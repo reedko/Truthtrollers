@@ -102,10 +102,10 @@ test("4: support-lane provenance cannot force a supporting relation", () => {
   const ranked = prioritizeCfxPhase3Documents({ documents: [{
     documentId: "D1", canonicalIdentityKind: "pmid", accessLevel: "abstract",
     textLength: 100, selectedTextVersionHash: "a".repeat(64), propositionIds: ["P02"],
-    queryIds: ["Q4"], queryIntents: ["independent_evidence"], providers: ["pubmed"],
+    queryIds: ["Q4"], providers: ["pubmed"],
     publishers: ["Journal"], documentRoles: ["independent"],
   }] });
-  assert.equal(ranked[0].queryIntents[0], "independent_evidence");
+  assert.equal(ranked[0].propositionIds[0], "P02");
   assert.equal(output.targets[1].assertions[0].bearingRelation, "challenges");
 });
 
@@ -113,10 +113,10 @@ test("5: counterevidence-lane provenance cannot force a challenging relation", (
   const ranked = prioritizeCfxPhase3Documents({ documents: [{
     documentId: "D2", canonicalIdentityKind: "doi", accessLevel: "abstract",
     textLength: 100, selectedTextVersionHash: "b".repeat(64), propositionIds: ["P01"],
-    queryIds: ["Q5"], queryIntents: ["counterevidence"], providers: ["pubmed"],
+    queryIds: ["Q5"], providers: ["pubmed"],
     publishers: ["Journal"], documentRoles: ["independent"],
   }] });
-  assert.equal(ranked[0].queryIntents[0], "counterevidence");
+  assert.equal(ranked[0].propositionIds[0], "P01");
   assert.equal(output.targets[0].assertions[0].bearingRelation, "supports");
 });
 
@@ -185,7 +185,7 @@ test("12: snippet-only material remains provisional and cannot be requested", as
   const ranked = prioritizeCfxPhase3Documents({ documents: [{
     documentId: "D3", canonicalIdentityKind: "resolved_url", accessLevel: "snippet",
     textLength: 100, selectedTextVersionHash: "c".repeat(64), propositionIds: ["P01"],
-    queryIds: ["Q1"], queryIntents: ["canonical"], providers: ["web"],
+    queryIds: ["Q1"], providers: ["web"],
     publishers: [], documentRoles: ["other"],
   }] });
   assert.equal(ranked[0].tier, "excluded");

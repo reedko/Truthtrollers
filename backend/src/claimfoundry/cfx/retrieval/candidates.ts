@@ -108,7 +108,6 @@ export function normalizeCfxProviderCandidate(input: {
   const discoveryPath: CfxCandidateDiscoveryPath = {
     propositionId: input.request.propositionId,
     queryId: input.request.queryId,
-    queryIntent: input.request.queryIntent,
     query: input.request.query,
     provider,
     retrievalRank: input.rank,

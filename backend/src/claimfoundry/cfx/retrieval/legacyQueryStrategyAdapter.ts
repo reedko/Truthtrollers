@@ -5,7 +5,6 @@ import {
 import type {
   CfxEvidenceInput,
   CfxQueryId,
-  CfxQueryIntent,
 } from "./types.js";
 
 // This is the complete CFX reuse boundary for legacy query-generation code.
@@ -59,7 +58,6 @@ function literalAnchorTokens(input: CfxEvidenceInput): Set<string> {
 
 export function validateCfxQueryStrategy(input: {
   queryId: CfxQueryId;
-  queryIntent: CfxQueryIntent;
   query: string;
   evidenceInput: CfxEvidenceInput;
 }): { valid: boolean; reasons: string[]; matchedLiteralAnchors: string[] } {
@@ -67,20 +65,6 @@ export function validateCfxQueryStrategy(input: {
   const query = clean(input.query);
   if (isInstructionLikeQuery(query)) reasons.push("INSTRUCTION_LIKE_QUERY");
   if (isGlueQuery(query)) reasons.push("GLUE_QUERY");
-
-  const fixedIntent:Partial<Record<CfxQueryId, CfxQueryIntent>> = {
-    Q1:"canonical", Q2:"entity_predicate", Q3:"source_identity",
-    Q4:"independent_evidence",
-  };
-  if (fixedIntent[input.queryId] && fixedIntent[input.queryId] !== input.queryIntent) {
-    reasons.push("QUERY_INTENT_DOES_NOT_MATCH_LANE");
-  }
-  if (
-    input.queryId === "Q5"
-    && !["counterevidence", "qualification"].includes(input.queryIntent)
-  ) {
-    reasons.push("Q5_REQUIRES_COUNTEREVIDENCE_OR_QUALIFICATION_INTENT");
-  }
 
   const queryTokens = meaningfulTokens(query);
   const literalAnchors = literalAnchorTokens(input.evidenceInput);

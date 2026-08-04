@@ -1,4 +1,10 @@
 export function loadProductionCfxEvidenceInputs(input: Record<string, any>): Promise<Array<Record<string, any>>>;
+export class CfxQueryInputError extends Error {
+  code: string;
+  claimId: number;
+  contentId: number;
+  missingFields?: string[];
+}
 export function legacyDocumentQuality(candidate: Record<string, any>): number;
 export function assertCfxProductionSchemaReady(
   query: (sql: string, values?: unknown[]) => Promise<any>,

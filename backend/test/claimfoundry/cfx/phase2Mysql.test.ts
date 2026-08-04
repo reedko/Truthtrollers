@@ -6,11 +6,16 @@ import dotenv from "dotenv";
 import mysql from "mysql2/promise";
 import {
   ensureCfxCanonicalAcquisition,
+  persistCfxDiscoveryAssignments,
   retryCfxCanonicalAcquisition,
+  upsertCfxCanonicalDocument,
 } from "../../../src/services/cfxCanonicalDocumentStore.js";
 import {
   persistEvidenceScrapeCapture,
 } from "../../../src/services/cfxEvidenceScrapeAdapter.js";
+import {
+  aggregateCfxCanonicalDocuments,
+} from "../../../src/claimfoundry/cfx/acquisition/canonicalDocuments.js";
 
 dotenv.config({ path: path.resolve(".env") });
 const enabled = process.env.CFX_REAL_MYSQL_TEST === "1";
@@ -229,6 +234,133 @@ test("Phase 2 schema and acquisition invariants hold on disposable real MySQL", 
       proposition_id:"P01",target_claim_id:claim.insertId,candidate_id:"C1",
       query_id:"Q5",query_intent:"qualification",provider:"pubmed",retrieval_rank:1,
     });
+  } finally {
+    if (pool) await pool.end();
+    await admin.query(`DROP DATABASE IF EXISTS \`${database}\``);
+    await admin.end();
+  }
+});
+
+test("query_intent is nullable: new assignments persist without it, legacy explicit values remain readable", {
+  skip:!enabled,
+  timeout:120_000,
+}, async () => {
+  const database = `cfx_phase2_nullable_test_${process.pid}_${Date.now()}`;
+  assert.match(database, /^cfx_phase2_nullable_test_[0-9_]+$/u);
+  assert.notEqual(database, process.env.DB_DATABASE);
+  const admin = await mysql.createConnection({
+    host:process.env.DB_HOST || "127.0.0.1",
+    port:Number(process.env.DB_PORT || 3306),
+    user:process.env.DB_USER,
+    password:process.env.DB_PASSWORD,
+  });
+  let pool:mysql.Pool | null = null;
+  try {
+    await admin.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci`);
+    pool = mysql.createPool({
+      host:process.env.DB_HOST || "127.0.0.1",
+      port:Number(process.env.DB_PORT || 3306),
+      user:process.env.DB_USER,
+      password:process.env.DB_PASSWORD,
+      database,
+      connectionLimit:4,
+    });
+    const query = rowQuery(pool);
+    for (const ddl of [
+      "CREATE TABLE content (content_id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY(content_id)) ENGINE=InnoDB",
+      "CREATE TABLE claims (claim_id INT NOT NULL AUTO_INCREMENT, claim_text TEXT NOT NULL, claim_type ENUM('task','reference','snippet') DEFAULT 'task', PRIMARY KEY(claim_id)) ENGINE=InnoDB",
+      `CREATE TABLE scrape_jobs (
+        scrape_job_id BIGINT NOT NULL AUTO_INCREMENT,
+        requested_by_user_id BIGINT NULL,
+        requested_by_source ENUM('dashboard','extension','api') NOT NULL DEFAULT 'api',
+        scrape_mode ENUM('scrape_current_tab','scrape_specific_url') NOT NULL DEFAULT 'scrape_specific_url',
+        target_url TEXT NULL,task_content_id BIGINT NULL,
+        status ENUM('pending','claimed','completed','failed','expired') NOT NULL DEFAULT 'pending',
+        PRIMARY KEY(scrape_job_id)) ENGINE=InnoDB`,
+      "CREATE TABLE claim_sources (claim_source_id INT NOT NULL AUTO_INCREMENT, claim_id INT NOT NULL, reference_content_id INT NOT NULL, PRIMARY KEY(claim_source_id), CONSTRAINT p2n_cs_claim FOREIGN KEY(claim_id) REFERENCES claims(claim_id), CONSTRAINT p2n_cs_content FOREIGN KEY(reference_content_id) REFERENCES content(content_id)) ENGINE=InnoDB",
+      "CREATE TABLE reference_claim_task_links (reference_claim_task_links_id INT NOT NULL AUTO_INCREMENT, reference_claim_id INT NOT NULL, task_claim_id INT NOT NULL, PRIMARY KEY(reference_claim_task_links_id), CONSTRAINT p2n_rctl_ref FOREIGN KEY(reference_claim_id) REFERENCES claims(claim_id), CONSTRAINT p2n_rctl_task FOREIGN KEY(task_claim_id) REFERENCES claims(claim_id)) ENGINE=InnoDB",
+    ]) await query(ddl);
+    // Apply the original 2026-08-01 migration unchanged, then the new
+    // forward-only nullable migration on top of it -- proving the two
+    // together reproduce the exact real-database end state.
+    for (const migrationPath of [
+      "migrations/2026-07-31-01-cfx-evidence-scrape-bindings.sql",
+      "migrations/2026-08-01-01-cfx-phase2-canonical-documents.sql",
+      "migrations/2026-08-05-01-cfx-discovery-assignment-query-intent-nullable.sql",
+    ]) {
+      const migration = await readFile(migrationPath, "utf8");
+      for (const ddl of statements(migration)) await query(ddl);
+    }
+
+    const [[column]] = await pool.query<mysql.RowDataPacket[]>(
+      `SELECT IS_NULLABLE, COLUMN_TYPE FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA=? AND TABLE_NAME='cfx_document_discovery_assignments' AND COLUMN_NAME='query_intent'`,
+      [database],
+    );
+    assert.equal(column!.IS_NULLABLE, "YES");
+    assert.equal(
+      column!.COLUMN_TYPE,
+      "enum('canonical','entity_predicate','source_identity','independent_evidence','counterevidence','qualification')",
+    );
+
+    const [claim] = await pool.query<mysql.ResultSetHeader>(
+      "INSERT INTO claims(claim_text,claim_type) VALUES ('target','task')");
+
+    // 5. No active application object includes queryIntent: the real,
+    // unmodified aggregateCfxCanonicalDocuments() output carries no such field.
+    const candidate = {
+      candidateId: "C1", propositionId: "P01", queryId: "Q1" as const,
+      provider: "tavily", providerRecordId: null, title: "Nullable-era document",
+      authors: [] as string[], publication: null, publicationDate: null,
+      doi: null, pmid: "999999", url: null, canonicalUrl: null, resolvedUrl: null,
+      abstractOrSnippet: null, sourceType: null, retrievalScore: 1, retrievalRank: 1,
+      rawArtifactPath: "raw/C1.json",
+      discoveryPaths: [{
+        propositionId: "P01", queryId: "Q1" as const, query: "nullable era query",
+        provider: "tavily", retrievalRank: 1, requestId: "REQ-P01-Q1",
+      }],
+    };
+    const [document] = aggregateCfxCanonicalDocuments([
+      { candidate, targetClaimId: claim.insertId },
+    ]);
+    assert.equal("queryIntent" in document!.discoveryAssignments[0]!, false);
+    assert.equal(document!.discoveryAssignments[0]!.propositionId, "P01");
+    assert.equal(document!.discoveryAssignments[0]!.targetClaimId, claim.insertId);
+
+    const canonicalDocumentId = await upsertCfxCanonicalDocument(query, {
+      runId: "run-nullable", document: document!,
+    });
+
+    // 1 & 2. A new discovery-assignment insert through the real,
+    // unmodified production function succeeds without query_intent, and the
+    // persisted row reads back as NULL.
+    const persisted = await persistCfxDiscoveryAssignments(query, {
+      runId: "run-nullable",
+      canonicalDocumentId,
+      assignments: document!.discoveryAssignments,
+    });
+    assert.equal(persisted.insertedCount, 1);
+    const [[newRow]] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT query_intent FROM cfx_document_discovery_assignments WHERE candidate_id='C1'",
+    );
+    assert.equal(newRow!.query_intent, null);
+
+    // 3. A legacy row written with an explicit enum value (as any
+    // pre-migration historical row would have been) remains readable and
+    // unchanged by the nullable migration.
+    await pool.query(
+      `INSERT INTO cfx_document_discovery_assignments
+       (canonical_document_id,run_id,proposition_id,target_claim_id,candidate_id,
+        query_id,query_intent,query_text,provider,retrieval_rank,
+        provider_request_id,assignment_sha256)
+       VALUES (?,'run-nullable','P01',?,'LEGACY-C1','Q5','qualification',
+               'legacy claim-specific limitations','pubmed',1,'REQ-LEGACY',?)`,
+      [canonicalDocumentId, claim.insertId, "d".repeat(64)],
+    );
+    const [[legacyRow]] = await pool.query<mysql.RowDataPacket[]>(
+      "SELECT query_intent FROM cfx_document_discovery_assignments WHERE candidate_id='LEGACY-C1'",
+    );
+    assert.equal(legacyRow!.query_intent, "qualification");
   } finally {
     if (pool) await pool.end();
     await admin.query(`DROP DATABASE IF EXISTS \`${database}\``);

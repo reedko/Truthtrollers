@@ -23,7 +23,6 @@ import {
   prioritizeCfxPhase3Documents,
   type CfxPhase3DocumentCandidate,
 } from "../phase3/prioritization.js";
-import type { CfxQueryIntent } from "../retrieval/types.js";
 
 const TASK_CONTENT_ID = Number(process.argv[2] ?? 18056);
 const MODEL = "gpt-4o-mini";
@@ -43,10 +42,6 @@ if (!configuredRetrievalCandidates) {
 const RETRIEVAL_CANDIDATES = path.resolve(configuredRetrievalCandidates);
 
 type Row = RowDataPacket & Record<string, unknown>;
-const intentByQuery: Record<string, CfxQueryIntent> = {
-  Q1: "canonical", Q2: "entity_predicate", Q3: "source_identity",
-  Q4: "independent_evidence", Q5: "counterevidence",
-};
 
 function timestamp(): string {
   return new Date().toISOString().replace(/[-:]/gu, "").replace(/\.\d{3}Z$/u, "Z").toLowerCase();
@@ -117,7 +112,6 @@ async function main(): Promise<void> {
       const frozen = frozenCandidates.find((candidate) => candidate.candidateId === row.candidate_id);
       const paths = frozen && Array.isArray(frozen.discoveryPaths) ? frozen.discoveryPaths as Row[] : [];
       const queryIds = unique(paths.map((value) => String(value.queryId ?? "")));
-      const queryIntents = unique(queryIds.map((queryId) => intentByQuery[queryId] ?? "canonical")) as CfxQueryIntent[];
       const providerNames = unique([
         String(row.provider ?? ""), ...paths.map((value) => String(value.provider ?? "")),
       ]);
@@ -140,7 +134,6 @@ async function main(): Promise<void> {
         selectedTextVersionHash: String(row.cleaned_text_sha256),
         propositionIds: unique([String(row.proposition_id ?? ""), ...paths.map((value) => String(value.propositionId ?? ""))]),
         queryIds,
-        queryIntents,
         providers: providerNames,
         publishers: unique([publisher]),
         documentRoles: ["other"],

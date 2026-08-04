@@ -1,7 +1,6 @@
 import type {
   CfxEvidenceInput,
   CfxQueryId,
-  CfxQueryIntent,
 } from "./types.js";
 
 export type CfxCompiledPubmedQuery = {
@@ -136,7 +135,6 @@ function uniqueFallback(input: {
 export function compileLiteralPubmedQuery(input: {
   evidenceInput: CfxEvidenceInput;
   queryId: CfxQueryId;
-  queryIntent?: CfxQueryIntent;
 }): CfxCompiledPubmedQuery | null {
   const source = input.evidenceInput;
   const localPopulations = anchoredValues(
@@ -163,9 +161,7 @@ export function compileLiteralPubmedQuery(input: {
     ? unique(source.literalIdentifiers.dateRanges, 1)
     : [];
   const purposeTerms = input.queryId !== "Q5" ? []
-    : input.queryIntent === "qualification"
-      ? ["methodological limitations", "confounding", "subgroup"]
-      : ["replication", "reanalysis", "correction", "retraction"];
+    : ["replication", "reanalysis", "correction", "retraction"];
   const components = {
     populations,
     interventionsOrExposures,

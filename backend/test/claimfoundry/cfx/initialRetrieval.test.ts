@@ -89,19 +89,16 @@ function modelOutput() {
         propositionId,
         queries: [{
           queryId: "Q2",
-          queryIntent: "entity_predicate",
           query: `${propositionId} infants vaccines hospitalization relationship`,
           provider: "pubmed",
           rationale: "Searches the literal predicate and entities.",
         }, {
           queryId: "Q4",
-          queryIntent: "independent_evidence",
           query: `${propositionId} infants vaccination hospitalization cohort study`,
           provider: "pubmed",
           rationale: "Searches independent biomedical evidence.",
         }, {
           queryId: "Q5",
-          queryIntent: index % 2 === 0 ? "counterevidence" : "qualification",
           query: index % 2 === 0
             ? `${propositionId} infants vaccines hospitalization replication reanalysis`
             : `${propositionId} infants vaccines hospitalization methodological limitations`,
@@ -115,13 +112,13 @@ function modelOutput() {
 
 test("governed planning prompt and strict schema retain the intended surface", async () => {
   const prompt = await loadCfxQueryPlanningPrompt();
-  assert.equal(prompt.promptId, "cfx-initial-query-planning-v2");
+  assert.equal(prompt.promptId, "cfx-initial-query-planning-v1");
   assert.ok(prompt.prompt.includes(
     "The canonical substantive assertions are immutable.",
   ));
   assert.equal(
     CFX_QUERY_PLANNING_JSON_SCHEMA.name,
-    "cfx_initial_query_planning_v2",
+    "cfx_initial_query_planning_v1",
   );
   const inputs = Array.from({ length: 12 }, (_, index) =>
     evidenceInput(index + 1));
@@ -133,7 +130,7 @@ test("governed planning prompt and strict schema retain the intended surface", a
   assert.equal(request.maxOutputTokens, 8_000);
   assert.equal(request.timeoutMs, 180_000);
   assert.equal(request.user.match(/immutableSubstantiveAssertion/g)?.length, 12);
-  assert.ok(request.user.includes("queryIntent records only why a query was issued"));
+  assert.ok(request.user.includes("Return exactly Q2, Q4, and Q5 for every propositionId."));
 });
 
 test("PubMed applicability is literal and records why it fired", () => {
@@ -236,19 +233,19 @@ test("PubMed compiler rejects article clauses and requires the literal biomedica
 test("Q5 policy requires a claim-specific counterevidence or qualification transformation", () => {
   const input = evidenceInput(7);
   const counter = validateCfxQueryStrategy({
-    queryId:"Q5",queryIntent:"counterevidence",
+    queryId:"Q5",
     query:"infants vaccines hospitalization replication reanalysis",
     evidenceInput:input,
   });
   assert.equal(counter.valid, true);
   const qualification = validateCfxQueryStrategy({
-    queryId:"Q5",queryIntent:"qualification",
+    queryId:"Q5",
     query:"infants vaccines hospitalization methodological limitations",
     evidenceInput:input,
   });
   assert.equal(qualification.valid, true);
   const trivial = validateCfxQueryStrategy({
-    queryId:"Q5",queryIntent:"counterevidence",
+    queryId:"Q5",
     query:`${input.substantiveAssertion} false`,evidenceInput:input,
   });
   assert.equal(trivial.valid, false);
@@ -258,10 +255,10 @@ test("Q5 policy requires a claim-specific counterevidence or qualification trans
 test("PubMed Q5 keeps counterevidence purpose distinct through every fallback", () => {
   const input = evidenceInput(7);
   const q4 = compileLiteralPubmedQuery({
-    evidenceInput:input,queryId:"Q4",queryIntent:"independent_evidence",
+    evidenceInput:input,queryId:"Q4",
   })!;
   const q5 = compileLiteralPubmedQuery({
-    evidenceInput:input,queryId:"Q5",queryIntent:"counterevidence",
+    evidenceInput:input,queryId:"Q5",
   })!;
   assert.notEqual(q5.query, q4.query);
   assert.match(q5.query, /replication\[Title\/Abstract\]/u);
@@ -400,7 +397,6 @@ test("duplicate compiled PubMed text preserves the independent-evidence lane", (
   )!;
   const p09Q5 = p09Output.queries.find((query) => query.queryId === "Q5")!;
   p09Q5.provider = "web";
-  p09Q5.queryIntent = "qualification";
   p09Q5.query = "thimerosal autism methodological limitations";
   const plan = mergeCfxQueryPlan({
     inputs,
@@ -552,7 +548,6 @@ test("candidate normalization and dedupe preserve all discovery paths", () => {
     requestId: "REQ-P05-Q2",
     propositionId: "P05",
     queryId: "Q2" as const,
-    queryIntent: "entity_predicate" as const,
     query: "CDC MMR autism",
     provider: "web" as const,
     topK: 5 as const,
@@ -579,7 +574,6 @@ test("candidate normalization and dedupe preserve all discovery paths", () => {
     ...request,
     requestId: "REQ-P05-Q4",
     queryId: "Q4" as const,
-    queryIntent: "independent_evidence" as const,
     query: "MMR autism cohort study",
   };
   const second = normalizeCfxProviderCandidate({
@@ -608,17 +602,12 @@ test("candidate normalization and dedupe preserve all discovery paths", () => {
     result.candidates[0]!.discoveryPaths.map((path) => path.queryId).sort(),
     ["Q2", "Q4"],
   );
-  assert.deepEqual(
-    result.candidates[0]!.discoveryPaths.map((path) => path.queryIntent).sort(),
-    ["entity_predicate", "independent_evidence"],
-  );
   assert.equal(result.audit[0]!.mergedCandidateIds.length, 2);
 });
 
-test("query intent survives as discovery provenance and never becomes evidence stance", () => {
+test("discovery paths never carry an evidence-stance or bearing-relation signal", () => {
   const request = {
     requestId:"REQ-P07-Q5",propositionId:"P07",queryId:"Q5" as const,
-    queryIntent:"counterevidence" as const,
     query:"infants vaccines hospitalization replication reanalysis",
     provider:"web" as const,topK:5 as const,pubmedFallbacks:[],
   };
@@ -626,7 +615,8 @@ test("query intent survives as discovery provenance and never becomes evidence s
     raw:{provider:"tavily",title:"A result",url:"https://example.test/result"},
     request,rank:1,rawArtifactPath:"raw.json",
   });
-  assert.equal(candidate.discoveryPaths[0]!.queryIntent, "counterevidence");
+  assert.equal(candidate.discoveryPaths[0]!.queryId, "Q5");
+  assert.equal("queryIntent" in candidate.discoveryPaths[0]!, false);
   assert.equal("stance" in candidate, false);
   assert.equal("bearingRelation" in candidate, false);
   assert.equal("stance" in candidate.discoveryPaths[0]!, false);
@@ -663,7 +653,6 @@ test("review report exposes queries and candidates without automatic bearing or 
     discoveryPaths: [{
       propositionId: "P01",
       queryId: "Q1",
-      queryIntent: "canonical",
       query: "query",
       provider: "tavily",
       retrievalRank: 1,

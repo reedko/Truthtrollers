@@ -30,7 +30,6 @@ export function cfxQueryPlanMarkdown(input: {
       ...proposition.queries.flatMap((query) => [
         `### ${query.queryId} — ${query.lane}`,
         "",
-        `- Query intent: ${query.queryIntent}`,
         `- Provider: ${query.provider ?? "not executed"}`,
         `- Query: ${query.query ?? "—"}`,
         `- Model-proposed query: ${query.modelProposedQuery ?? "—"}`,

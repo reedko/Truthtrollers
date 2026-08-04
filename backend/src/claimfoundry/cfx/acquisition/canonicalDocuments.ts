@@ -7,7 +7,6 @@ import {
 import type {
   CfxCandidateDiscoveryPath,
   CfxEvidenceCandidate,
-  CfxQueryIntent,
 } from "../retrieval/types.js";
 
 export const CFX_DOCUMENT_IDENTITY_KINDS = [
@@ -32,7 +31,6 @@ export type CfxDocumentDiscoveryAssignment = {
   targetClaimId: number;
   candidateId: string;
   queryId: string;
-  queryIntent: CfxQueryIntent;
   query: string;
   provider: string;
   rank: number | null;
@@ -111,7 +109,6 @@ function assignment(
     targetClaimId,
     candidateId,
     queryId: path.queryId,
-    queryIntent: path.queryIntent,
     query: path.query,
     provider: path.provider,
     rank: Number.isSafeInteger(path.retrievalRank)

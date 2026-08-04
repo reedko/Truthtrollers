@@ -19,21 +19,17 @@ import {
 import {
   compileLiteralPubmedQuery,
 } from "./pubmedQueryCompiler.js";
-import {
-  validateCfxQueryStrategy,
-} from "./legacyQueryStrategyAdapter.js";
 import type {
   CfxEvidenceInput,
   CfxPlannedQuery,
   CfxQueryId,
-  CfxQueryIntent,
   CfxQueryLaneName,
   CfxQueryPlan,
 } from "./types.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PROMPT_HASH =
-  "9ba360fbdabac58c936f71f7bd31452cf185762a49e0777bef30e4bc8c04b70c";
+  "4af9000479199600980ecf422c1003bfb5affaf5d301bce09b816452d4cc3400";
 const GENERIC_SOURCE_RE =
   /\b(?:article|author|historical context|statistical data|general discussion|source material|not specified|unnamed|unknown)\b/iu;
 const BIOMEDICAL_RE =
@@ -50,15 +46,16 @@ export const DEFAULT_CFX_QUERY_PLANNING_CONFIG = Object.freeze({
   store: false as const,
 });
 
-const laneById: Partial<Record<CfxQueryId, CfxQueryLaneName>> = {
+const laneById: Record<CfxQueryId, CfxQueryLaneName> = {
   Q1: "canonical",
-  Q2: "entity_predicate",
+  Q2: "predicate_entities",
   Q3: "source_identity",
   Q4: "independent_evidence",
+  Q5: "counterevidence_qualification",
 };
 
-function laneFor(queryId: CfxQueryId, queryIntent: CfxQueryIntent): CfxQueryLaneName {
-  return laneById[queryId] ?? queryIntent;
+function laneFor(queryId: CfxQueryId): CfxQueryLaneName {
+  return laneById[queryId];
 }
 
 function clean(value: string, maximum = 300): string {
@@ -216,10 +213,9 @@ function deterministicQueries(input: CfxEvidenceInput): {
     q1: {
       propositionId: input.propositionId,
       queryId: "Q1",
-      queryIntent: "canonical",
       query: canonical || null,
       quotedDiagnosticVariant: canonical ? `"${canonical}"` : null,
-      lane: laneFor("Q1", "canonical"),
+      lane: laneFor("Q1"),
       provider: canonical ? "web" : null,
       rationale: "Canonical assertion with mechanical whitespace and terminal punctuation cleanup only.",
       origin: "deterministic",
@@ -232,10 +228,9 @@ function deterministicQueries(input: CfxEvidenceInput): {
     q3: {
       propositionId: input.propositionId,
       queryId: "Q3",
-      queryIntent: "source_identity",
       query: identity.query,
       quotedDiagnosticVariant: null,
-      lane: laneFor("Q3", "source_identity"),
+      lane: laneFor("Q3"),
       provider: identity.provider,
       rationale: identity.query
         ? identity.reason
@@ -253,7 +248,7 @@ function deterministicQueries(input: CfxEvidenceInput): {
 export async function loadCfxQueryPlanningPrompt(): Promise<CfxGovernedPrompt> {
   return loadCfxPrompt({
     filePath: path.join(here, "query-planning-v1.json"),
-    expectedPromptId: "cfx-initial-query-planning-v2",
+    expectedPromptId: "cfx-initial-query-planning-v1",
     expectedPromptHash: PROMPT_HASH,
   });
 }
@@ -316,24 +311,10 @@ function validateModelPlans(
       continue;
     }
     seen.add(plan.propositionId);
-    const evidenceInput = inputs.find(
-      (item) => item.propositionId === plan.propositionId,
-    )!;
     const queries = plan.queries.filter((query) => {
       if (VERDICT_WORD_RE.test(query.query)) {
         warnings.push(
           `Prohibited verdict word in ${plan.propositionId}/${query.queryId} (kept)`,
-        );
-      }
-      const validation = validateCfxQueryStrategy({
-        queryId: query.queryId,
-        queryIntent: query.queryIntent,
-        query: query.query,
-        evidenceInput,
-      });
-      if (!validation.valid) {
-        warnings.push(
-          `Query-policy warning in ${plan.propositionId}/${query.queryId}: ${validation.reasons.join(",")} (kept)`,
         );
       }
       return true;
@@ -384,11 +365,6 @@ export function mergeCfxQueryPlan(input: {
           }
         }
       }
-      const fallbackIntent: Record<"Q2" | "Q4" | "Q5", CfxQueryIntent> = {
-        Q2: "entity_predicate",
-        Q4: "independent_evidence",
-        Q5: "qualification",
-      };
       const modelRows = (["Q2", "Q4", "Q5"] as const).map(
         (queryId): CfxPlannedQuery => {
           const proposed = byId.get(queryId);
@@ -396,10 +372,9 @@ export function mergeCfxQueryPlan(input: {
             return {
               propositionId: evidenceInput.propositionId,
               queryId,
-              queryIntent: fallbackIntent[queryId],
               query: null,
               quotedDiagnosticVariant: null,
-              lane: laneFor(queryId, fallbackIntent[queryId]),
+              lane: laneFor(queryId),
               provider: null,
               rationale: "Model did not provide a usable query for this lane.",
               origin: "model",
@@ -419,7 +394,6 @@ export function mergeCfxQueryPlan(input: {
             ? compileLiteralPubmedQuery({
                 evidenceInput,
                 queryId,
-                queryIntent: proposed.queryIntent,
               })
             : null;
           const provider = permittedProvider === "pubmed" && !compiled
@@ -429,10 +403,9 @@ export function mergeCfxQueryPlan(input: {
           return {
             propositionId: evidenceInput.propositionId,
             queryId,
-            queryIntent: proposed.queryIntent,
             query,
             quotedDiagnosticVariant: null,
-            lane: laneFor(queryId, proposed.queryIntent),
+            lane: laneFor(queryId),
             provider,
             rationale: provider === "pubmed" && compiled
               ? `${proposed.rationale} PubMed syntax was compiled deterministically from literal biomedical components.`

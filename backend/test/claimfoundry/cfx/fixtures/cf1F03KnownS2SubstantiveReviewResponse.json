@@ -1,0 +1,76 @@
+{
+  "results": [
+    {
+      "propositionId": "P01",
+      "substantiveAssertion": "Parents who choose not to vaccinate their children are typically highly educated and scientifically literate.",
+      "assertionSource": "Aaron Siri, foreword of 'Vaccines, Amen: The Religion of Vaccines'",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P02",
+      "substantiveAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "articleStance": "challenges"
+    },
+    {
+      "propositionId": "P03",
+      "substantiveAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "articleStance": "challenges"
+    },
+    {
+      "propositionId": "P04",
+      "substantiveAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "articleStance": "challenges"
+    },
+    {
+      "propositionId": "P05",
+      "substantiveAssertion": "The CDC manipulated data linking the MMR vaccine to autism.",
+      "assertionSource": "William Thompson, CDC whistleblower",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P06",
+      "substantiveAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertionSource": "Article discussion",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P07",
+      "substantiveAssertion": "The rise in chronic illnesses among children correlates with the increase in vaccine doses since the 1986 act.",
+      "assertionSource": "Article discussion",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P08",
+      "substantiveAssertion": "Aluminum in vaccines is safe and occurs in lower amounts than in food.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "articleStance": "challenges"
+    },
+    {
+      "propositionId": "P09",
+      "substantiveAssertion": "Thimerosal is not harmful and has been removed from childhood vaccines.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "articleStance": "challenges"
+    },
+    {
+      "propositionId": "P10",
+      "substantiveAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+      "assertionSource": "Article discussion",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P11",
+      "substantiveAssertion": "Vaccines are linked to an increase in Sudden Infant Death Syndrome (SIDS).",
+      "assertionSource": "Neil Z. Miller's analysis",
+      "articleStance": "adopts"
+    },
+    {
+      "propositionId": "P12",
+      "substantiveAssertion": "The CDC's narrative about vaccine safety is based on flawed or manipulated data.",
+      "assertionSource": "Article discussion",
+      "articleStance": "challenges"
+    }
+  ]
+}

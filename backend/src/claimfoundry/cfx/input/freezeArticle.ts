@@ -48,7 +48,23 @@ export async function freezeCfxArticle(input: {
   ) {
     throw new Error(`CFX article text hash mismatch for ${input.fixtureId}`);
   }
-  const document = normalizeArticleText(article);
+  return freezeCfxArticleFromRecord({
+    fixtureId: input.fixtureId,
+    fixturePath: input.fixturePath,
+    fixtureFileSha256,
+    article,
+    articleTextSha256,
+  });
+}
+
+function freezeCfxArticleFromRecord(input: {
+  fixtureId: string;
+  fixturePath: string;
+  fixtureFileSha256: string;
+  article: { title: string; text: string };
+  articleTextSha256: string;
+}): CfxFrozenArticle {
+  const document = normalizeArticleText(input.article);
   const sourceUnits: CfxSourceUnit[] = document.sourceUnits.map((unit) => ({
     unitId: unit.unitId,
     text: unit.text,
@@ -59,17 +75,44 @@ export async function freezeCfxArticle(input: {
   return {
     fixtureId: input.fixtureId,
     fixturePath: input.fixturePath,
-    fixtureFileSha256,
-    articleTextSha256,
+    fixtureFileSha256: input.fixtureFileSha256,
+    articleTextSha256: input.articleTextSha256,
     normalizedArticleHash: document.contentHash,
     sourceUnitManifestHash: sourceUnitManifestHash(sourceUnits),
-    articleTitle: article.title,
-    articleText: article.text,
+    articleTitle: input.article.title,
+    articleText: input.article.text,
     canonicalText: document.canonicalText,
-    articleCharacterCount: article.text.length,
+    articleCharacterCount: input.article.text.length,
     sourceUnitCount: sourceUnits.length,
     sourceUnits,
     unitProjection,
     unitProjectionSha256: sha256(unitProjection),
   };
+}
+
+/**
+ * Freezes (hashes + normalizes into grounded source units) an article that
+ * was just produced by a live scrape, rather than read from a fixture file
+ * on disk. There is no "expected" hash to verify against here -- provenance
+ * is recorded (articleTextSha256), not checked, since a fresh scrape's text
+ * is whatever the live page actually contained. No DB writes, no model calls.
+ */
+export function freezeCfxArticleFromText(input: {
+  title: string;
+  text: string;
+  sourceUrl?: string;
+  contentId?: number;
+}): CfxFrozenArticle {
+  const article = { title: input.title, text: input.text };
+  const articleTextSha256 = sha256(article.text);
+  const fixtureId = input.contentId !== undefined
+    ? `content-${input.contentId}`
+    : "live-scrape";
+  return freezeCfxArticleFromRecord({
+    fixtureId,
+    fixturePath: input.sourceUrl ?? fixtureId,
+    fixtureFileSha256: articleTextSha256,
+    article,
+    articleTextSha256,
+  });
 }

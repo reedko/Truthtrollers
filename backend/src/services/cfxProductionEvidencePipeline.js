@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { z } from "zod";
 import {
   buildAcademicPublishingIdentity,
   fetchAcademicApiContent,
@@ -44,17 +45,135 @@ function positive(value, name) {
   return number;
 }
 
-function parseJson(value) {
-  if (!value) return {};
-  if (typeof value === "object") return value;
-  try { return JSON.parse(value); } catch { return {}; }
+/**
+ * Thrown by loadProductionCfxEvidenceInputs when a requested claim's persisted
+ * CFX rich evidence-search handoff (claim_evaluation_targets.query_hints_json)
+ * is missing, malformed, or incomplete. CFX is the only production
+ * architecture -- there is no compatibility fallback to recompute a degraded
+ * handoff, so any of these conditions must fail the whole production evidence
+ * run before query planning, not degrade silently.
+ */
+export class CfxQueryInputError extends Error {
+  constructor(message, { code, claimId, contentId, missingFields } = {}) {
+    super(message);
+    this.name = "CfxQueryInputError";
+    this.code = code;
+    this.claimId = claimId;
+    this.contentId = contentId;
+    if (missingFields) this.missingFields = missingFields;
+  }
 }
 
-function articleStance(value) {
-  const stance = String(value || "").trim().toLowerCase();
-  if (["adopts", "endorses", "supports", "argues", "relies_on"].includes(stance)) return "adopts";
-  if (["challenges", "disputes", "refutes", "criticizes", "rejects"].includes(stance)) return "challenges";
-  return "reports";
+// Matches the exact shape cfxCaseAssertionPersistence.js persists into
+// claim_evaluation_targets.query_hints_json (upsertEvaluationTarget):
+//   { propositionId, groundingUnitIds, literalIdentifiers, lookupHints,
+//     deterministicQueries }
+// where deterministicQueries holds the raw handoff.queries shape
+// ({literal,sourceQualified,studyLookup}), not the reshaped
+// CfxEvidenceInput.deterministicQueries shape. Field lists mirror
+// retrieval/loadEvidenceInputs.ts's proven literalIdentifiers/lookupHints/
+// queries schemas exactly.
+const cfxLiteralIdentifiersSchema = z.object({
+  people: z.array(z.string()),
+  organizations: z.array(z.string()),
+  laws: z.array(z.string()),
+  studyTitles: z.array(z.string()),
+  journals: z.array(z.string()),
+  years: z.array(z.string()),
+  dateRanges: z.array(z.string()),
+  doi: z.array(z.string()),
+  pmid: z.array(z.string()),
+  urls: z.array(z.string()),
+  citationNumbers: z.array(z.string()),
+  acronyms: z.array(z.string()),
+}).strict();
+
+const cfxLookupHintsSchema = z.object({
+  populations: z.array(z.string()),
+  exposures: z.array(z.string()),
+  outcomes: z.array(z.string()),
+  interventions: z.array(z.string()),
+  geography: z.array(z.string()),
+  documentTypes: z.array(z.string()),
+  topics: z.array(z.string()),
+}).strict();
+
+const cfxPersistedQueriesSchema = z.object({
+  literal: z.array(z.string()),
+  sourceQualified: z.array(z.string()),
+  studyLookup: z.array(z.string()),
+}).strict();
+
+const cfxQueryHintsSchema = z.object({
+  propositionId: z.string().regex(/^P[0-9]+$/u),
+  groundingUnitIds: z.array(z.string().regex(/^U[0-9]+$/u)).min(1),
+  literalIdentifiers: cfxLiteralIdentifiersSchema,
+  lookupHints: cfxLookupHintsSchema,
+  deterministicQueries: cfxPersistedQueriesSchema,
+}).passthrough();
+
+const CFX_ARTICLE_STANCES = ["adopts", "challenges", "reports"];
+
+/**
+ * Requires and validates the persisted CFX rich evidence-search handoff for
+ * one claim. Fails loudly and specifically -- missing, malformed, and
+ * incomplete/invalid handoffs each throw a distinctly coded CfxQueryInputError
+ * naming the claim and content IDs (and, for incomplete/invalid shapes, the
+ * exact missing/invalid field paths). There is no fallback: this is the only
+ * path loadProductionCfxEvidenceInputs has for producing groundingUnitIds,
+ * literalIdentifiers, lookupHints, deterministicQueries, and propositionId.
+ */
+function requireCfxQueryHints(raw, { claimId, contentId }) {
+  if (raw === null || raw === undefined || raw === "") {
+    throw new CfxQueryInputError(
+      `Claim ${claimId} (content ${contentId}) has no persisted query_hints_json; `
+      + "a CFX rich evidence-search handoff is required and there is no compatibility fallback.",
+      { code: "MISSING_QUERY_HINTS", claimId, contentId },
+    );
+  }
+  let parsed;
+  if (typeof raw === "object") {
+    parsed = raw;
+  } else {
+    try {
+      parsed = JSON.parse(raw);
+    } catch (error) {
+      throw new CfxQueryInputError(
+        `Claim ${claimId} (content ${contentId}) has malformed query_hints_json: ${error.message}`,
+        { code: "MALFORMED_QUERY_HINTS_JSON", claimId, contentId },
+      );
+    }
+  }
+  const validated = cfxQueryHintsSchema.safeParse(parsed);
+  if (!validated.success) {
+    const missingFields = validated.error.issues.map((issue) => issue.path.join(".") || "(root)");
+    throw new CfxQueryInputError(
+      `Claim ${claimId} (content ${contentId}) has an incomplete or invalid CFX query_hints_json; `
+      + `missing/invalid fields: ${missingFields.join(", ")}`,
+      { code: "INVALID_QUERY_HINTS_SHAPE", claimId, contentId, missingFields },
+    );
+  }
+  return validated.data;
+}
+
+/** Requires the persisted CFX article stance to be exactly one of the three governed values; no synonym normalization, no silent default. */
+function requireCfxArticleStance(value, { claimId, contentId }) {
+  if (CFX_ARTICLE_STANCES.includes(value)) return value;
+  throw new CfxQueryInputError(
+    `Claim ${claimId} (content ${contentId}) has an invalid or missing article_stance: ${JSON.stringify(value)}; `
+    + `expected one of ${CFX_ARTICLE_STANCES.join(", ")}.`,
+    { code: "INVALID_ARTICLE_STANCE", claimId, contentId },
+  );
+}
+
+/** Requires the persisted grounding excerpt (source_excerpt) to be a non-empty string; groundingText is never part of query_hints_json and is never recomputed. */
+function requireCfxGroundingText(value, { claimId, contentId }) {
+  const text = typeof value === "string" ? value : "";
+  if (text.trim()) return text;
+  throw new CfxQueryInputError(
+    `Claim ${claimId} (content ${contentId}) has no persisted grounding excerpt (source_excerpt).`,
+    { code: "MISSING_GROUNDING_TEXT", claimId, contentId },
+  );
 }
 
 /** Preserve the legacy evidence-document quality projection (search relevance
@@ -74,15 +193,6 @@ export function legacyDocumentQuality(candidate) {
   return Math.max(0, Math.min(1.2, base + legacyDomainBoost));
 }
 
-function identifierMetadata(row) {
-  const raw = String(row.study_identifier || "").trim();
-  const identifiers = { doi: [], pmid: [], urls: [] };
-  if (/^10\.\d{4,9}\//iu.test(raw)) identifiers.doi.push(raw);
-  else if (/^(?:PMID\s*[:#]?\s*)?\d{4,12}$/iu.test(raw)) identifiers.pmid.push(raw.replace(/\D/gu, ""));
-  else if (/^https?:\/\//iu.test(raw)) identifiers.urls.push(raw);
-  return identifiers;
-}
-
 async function defaultRuntime() {
   const [handoff, planning, retrieval, candidates, canonicalDocuments, artifacts, sourceUnits] = await Promise.all([
     import("../../dist/claimfoundry/cfx/evidenceSearch/buildEvidenceSearchHandoff.js"),
@@ -96,17 +206,15 @@ async function defaultRuntime() {
   return { ...handoff, ...planning, ...retrieval, ...candidates, ...canonicalDocuments, ...artifacts, ...sourceUnits };
 }
 
-export async function loadProductionCfxEvidenceInputs({ query, taskContentId, claimIds, runtime }) {
+export async function loadProductionCfxEvidenceInputs({ query, taskContentId, claimIds }) {
   const taskId = positive(taskContentId, "taskContentId");
   const ids = [...new Set(claimIds.map((id) => positive(id, "claimId")))];
   if (!ids.length) throw new TypeError("claimIds must be non-empty");
   const placeholders = ids.map(() => "?").join(",");
   const rows = await query(
-    `SELECT c.claim_id,c.claim_text,cc.object_claim_text,cc.speaker_entity,
-            cc.article_stance AS content_article_stance,
-            cet.evaluation_target_id,cet.target_order,cet.target_text,
-            cet.source_excerpt,cet.article_stance AS target_article_stance,
-            cet.study_title,cet.study_authors,cet.study_year,cet.study_identifier,
+    `SELECT c.claim_id,c.claim_text,cc.speaker_entity,
+            cet.evaluation_target_id,cet.target_order,
+            cet.source_excerpt,cet.article_stance,
             cet.population_scope,cet.query_hints_json
        FROM claims c
        JOIN content_claims cc ON cc.claim_id=c.claim_id AND cc.content_id=?
@@ -123,71 +231,44 @@ export async function loadProductionCfxEvidenceInputs({ query, taskContentId, cl
 
   return ids.map((claimId) => {
     const row = firstByClaim.get(claimId);
-    const propositionId = `P${claimId}`;
+    const contentId = taskId;
     const substantiveAssertion = String(row.claim_text || "");
-    if (!substantiveAssertion.trim()) throw new Error(`Claim ${claimId} has no canonical text`);
-    const groundingText = String(row.source_excerpt || row.object_claim_text || row.target_text || substantiveAssertion);
-    const unitId = `U${claimId}`;
-    const assertionSource = String(row.speaker_entity || "article voice");
-    const references = row.study_title || row.study_authors || row.study_year || row.study_identifier
-      ? [{
-          referenceId: `REF-${claimId}`,
-          text: [row.study_title, row.study_authors, row.study_year, row.study_identifier].filter(Boolean).join("; "),
-          sourceUnitId: unitId,
-          title: row.study_title || null,
-          authors: String(row.study_authors || "").split(/\s*[,;]\s*/u).filter(Boolean),
-          publicationYear: row.study_year || null,
-          identifiers: identifierMetadata(row),
-        }]
-      : [];
-    const handoff = runtime.buildCfxEvidenceSearchHandoff({
-      review: {
-        propositionId,
-        substantiveAssertion,
-        assertionSource,
-        articleStance: articleStance(row.target_article_stance || row.content_article_stance),
-      },
-      source: {
-        propositionId,
-        assertion: substantiveAssertion,
-        assertionSource,
-        whyItMattersToArticleThesis: "Production canonical evaluation target",
-        groundingUnitIds: [unitId],
-      },
-      article: {
-        sourceUnits: [{ unitId, text: groundingText, charStart: 0, charEnd: groundingText.length }],
-        citationMetadata: {
-          links: [],
-          citationMarkers: references.map((reference) => ({
-            markerId: `MARKER-${claimId}`,
-            displayText: reference.text,
-            sourceUnitId: unitId,
-            resolvedReferenceId: reference.referenceId,
-          })),
-          references,
-        },
-      },
-    });
-    const hints = parseJson(row.query_hints_json);
+    if (!substantiveAssertion.trim()) {
+      throw new CfxQueryInputError(
+        `Claim ${claimId} (content ${contentId}) has no canonical claim_text.`,
+        { code: "MISSING_CLAIM_TEXT", claimId, contentId },
+      );
+    }
+    const assertionSourceRaw = row.speaker_entity;
+    if (typeof assertionSourceRaw !== "string" || !assertionSourceRaw.trim()) {
+      throw new CfxQueryInputError(
+        `Claim ${claimId} (content ${contentId}) has no persisted CFX assertion source (content_claims.speaker_entity).`,
+        { code: "MISSING_ASSERTION_SOURCE", claimId, contentId },
+      );
+    }
+    const assertionSource = assertionSourceRaw;
+    const stance = requireCfxArticleStance(row.article_stance, { claimId, contentId });
+    const groundingText = requireCfxGroundingText(row.source_excerpt, { claimId, contentId });
+    const hints = requireCfxQueryHints(row.query_hints_json, { claimId, contentId });
+
     return {
-      propositionId,
+      propositionId: hints.propositionId,
       claimId,
       substantiveAssertion,
       assertionSource,
-      articleStance: articleStance(row.target_article_stance || row.content_article_stance),
-      groundingUnitIds: [unitId],
-      groundingText: handoff.groundingText,
-      literalIdentifiers: handoff.literalIdentifiers,
-      lookupHints: handoff.lookupHints,
+      articleStance: stance,
+      groundingUnitIds: hints.groundingUnitIds,
+      groundingText,
+      literalIdentifiers: hints.literalIdentifiers,
+      lookupHints: hints.lookupHints,
       deterministicQueries: {
-        literalQuery: handoff.queries.literal[0] || substantiveAssertion,
-        sourceQualifiedQuery: handoff.queries.sourceQualified[0] || null,
-        studyLookupQueries: handoff.queries.studyLookup,
+        literalQuery: hints.deterministicQueries.literal[0] || substantiveAssertion,
+        sourceQualifiedQuery: hints.deterministicQueries.sourceQualified[0] || null,
+        studyLookupQueries: hints.deterministicQueries.studyLookup,
       },
       compatibility: {
         evaluationTargetId: row.evaluation_target_id == null ? null : Number(row.evaluation_target_id),
         populationScope: row.population_scope || null,
-        legacyPrimaryQueryIgnored: hints.primaryQueryText || null,
       },
     };
   });
@@ -974,19 +1055,41 @@ export async function runCfxProductionEvidencePipeline({
       },
     });
     await artifacts.write("retrieval/outcomes.json", retrieval.outcomes);
+    // Proven proposition-scoped candidate dedup (reproduces the CF1-F03 Run-A
+    // 261 -> 177 result): dedupeCfxCandidates() is invoked once per
+    // proposition, on that proposition's candidates only, then the results
+    // are concatenated. This never merges candidates across propositionId
+    // boundaries; that cross-proposition consolidation is a separate,
+    // later, exact-identity-only step (aggregateCfxCanonicalDocuments).
+    const knownPropositionIds = new Set(inputs.map((input) => input.propositionId));
     const candidateRows = [];
+    const dedupeAuditRows = [];
+    let duplicateCount = 0;
     for (const input of inputs) {
       const discovered = retrieval.outcomes
         .filter((outcome) => outcome.request.propositionId === input.propositionId)
         .flatMap((outcome) => outcome.candidates);
-      for (const candidate of orderCandidates(discovered)) {
+      for (const candidate of discovered) {
+        if (!knownPropositionIds.has(candidate.propositionId) || candidate.propositionId !== input.propositionId) {
+          throw new Error(
+            `CFX candidate ${candidate.candidateId} has an unknown or mismatched propositionId (${candidate.propositionId}); expected ${input.propositionId}`,
+          );
+        }
+      }
+      const deduped = runtime.dedupeCfxCandidates(discovered);
+      dedupeAuditRows.push(...deduped.audit);
+      duplicateCount += deduped.duplicateCount;
+      for (const candidate of orderCandidates(deduped.candidates)) {
         candidateRows.push({ input, candidate });
       }
     }
     await artifacts.write("candidates.json", candidateRows.map(({ candidate }) => candidate));
     await artifacts.write("dedupe_audit.json", {
-      policy:"exact canonical document aggregation only",
-      titleOrSemanticMerging:false,
+      policy: "proposition-scoped dedupeCfxCandidates, then exact canonical document aggregation across propositions",
+      titleOrSemanticMerging: true,
+      propositionScoped: true,
+      duplicateCount,
+      audit: dedupeAuditRows,
     });
 
     const canonicalDocuments = runtime.aggregateCfxCanonicalDocuments(

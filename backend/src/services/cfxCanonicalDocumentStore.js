@@ -2,10 +2,6 @@ import { createHash } from "node:crypto";
 import { withTransaction } from "../storage/dbTransaction.js";
 import { insertEvidenceScrapeBinding } from "./cfxEvidenceScrapeAdapter.js";
 
-const INTENTS = new Set([
-  "canonical", "entity_predicate", "source_identity", "independent_evidence",
-  "counterevidence", "qualification",
-]);
 const TERMINAL_JOB_STATES = new Set(["completed", "failed", "expired"]);
 
 const sha256 = (value) => createHash("sha256").update(String(value)).digest("hex");
@@ -96,20 +92,17 @@ export async function persistCfxDiscoveryAssignments(query, {
   const documentId = positive(canonicalDocumentId, "canonicalDocumentId");
   let inserted = 0;
   for (const assignment of assignments) {
-    if (!INTENTS.has(assignment.queryIntent)) {
-      throw new TypeError(`unsupported queryIntent ${assignment.queryIntent}`);
-    }
     const result = await query(
       `INSERT INTO cfx_document_discovery_assignments
          (canonical_document_id,run_id,proposition_id,target_claim_id,candidate_id,
-          query_id,query_intent,query_text,provider,retrieval_rank,
+          query_id,query_text,provider,retrieval_rank,
           provider_request_id,assignment_sha256)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)
        ON DUPLICATE KEY UPDATE
          discovery_assignment_id=LAST_INSERT_ID(discovery_assignment_id)`,
       [documentId, bounded(runId, "runId"), assignment.propositionId,
         positive(assignment.targetClaimId, "targetClaimId"), assignment.candidateId,
-        assignment.queryId, assignment.queryIntent, assignment.query,
+        assignment.queryId, assignment.query,
         assignment.provider, assignment.rank, assignment.requestId,
         assignment.assignmentHash],
     );

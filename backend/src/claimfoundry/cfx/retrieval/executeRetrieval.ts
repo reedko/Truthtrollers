@@ -32,7 +32,6 @@ export function retrievalRequests(
       requestId: requestId(proposition.propositionId, query.queryId),
       propositionId: proposition.propositionId,
       queryId: query.queryId,
-      queryIntent: query.queryIntent,
       query: query.query,
       provider: query.provider,
       topK: 5 as const,

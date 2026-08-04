@@ -1,0 +1,112 @@
+{
+  "propositions": [
+    {
+      "assertion": "Parents who choose not to vaccinate their children are typically highly educated and scientifically literate.",
+      "assertionSource": "Aaron Siri, foreword of 'Vaccines, Amen: The Religion of Vaccines'",
+      "whyItMattersToArticleThesis": "This assertion challenges the stereotype that vaccine-hesitant parents are uninformed or uneducated, suggesting that their decisions are based on informed choices rather than ignorance.",
+      "groundingUnitIds": [
+        "U0002",
+        "U0019"
+      ]
+    },
+    {
+      "assertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "whyItMattersToArticleThesis": "If proven false, this assertion undermines the safety claims of vaccines and raises concerns about the neurotoxic effects of thimerosal, a preservative used in some vaccines.",
+      "groundingUnitIds": [
+        "U0293",
+        "U0300"
+      ]
+    },
+    {
+      "assertion": "There have been no credible studies that link vaccination to chronic disease.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "whyItMattersToArticleThesis": "Disproving this assertion would challenge the narrative that vaccines are entirely safe and could indicate a need for further investigation into vaccine-related health issues.",
+      "groundingUnitIds": [
+        "U0011",
+        "U0394"
+      ]
+    },
+    {
+      "assertion": "Vaccines are tested more than any other medicine you could give your kid.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "whyItMattersToArticleThesis": "If this assertion is false, it raises questions about the rigor of vaccine safety testing and the reliability of the claims made by health authorities.",
+      "groundingUnitIds": [
+        "U0012",
+        "U0395"
+      ]
+    },
+    {
+      "assertion": "The CDC manipulated data linking the MMR vaccine to autism.",
+      "assertionSource": "William Thompson, CDC whistleblower",
+      "whyItMattersToArticleThesis": "If true, this assertion suggests a significant breach of trust in public health agencies and could fuel vaccine hesitancy further.",
+      "groundingUnitIds": [
+        "U0036",
+        "U0040"
+      ]
+    },
+    {
+      "assertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertionSource": "Article discussion",
+      "whyItMattersToArticleThesis": "This assertion highlights the lack of accountability in the vaccine industry, which could lead to public distrust in vaccine safety.",
+      "groundingUnitIds": [
+        "U0068",
+        "U0070"
+      ]
+    },
+    {
+      "assertion": "The rise in chronic illnesses among children correlates with the increase in vaccine doses since the 1986 act.",
+      "assertionSource": "Article discussion",
+      "whyItMattersToArticleThesis": "If this correlation is valid, it raises serious questions about the safety and necessity of the current vaccination schedule.",
+      "groundingUnitIds": [
+        "U0085",
+        "U0090"
+      ]
+    },
+    {
+      "assertion": "Aluminum in vaccines is safe and occurs in lower amounts than in food.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "whyItMattersToArticleThesis": "If this assertion is false, it could indicate that the cumulative exposure to aluminum from vaccines is harmful, contradicting public health messaging.",
+      "groundingUnitIds": [
+        "U0236",
+        "U0241"
+      ]
+    },
+    {
+      "assertion": "Thimerosal is not harmful and has been removed from childhood vaccines.",
+      "assertionSource": "Jefferson County Public Health ad",
+      "whyItMattersToArticleThesis": "If proven false, this assertion could indicate ongoing risks associated with thimerosal in vaccines and challenge the narrative of vaccine safety.",
+      "groundingUnitIds": [
+        "U0300",
+        "U0350"
+      ]
+    },
+    {
+      "assertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+      "assertionSource": "Article discussion",
+      "whyItMattersToArticleThesis": "If true, this assertion raises significant concerns about vaccine safety protocols and the potential for adverse health effects in children.",
+      "groundingUnitIds": [
+        "U0275",
+        "U0282"
+      ]
+    },
+    {
+      "assertion": "Vaccines are linked to an increase in Sudden Infant Death Syndrome (SIDS).",
+      "assertionSource": "Neil Z. Miller's analysis",
+      "whyItMattersToArticleThesis": "If this assertion is valid, it could lead to a reevaluation of vaccination practices and public health recommendations regarding infant health.",
+      "groundingUnitIds": [
+        "U0184",
+        "U0190"
+      ]
+    },
+    {
+      "assertion": "The CDC's narrative about vaccine safety is based on flawed or manipulated data.",
+      "assertionSource": "Article discussion",
+      "whyItMattersToArticleThesis": "If this assertion is proven true, it would undermine the credibility of public health authorities and their recommendations regarding vaccines.",
+      "groundingUnitIds": [
+        "U0038",
+        "U0338"
+      ]
+    }
+  ]
+}

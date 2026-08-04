@@ -98,7 +98,7 @@ ${candidates.map((candidate) => `<article class="candidate">
 <strong>Publication / date</strong><span>${escapeHtml([candidate.publication, candidate.publicationDate].filter(Boolean).join(" · ") || "Unknown")}</span>
 <strong>DOI / PMID</strong><span>${escapeHtml([candidate.doi && `DOI ${candidate.doi}`, candidate.pmid && `PMID ${candidate.pmid}`].filter(Boolean).join(" · ") || "None")}</span>
 <strong>URL</strong><span>${candidate.url ? `<a href="${escapeHtml(candidate.url)}">${escapeHtml(candidate.url)}</a>` : "None"}</span>
-<strong>Found by</strong><span>${escapeHtml(candidate.discoveryPaths.map((path) => `${path.queryId}/${path.queryIntent}/${path.provider} rank ${path.retrievalRank}`).join("\n"))}</span>
+<strong>Found by</strong><span>${escapeHtml(candidate.discoveryPaths.map((path) => `${path.queryId}/${path.provider} rank ${path.retrievalRank}`).join("\n"))}</span>
 <strong>Snippet / abstract</strong><span>${escapeHtml(candidate.abstractOrSnippet ?? "None")}</span>
 </div>
 <p class="review"><strong>Manual review:</strong><span>bears directly</span><span>possibly bears</span><span>topic only</span><span>irrelevant</span><span>duplicate</span><span>inaccessible</span><span>not reviewed</span></p>

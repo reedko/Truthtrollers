@@ -7,15 +7,12 @@ export type CfxQueryId = typeof CFX_QUERY_IDS[number];
 
 export const CFX_QUERY_LANES = [
   "canonical",
-  "entity_predicate",
+  "predicate_entities",
   "source_identity",
   "independent_evidence",
-  "counterevidence",
-  "qualification",
+  "counterevidence_qualification",
 ] as const;
 export type CfxQueryLaneName = typeof CFX_QUERY_LANES[number];
-export const CFX_QUERY_INTENTS = CFX_QUERY_LANES;
-export type CfxQueryIntent = CfxQueryLaneName;
 
 export type CfxEvidenceInput = {
   propositionId: string;
@@ -36,7 +33,6 @@ export type CfxEvidenceInput = {
 export type CfxPlannedQuery = {
   propositionId: string;
   queryId: CfxQueryId;
-  queryIntent: CfxQueryIntent;
   query: string | null;
   quotedDiagnosticVariant: string | null;
   lane: CfxQueryLaneName;
@@ -77,7 +73,6 @@ export type CfxRetrievalRequest = {
   requestId: string;
   propositionId: string;
   queryId: CfxQueryId;
-  queryIntent: CfxQueryIntent;
   query: string;
   provider: "web" | "pubmed";
   topK: 5;
@@ -98,7 +93,6 @@ export type CfxRetrievalTransport = {
 export type CfxCandidateDiscoveryPath = {
   propositionId: string;
   queryId: CfxQueryId;
-  queryIntent: CfxQueryIntent;
   query: string;
   provider: string;
   retrievalRank: number;

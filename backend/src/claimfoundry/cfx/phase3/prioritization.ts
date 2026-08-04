@@ -1,6 +1,5 @@
 import type { CfxEvidenceAccessLevel } from "../evidenceBearing/types.js";
 import type { CfxDocumentIdentityKind } from "../acquisition/canonicalDocuments.js";
-import type { CfxQueryIntent } from "../retrieval/types.js";
 
 export type CfxPhase3DocumentCandidate = {
   documentId: string;
@@ -14,7 +13,6 @@ export type CfxPhase3DocumentCandidate = {
   selectedTextVersionHash: string | null;
   propositionIds: string[];
   queryIds: string[];
-  queryIntents: CfxQueryIntent[];
   providers: string[];
   publishers: string[];
   documentRoles: Array<"primary" | "official" | "independent" | "other">;
@@ -46,11 +44,9 @@ function baseScore(document: CfxPhase3DocumentCandidate): number {
   const roleScore = document.documentRoles.includes("primary") ? 45
     : document.documentRoles.includes("official") ? 40
       : document.documentRoles.includes("independent") ? 35 : 0;
-  const laneScore = document.queryIntents.includes("counterevidence")
-    || document.queryIntents.includes("qualification") ? 30 : 0;
   return (accessScore[document.accessLevel] ?? 0)
     + identityScore[document.canonicalIdentityKind]
-    + roleScore + laneScore
+    + roleScore
     + Math.min(unique(document.queryIds).length, 5) * 8
     + Math.min(unique(document.propositionIds).length, 12) * 12
     + Math.min(unique(document.providers).length, 4) * 6;
@@ -100,10 +96,6 @@ export function prioritizeCfxPhase3Documents(input: {
       `${unique(next.document.propositionIds).length} proposition assignment(s)`,
       `${unique(next.document.queryIds).length} discovery query assignment(s)`,
     ];
-    if (next.document.queryIntents.some((value) =>
-      value === "counterevidence" || value === "qualification")) {
-      reasons.push("counterevidence/qualification discovery representation");
-    }
     selected.push({
       ...next.document, eligible: true, eligibilityReason: "eligible selected text",
       score: next.score, rank: selected.length + 1,

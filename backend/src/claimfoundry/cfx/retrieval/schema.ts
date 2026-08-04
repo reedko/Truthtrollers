@@ -2,9 +2,6 @@ import { z } from "zod";
 
 const modelQuerySchema = z.object({
   queryId: z.enum(["Q2", "Q4", "Q5"]),
-  queryIntent: z.enum([
-    "entity_predicate", "independent_evidence", "counterevidence", "qualification",
-  ]),
   query: z.string().min(1).max(300),
   provider: z.enum(["web", "pubmed"]),
   rationale: z.string().min(1).max(500),
@@ -18,7 +15,7 @@ export const cfxQueryPlanningOutputSchema = z.object({
 }).strict();
 
 export const CFX_QUERY_PLANNING_JSON_SCHEMA = Object.freeze({
-  name: "cfx_initial_query_planning_v2",
+  name: "cfx_initial_query_planning_v1",
   strict: true as const,
   schema: {
     type: "object",
@@ -45,18 +42,11 @@ export const CFX_QUERY_PLANNING_JSON_SCHEMA = Object.freeze({
               items: {
                 type: "object",
                 additionalProperties: false,
-                required: ["queryId", "queryIntent", "query", "provider", "rationale"],
+                required: ["queryId", "query", "provider", "rationale"],
                 properties: {
                   queryId: {
                     type: "string",
                     enum: ["Q2", "Q4", "Q5"],
-                  },
-                  queryIntent: {
-                    type: "string",
-                    enum: [
-                      "entity_predicate", "independent_evidence",
-                      "counterevidence", "qualification",
-                    ],
                   },
                   query: {
                     type: "string",

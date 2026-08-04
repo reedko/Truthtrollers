@@ -30,6 +30,8 @@ import {
 } from "../../core/scrapeEvaluationRegistry.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { runCfxProductionEvidencePipeline } from "../../services/cfxProductionEvidencePipeline.js";
+import { runCfxCaseAssertionExtractionStage } from "../../services/cfxCaseAssertionExtractionStage.js";
+import { createOpenAiCf7StructuredProvider } from "../../claimfoundry/shared/provider/index.js";
 import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
@@ -71,6 +73,26 @@ import {
 const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
 export default function createContentScrapeRoutes({ query, pool }) {
+  // CFX case-assertion extraction (S0/S1/S2) is the default; legacy
+  // processTaskClaims/mapArgumentFunctions extraction is an explicit,
+  // named rollback (CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED=true).
+  // The legacy evidence engine (CFX_LEGACY_EVIDENCE_ENABLED=true) consumes
+  // TM4-mapped claims (argumentFunction, speakerEntity, ...) that only exist
+  // when case-assertion extraction is also running in legacy mode -- so
+  // running the legacy evidence engine against default (CFX) case-assertion
+  // extraction is rejected at startup rather than silently continuing with
+  // an empty mapped-claims array.
+  if (
+    process.env.CFX_LEGACY_EVIDENCE_ENABLED === "true"
+    && process.env.CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED !== "true"
+  ) {
+    throw new Error(
+      "Incompatible CFX flag combination: CFX_LEGACY_EVIDENCE_ENABLED=true requires "
+      + "CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED=true. The legacy evidence engine "
+      + "consumes TM4-mapped claims that only exist when case-assertion extraction is "
+      + "also running in legacy mode.",
+    );
+  }
   const router = Router();
   const cfxProductionEnabled = process.env.CFX_PRODUCTION_EVIDENCE_ENABLED !== "false";
   if (cfxProductionEnabled && pool) {
@@ -611,6 +633,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
       logger.log("✅ [/api/scrape-task] OpenAI API is accessible");
 
       let text;
+      let title = null;
       let domRefs = [];
       let inlineRefs = [];
 
@@ -720,6 +743,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
         }
 
         text = raw_text;
+        title = content_name || "Test Task";
 
         logger.log(
           `✅ [/api/scrape-task] TESTING MODE: Created task content_id=${taskContentId}`
@@ -750,6 +774,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
         }
 
         ({ taskContentId, text, domRefs, inlineRefs } = scrapeResult);
+        title = scrapeResult.title || null;
 
         // Resolve source identity and cache — fire-and-forget, never blocks
         resolveSourceIdentity(url, {
@@ -824,42 +849,71 @@ export default function createContentScrapeRoutes({ query, pool }) {
 
       // -----------------------------------------------------------------
       // 3. Extract & store TASK claims → claimIds
+      //    CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED selects the entire
+      //    extraction path before extraction begins (CFX is the default;
+      //    legacy is an explicit, named rollback); there is no
+      //    attempt-then-fallback between the two. The incompatible
+      //    combination with CFX_LEGACY_EVIDENCE_ENABLED is rejected at
+      //    startup, above.
       // -----------------------------------------------------------------
-      const taskClaims = await processTaskClaims({
-        query,
-        taskContentId,
-        text,
-      });
+      const legacyCaseAssertionExtractionEnabled = process.env.CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED === "true";
+      let claimIds;
+      // Referenced further below only inside the retired (always-empty)
+      // reference-claim-extraction path (LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED);
+      // declared here (left undefined, not defaulted to an empty array) so
+      // that dead code path still resolves to a name if ever re-enabled,
+      // without manufacturing a silent "empty but valid" value in the
+      // meantime.
+      let taskClaims;
+      let mappedTaskClaims;
+      if (!legacyCaseAssertionExtractionEnabled) {
+        const provider = createOpenAiCf7StructuredProvider();
+        const extraction = await runCfxCaseAssertionExtractionStage({
+          pool,
+          taskContentId,
+          title,
+          text,
+          sourceUrl: url,
+          provider,
+        });
+        claimIds = extraction.claimIds;
+      } else {
+        taskClaims = await processTaskClaims({
+          query,
+          taskContentId,
+          text,
+        });
 
-      const argumentMappings = await mapArgumentFunctions({
-        query,
-        taskContentId,
-        claims: taskClaims,
-      });
-      const mappingByClaimId = new Map(
-        argumentMappings.map((item) => [Number(item.claimId), item])
-      );
-      const mappedTaskClaims = taskClaims.map((claim) => {
-        const mapping = mappingByClaimId.get(Number(claim.id));
-        if (!mapping) return claim;
-        return {
-          ...claim,
-          objectClaim: mapping.objectClaim,
-          objectText: mapping.objectClaim || claim.objectText,
-          searchText: mapping.objectClaim || claim.searchText,
-          isAttribution: mapping.isAttribution,
-          speakerEntity: mapping.speakerEntity,
-          articleStance: mapping.articleStance,
-          argumentFunction: mapping.argumentFunction,
-          scoreTransform: mapping.scoreTransform,
-          accountabilityEligible: mapping.accountabilityEligible,
-          argumentMappingConfidence: mapping.confidence,
-          argumentMappingRationale: mapping.rationale,
-          targetMappingUnresolved: mapping.targetMappingUnresolved,
-        };
-      });
+        const argumentMappings = await mapArgumentFunctions({
+          query,
+          taskContentId,
+          claims: taskClaims,
+        });
+        const mappingByClaimId = new Map(
+          argumentMappings.map((item) => [Number(item.claimId), item])
+        );
+        mappedTaskClaims = taskClaims.map((claim) => {
+          const mapping = mappingByClaimId.get(Number(claim.id));
+          if (!mapping) return claim;
+          return {
+            ...claim,
+            objectClaim: mapping.objectClaim,
+            objectText: mapping.objectClaim || claim.objectText,
+            searchText: mapping.objectClaim || claim.searchText,
+            isAttribution: mapping.isAttribution,
+            speakerEntity: mapping.speakerEntity,
+            articleStance: mapping.articleStance,
+            argumentFunction: mapping.argumentFunction,
+            scoreTransform: mapping.scoreTransform,
+            accountabilityEligible: mapping.accountabilityEligible,
+            argumentMappingConfidence: mapping.confidence,
+            argumentMappingRationale: mapping.rationale,
+            targetMappingUnresolved: mapping.targetMappingUnresolved,
+          };
+        });
 
-      const claimIds = mappedTaskClaims.map((c) => c.id);
+        claimIds = mappedTaskClaims.map((c) => c.id);
+      }
       usageBeforeEvidence = getOpenAiUsageCapture();
 
       // -----------------------------------------------------------------

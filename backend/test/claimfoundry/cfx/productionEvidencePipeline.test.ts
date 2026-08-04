@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import * as productionEvidencePipeline from "../../../src/services/cfxProductionEvidencePipeline.js";
 import { aggregateCfxCanonicalDocuments } from "../../../src/claimfoundry/cfx/acquisition/canonicalDocuments.js";
+import { dedupeCfxCandidates } from "../../../src/claimfoundry/cfx/retrieval/candidates.js";
 
 const {
   assertCfxProductionSchemaReady,
@@ -158,20 +159,13 @@ test("production CFX plans, retrieves, automatically acquires, and runs bounded 
     if (sql.includes("FROM claims c") && sql.includes("JOIN content_claims")) return [{
       claim_id: 11,
       claim_text: "The immutable production assertion.",
-      object_claim_text: "The immutable production assertion.",
       speaker_entity: "Example Institute",
-      content_article_stance: "endorses",
       evaluation_target_id: 12,
       target_order: 0,
-      target_text: "The immutable production assertion.",
       source_excerpt: "The source passage contains the immutable production assertion.",
-      target_article_stance: "endorses",
-      study_title: null,
-      study_authors: null,
-      study_year: null,
-      study_identifier: null,
+      article_stance: "adopts",
       population_scope: null,
-      query_hints_json: JSON.stringify({primaryQueryText:"legacy query is diagnostic only"}),
+      query_hints_json: queryHintsRow("P11", "U11"),
     }];
     if (sql.startsWith("SELECT d.canonical_document_id")) return [];
     if (sql.startsWith("INSERT INTO cfx_canonical_documents")) return {insertId:80,affectedRows:1};
@@ -357,6 +351,279 @@ test("production CFX plans, retrieves, automatically acquires, and runs bounded 
   assert.equal(artifacts.has("query-planning/request.json"), true);
   assert.equal(artifacts.has("query-planning/raw_response.json"), true);
   assert.equal(artifacts.has("retrieval/responses/REQ-P11-Q1.json"), true);
+});
+
+const EMPTY_LITERAL_IDENTIFIERS = {
+  people: [], organizations: [], laws: [], studyTitles: [], journals: [], years: [],
+  dateRanges: [], doi: [], pmid: [], urls: [], citationNumbers: [], acronyms: [],
+};
+const EMPTY_LOOKUP_HINTS = {
+  populations: [], exposures: [], outcomes: [], interventions: [], geography: [],
+  documentTypes: [], topics: [],
+};
+
+function queryHintsRow(propositionId:string, groundingUnitId:string) {
+  return JSON.stringify({
+    propositionId,
+    groundingUnitIds: [groundingUnitId],
+    literalIdentifiers: EMPTY_LITERAL_IDENTIFIERS,
+    lookupHints: EMPTY_LOOKUP_HINTS,
+    deterministicQueries: { literal: [], sourceQualified: [], studyLookup: [] },
+  });
+}
+
+function sharedIdentityCandidate(overrides: {
+  candidateId: string; propositionId: string; retrievalRank: number; requestId: string; query: string;
+}) {
+  return {
+    candidateId: overrides.candidateId,
+    propositionId: overrides.propositionId,
+    queryId: "Q1",
+    provider: "tavily",
+    providerRecordId: null,
+    title: "Shared evidence document",
+    authors: [] as string[],
+    publication: null,
+    publicationDate: null,
+    doi: null,
+    pmid: null,
+    url: "https://example.test/shared-evidence",
+    canonicalUrl: "https://example.test/shared-evidence",
+    resolvedUrl: "https://example.test/shared-evidence",
+    abstractOrSnippet: "A shared bounded provider snippet.",
+    sourceType: "web",
+    retrievalScore: 1,
+    retrievalRank: overrides.retrievalRank,
+    rawArtifactPath: `raw-provider-responses/${overrides.requestId}.json`,
+    discoveryPaths: [{
+      propositionId: overrides.propositionId,
+      queryId: "Q1",
+      // queryIntent is hand-supplied test data (not a type/production
+      // change) purely to satisfy the still-unmodified, out-of-scope
+      // cfxCanonicalDocumentStore.js persistCfxDiscoveryAssignments() gate,
+      // exactly as the pre-existing test above this one already does.
+      queryIntent: "canonical",
+      query: overrides.query,
+      provider: "tavily",
+      retrievalRank: overrides.retrievalRank,
+      requestId: overrides.requestId,
+    }],
+  };
+}
+
+test("proposition-scoped dedup: within-proposition duplicates merge, cross-proposition duplicates stay separate before aggregation, then resolve into one canonical document retaining both assignments", async () => {
+  const sqlCalls: Array<{sql:string; values:unknown[]}> = [];
+  let contentRelationCreated = false;
+  const query = async (sql:string, values:unknown[] = []) => {
+    sqlCalls.push({sql, values});
+    if (sql.includes("FROM claims c") && sql.includes("JOIN content_claims")) {
+      return [
+        {
+          claim_id: 11, claim_text: "Assertion one.", speaker_entity: "Source A",
+          evaluation_target_id: 12, target_order: 0,
+          source_excerpt: "Grounding text one.", article_stance: "adopts",
+          population_scope: null, query_hints_json: queryHintsRow("P1", "U0001"),
+        },
+        {
+          claim_id: 12, claim_text: "Assertion two.", speaker_entity: "Source B",
+          evaluation_target_id: 13, target_order: 0,
+          source_excerpt: "Grounding text two.", article_stance: "adopts",
+          population_scope: null, query_hints_json: queryHintsRow("P2", "U0002"),
+        },
+      ];
+    }
+    if (sql.startsWith("SELECT d.canonical_document_id")) return [];
+    if (sql.startsWith("INSERT INTO cfx_canonical_documents")) return {insertId:80,affectedRows:1};
+    if (sql.startsWith("INSERT INTO cfx_canonical_document_identities")) return {insertId:81,affectedRows:1};
+    if (sql.startsWith("UPDATE cfx_canonical_documents")) return {affectedRows:1};
+    if (sql.startsWith("INSERT INTO cfx_document_discovery_assignments")) return {insertId:82,affectedRows:1};
+    if (sql.startsWith("SELECT canonical_document_id FROM cfx_canonical_documents")) return [{canonical_document_id:80}];
+    if (sql.startsWith("SELECT binding_id,scrape_job_id,reference_content_id")) return [];
+    if (sql.startsWith("SELECT content_id FROM content")) return [];
+    if (/^INSERT INTO content\s*\(/u.test(sql)) return {insertId: 20};
+    if (sql.startsWith("SELECT content_relation_id")) {
+      return contentRelationCreated ? [{content_relation_id:30}] : [];
+    }
+    if (sql.startsWith("INSERT INTO content_relations")) {
+      contentRelationCreated = true;
+      return {insertId: 30};
+    }
+    if (sql.startsWith("SELECT ref_claim_link_id FROM reference_claim_links")) return [];
+    if (sql.startsWith("INSERT INTO reference_claim_links")) return {insertId: 35};
+    if (sql.startsWith("INSERT INTO scrape_jobs")) return {insertId: 40};
+    if (sql.startsWith("INSERT INTO cfx_evidence_acquisition_bindings")) return {insertId: 50};
+    if (sql.startsWith("INSERT INTO cfx_evidence_acquisition_attempts")) return {insertId: 60};
+    if (sql.startsWith("SELECT acquired_text_version_id")) return [];
+    if (sql.startsWith("INSERT INTO cfx_evidence_text_versions")) return {insertId: 70};
+    if (sql.startsWith("UPDATE cfx_evidence_text_versions")) return {affectedRows: 0};
+    if (sql.startsWith("UPDATE cfx_evidence_acquisition_bindings")) return {affectedRows: 1};
+    if (sql.startsWith("UPDATE content SET content_text=")) return {affectedRows: 1};
+    if (sql.startsWith("SELECT scrape_job_id FROM cfx_evidence_acquisition_bindings")) return [{ scrape_job_id: null }];
+    throw new Error(`Unexpected SQL: ${sql}`);
+  };
+  const connection = {
+    async beginTransaction() {}, async commit() {}, async rollback() {}, release() {}, query,
+  };
+  const pool = { async getConnection() { return connection; } };
+
+  const candA = sharedIdentityCandidate({candidateId:"CAND-P1-A", propositionId:"P1", retrievalRank:1, requestId:"REQ-P1-Q1", query:"assertion one"});
+  const candA2 = sharedIdentityCandidate({candidateId:"CAND-P1-A2", propositionId:"P1", retrievalRank:2, requestId:"REQ-P1-Q1", query:"assertion one"});
+  const candB = sharedIdentityCandidate({candidateId:"CAND-P2-B", propositionId:"P2", retrievalRank:1, requestId:"REQ-P2-Q1", query:"assertion two"});
+
+  const runtime = {
+    aggregateCfxCanonicalDocuments,
+    dedupeCfxCandidates,
+    canonicalHash() { return "a".repeat(64); },
+    async loadCfxQueryPlanningPrompt() { return {prompt:"governed",promptHash:"b".repeat(64)}; },
+    async runCfxQueryPlanning(input:any) {
+      await input.beforeInvoke({model:"gpt-4o-mini",messages:[]});
+      await input.afterResponse({rawResponse:{id:"plan-1"},responseId:"plan-1",requestId:null,usage:{inputTokens:1,outputTokens:1,totalTokens:2,cachedInputTokens:0},latencyMs:1});
+      return {plan:{propositions:[]},providerCallCount:1};
+    },
+    async executeCfxRetrieval(input:any) {
+      const requestP1 = {requestId:"REQ-P1-Q1",propositionId:"P1",queryId:"Q1",query:"assertion one",provider:"web",topK:5,pubmedFallbacks:[]};
+      const requestP2 = {requestId:"REQ-P2-Q1",propositionId:"P2",queryId:"Q1",query:"assertion two",provider:"web",topK:5,pubmedFallbacks:[]};
+      await input.beforeRequest(requestP1);
+      await input.afterResponse({request:requestP1,response:{results:[candA, candA2]},provider:"tavily",providerRequestId:"web-1",latencyMs:1});
+      await input.beforeRequest(requestP2);
+      await input.afterResponse({request:requestP2,response:{results:[candB]},provider:"tavily",providerRequestId:"web-2",latencyMs:1});
+      return {
+        outcomes: [
+          {request: requestP1, candidates: [candA, candA2]},
+          {request: requestP2, candidates: [candB]},
+        ],
+        requestCount: 2, providerRequestCount: 2, providerFailureCount: 0,
+      };
+    },
+  };
+  const artifacts = new Map<string,unknown>();
+  const result = await runCfxProductionEvidencePipeline({
+    query,
+    pool,
+    taskContentId: 10,
+    claimIds: [11, 12],
+    expectedClaimCount: 2,
+    documentsPerAssertion: 1,
+    async schemaPreflight() {},
+    provider: {},
+    bearingProvider: {},
+    retrievalTransport: {},
+    async runtimeLoader() { return runtime; },
+    async academicResolver() { return null; },
+    async persistedTextResolver() { return null; },
+    async automaticAcquirer() {
+      return {
+        acquired:true,
+        cleanedText:Array.from({length:90}, (_, index) => `substantive evidence sentence ${index}.`).join(" "),
+        method:"publisher_html",
+        sourceUrl:"https://example.test/shared-evidence",
+        resolvedUrl:"https://example.test/shared-evidence",
+        contentType:"text/html",
+        completeness:"complete",
+        attempts:[{method:"axios",status:"success",url:"https://example.test/shared-evidence",resolvedUrl:"https://example.test/shared-evidence",httpStatus:200,contentType:"text/html",characterCount:108,timingMs:1,diagnostic:null,rawResponse:"<article>complete</article>",tier:"normal_platform_scrape"}],
+      };
+    },
+    async queueRetry() { return { created: true, scrapeJobId: 40, status: "pending" }; },
+    async sourceQualityEnricher() { return {status:"created"}; },
+    async sourceCrestProcessor() { return {status:"identity_pending"}; },
+    async publishingIdentityProcessor() { return {persistence:null}; },
+    async bearingProcessor() { return {status:"completed",providerCalls:1,evidenceAssertionCount:1}; },
+    artifactStoreFactory() {
+      return {
+        root:"memory/run",
+        async initialize() {},
+        async write(file:string,value:unknown) { artifacts.set(file,value); },
+        async finalize() { return {root:"memory/run",aggregateSha256:"c".repeat(64)}; },
+      };
+    },
+  });
+
+  // (a) Identical candidates within one proposition (candA, candA2, same
+  // canonicalUrl, both propositionId "P1") are deduped down to one.
+  const dedupeAudit = artifacts.get("dedupe_audit.json") as any;
+  assert.equal(dedupeAudit.propositionScoped, true);
+  assert.equal(dedupeAudit.duplicateCount, 1, "candA2 must be deduped as a duplicate of candA within P1");
+
+  // (b) Otherwise-identical candidates belonging to different propositions
+  // (candA-post-dedup for P1, candB for P2) remain separate going into
+  // aggregation: exactly 2 candidateRows, not 1.
+  const candidatesJson = artifacts.get("candidates.json") as any[];
+  assert.equal(candidatesJson.length, 2, "P1's surviving candidate and P2's candidate must both reach aggregation as separate rows");
+  assert.deepEqual(
+    candidatesJson.map((candidate:any) => candidate.propositionId).sort(),
+    ["P1", "P2"],
+  );
+
+  // (c) Those two proposition-specific candidates resolve into ONE canonical
+  // document (same exact canonicalUrl), retaining BOTH discovery assignments.
+  const canonicalDocuments = artifacts.get("canonical_documents.json") as any[];
+  assert.equal(canonicalDocuments.length, 1, "the shared canonicalUrl must aggregate into exactly one canonical document");
+  const [document] = canonicalDocuments;
+  assert.deepEqual(
+    [...new Set(document.discoveryAssignments.map((assignment:any) => assignment.propositionId))].sort(),
+    ["P1", "P2"],
+    "the single canonical document must retain discovery assignments for both propositions",
+  );
+
+  assert.equal(result.canonicalDocumentCount, 1);
+  assert.equal(candidatesJson.every((candidate:any) => Boolean(candidate.propositionId)), true);
+});
+
+test("proposition-scoped dedup fails closed on a candidate with an unknown propositionId", async () => {
+  const query = async (sql:string) => {
+    if (sql.includes("FROM claims c") && sql.includes("JOIN content_claims")) {
+      return [{
+        claim_id: 11, claim_text: "Assertion one.", speaker_entity: "Source A",
+        evaluation_target_id: 12, target_order: 0,
+        source_excerpt: "Grounding text one.", article_stance: "adopts",
+        population_scope: null, query_hints_json: queryHintsRow("P1", "U0001"),
+      }];
+    }
+    throw new Error(`storage must not be touched: ${sql}`);
+  };
+  const pool = { async getConnection() { throw new Error("must not open a connection"); } };
+  const stray = sharedIdentityCandidate({candidateId:"CAND-STRAY", propositionId:"P-UNKNOWN", retrievalRank:1, requestId:"REQ-P1-Q1", query:"assertion one"});
+  const runtime = {
+    dedupeCfxCandidates,
+    canonicalHash() { return "a".repeat(64); },
+    async loadCfxQueryPlanningPrompt() { return {prompt:"governed",promptHash:"b".repeat(64)}; },
+    async runCfxQueryPlanning(input:any) {
+      await input.beforeInvoke({model:"gpt-4o-mini",messages:[]});
+      await input.afterResponse({rawResponse:{id:"plan-1"},responseId:"plan-1",requestId:null,usage:{inputTokens:1,outputTokens:1,totalTokens:2,cachedInputTokens:0},latencyMs:1});
+      return {plan:{propositions:[]},providerCallCount:1};
+    },
+    async executeCfxRetrieval(input:any) {
+      const requestP1 = {requestId:"REQ-P1-Q1",propositionId:"P1",queryId:"Q1",query:"assertion one",provider:"web",topK:5,pubmedFallbacks:[]};
+      await input.beforeRequest(requestP1);
+      // The candidate's own propositionId ("P-UNKNOWN") does not match the
+      // requesting proposition ("P1") or any known evidence input.
+      await input.afterResponse({request:requestP1,response:{results:[stray]},provider:"tavily",providerRequestId:"web-1",latencyMs:1});
+      return {outcomes:[{request: requestP1, candidates: [stray]}], requestCount:1, providerRequestCount:1, providerFailureCount:0};
+    },
+  };
+  await assert.rejects(
+    runCfxProductionEvidencePipeline({
+      query,
+      pool,
+      taskContentId: 10,
+      claimIds: [11],
+      expectedClaimCount: 1,
+      async schemaPreflight() {},
+      provider: {},
+      bearingProvider: {},
+      retrievalTransport: {},
+      async runtimeLoader() { return runtime; },
+      artifactStoreFactory() {
+        return {
+          root:"memory/run",
+          async initialize() {},
+          async write() {},
+          async finalize() { return {root:"memory/run",aggregateSha256:"c".repeat(64)}; },
+        };
+      },
+    }),
+    /unknown or mismatched propositionId/u,
+  );
 });
 
 test("fresh canonical persisted text skips automatic network acquisition", async () => {
