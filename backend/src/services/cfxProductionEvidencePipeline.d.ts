@@ -25,5 +25,8 @@ export function selectCfxTopRankedDocumentsPerAssertion(
 };
 export function persistCfxAcquiredText(input: Record<string, any>): Promise<Record<string, any> | null>;
 export function materializeCfxPhase2Documents(input: Record<string, any>): Promise<Record<string, any>>;
+export function runCfxAssertionRelativePacketExtractionForPair(
+  input: Record<string, any>,
+): Promise<Record<string, any>>;
 export function runCfxProductionEvidencePipeline(input: Record<string, any>): Promise<Record<string, any>>;
 export function runCfxPhase2Acquisition(input: Record<string, any>): Promise<Record<string, any>>;

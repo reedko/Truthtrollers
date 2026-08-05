@@ -32,6 +32,7 @@ import {
 import { ensureCfxSourceQuality } from "./cfxSourceQualityCompatibility.js";
 import { ensureCfxSourceCrest } from "./cfxSourceCrestCompatibility.js";
 import { acquireCfxDocumentAutomatically } from "./cfxAutomaticAcquisition.js";
+import { buildCfxOptionAAliases } from "./cfxOptionAAliases.js";
 import logger from "../utils/logger.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -194,7 +195,10 @@ export function legacyDocumentQuality(candidate) {
 }
 
 async function defaultRuntime() {
-  const [handoff, planning, retrieval, candidates, canonicalDocuments, artifacts, sourceUnits] = await Promise.all([
+  const [
+    handoff, planning, retrieval, candidates, canonicalDocuments, artifacts, sourceUnits,
+    packetSelection, assertionRelativeExtractionModule,
+  ] = await Promise.all([
     import("../../dist/claimfoundry/cfx/evidenceSearch/buildEvidenceSearchHandoff.js"),
     import("../../dist/claimfoundry/cfx/retrieval/queryPlanning.js"),
     import("../../dist/claimfoundry/cfx/retrieval/executeRetrieval.js"),
@@ -202,8 +206,15 @@ async function defaultRuntime() {
     import("../../dist/claimfoundry/cfx/acquisition/canonicalDocuments.js"),
     import("../../dist/claimfoundry/cfx/artifacts/immutableArtifacts.js"),
     import("../../dist/claimfoundry/shared/sourceUnits/index.js"),
+    // Proven, unmodified assertion-relative packet-selection bridge.
+    import("../../dist/claimfoundry/cfx/retrieval/assertion_relative/packetSelectionBridge.js"),
+    // Proven, unmodified single-assertion packet-extraction runner.
+    import("../../dist/claimfoundry/cfx/experiments/singleAssertionPacketExtraction/runExtraction.js"),
   ]);
-  return { ...handoff, ...planning, ...retrieval, ...candidates, ...canonicalDocuments, ...artifacts, ...sourceUnits };
+  return {
+    ...handoff, ...planning, ...retrieval, ...candidates, ...canonicalDocuments, ...artifacts, ...sourceUnits,
+    ...packetSelection, ...assertionRelativeExtractionModule,
+  };
 }
 
 export async function loadProductionCfxEvidenceInputs({ query, taskContentId, claimIds }) {
@@ -672,6 +683,11 @@ export async function persistCfxAcquiredText({
       acquiredTextVersionId: reusable.acquiredTextVersionId,
       sourceBindingId: reusable.bindingId,
       sourceRunId: reusable.sourceRunId,
+      // Already resolved above (reusable.cleanedText); surfaced here so
+      // callers (e.g. the assertion-relative extraction seam) can consume
+      // the exact acquired text without a second read of the canonical
+      // text-version contract.
+      cleanedText: reusable.cleanedText,
       cleanedTextSha256: reusable.cleanedTextSha256,
       characterCount: reusable.characterCount,
       freshnessAgeMs: reusable.ageMs,
@@ -756,6 +772,7 @@ export async function persistCfxAcquiredText({
       return {
         accessLevel: fullText ? "full_text" : "abstract",
         source: "academic",
+        cleanedText: academic.cleanText,
         sourceQualityProcessed: true,
         // attempted prevents an immediate duplicate enrichment inside the
         // bearing coordinator; processed reports the truthful persisted result.
@@ -866,6 +883,7 @@ export async function persistCfxAcquiredText({
     return {
       accessLevel,
       source: automatic.method,
+      cleanedText: automatic.cleanedText,
       acquisitionAttempts: automatic.attempts,
       extractedDocument: {
         documentType: extractedDocument.documentType || null,
@@ -938,6 +956,7 @@ export async function persistCfxAcquiredText({
     return {
       accessLevel: isAbstract ? "abstract" : "user_action_required",
       source: "retrieval",
+      cleanedText: candidate.abstractOrSnippet,
       acquisitionAttempts: automatic.attempts,
       sourceQualityProcessed: true,
       sourceCrestProcessed: false,
@@ -959,6 +978,135 @@ export async function persistCfxAcquiredText({
     },
   });
   return null;
+}
+
+/**
+ * Proven single-assertion packet-extraction model configuration, unchanged
+ * from the frozen governed run (cfx-single-assertion-packet-extraction-
+ * 20260802090828): temperature 0.1, 8,000-token output limit, 180,000 ms
+ * timeout. Not configurable per call -- only the model name has an env
+ * override, matching this file's existing CFX_TARGETED_BEARING_MODEL /
+ * CFX_DOCUMENT_BEARING_MODEL convention.
+ */
+const ASSERTION_RELATIVE_EXTRACTION_MODEL_CONFIG = Object.freeze({
+  temperature: 0.1,
+  maxOutputTokens: 8_000,
+  timeoutMs: 180_000,
+});
+
+/**
+ * For one document, and one proposition already known (via the live
+ * selectCfxTopRankedDocumentsPerAssertion result, not
+ * document.discoveryAssignments) to have selected it: build Option-A
+ * aliases, run the real, unmodified selectCfxAssertionRelativePackets(),
+ * and -- unconditionally -- the real, unmodified
+ * runCfxSingleAssertionPacketExtraction() (which itself makes zero provider
+ * calls when packets are empty; this function does not duplicate that
+ * short-circuit). Persists nothing. Returns a plain provenance record and
+ * writes matching artifacts; never includes queryIntent.
+ */
+export async function runCfxAssertionRelativePacketExtractionForPair({
+  runtime,
+  provider,
+  model,
+  propositionId,
+  evidenceInput,
+  documentKey,
+  referenceContentId,
+  acquiredText,
+  packetSelectionOptions = {},
+  artifacts,
+}) {
+  const aliases = buildCfxOptionAAliases(evidenceInput);
+  const packetSelectionInput = {
+    assertion: {
+      assertionId: propositionId,
+      text: evidenceInput.substantiveAssertion,
+      aliases,
+      // Always []: no concept-generation model call, no fixture concept
+      // groups. This is the Option-A product decision, not a default that
+      // callers can override.
+      requiredConceptGroups: [],
+    },
+    document: {
+      documentId: documentKey,
+      // The exact acquired cleaned text, wrapped as one block, unmodified --
+      // no new normalization or paragraph-splitting system.
+      blocks: [{ blockId: "SOURCE-0001", text: acquiredText }],
+    },
+    // No explicit config: retriever.py's own RetrievalConfig defaults are
+    // byte-identical to the proven governed configuration (windowCharacterTarget
+    // 700, minimumCombinedScore 0.18, maximumSeedWindows 12, maximumPackets 8,
+    // enableEmbeddings/enableBm25 true, requireAllConceptGroups true,
+    // minimumConceptGroupScore 0.60) -- overriding them here would be
+    // redesigning the proven packet selector, not reusing it.
+  };
+
+  let packetSelectionOutput = null;
+  let packetSelectionFailure = null;
+  try {
+    packetSelectionOutput = await runtime.selectCfxAssertionRelativePackets(
+      packetSelectionInput,
+      packetSelectionOptions,
+    );
+  } catch (error) {
+    packetSelectionFailure = { name: error?.name || "Error", message: error?.message || String(error) };
+  }
+  const selectedPackets = packetSelectionOutput?.selectedPackets || [];
+  const emptyPacketSelection = selectedPackets.length === 0;
+
+  let extraction = null;
+  if (!packetSelectionFailure) {
+    extraction = await runtime.runCfxSingleAssertionPacketExtraction({
+      assertionId: propositionId,
+      assertionText: evidenceInput.substantiveAssertion,
+      documentId: documentKey,
+      selectedPackets,
+      provider,
+      model,
+      ...ASSERTION_RELATIVE_EXTRACTION_MODEL_CONFIG,
+    });
+  }
+
+  const record = {
+    propositionId,
+    claimId: evidenceInput.claimId,
+    targetClaimId: evidenceInput.claimId,
+    referenceContentId,
+    documentId: documentKey,
+    aliases,
+    requiredConceptGroups: [],
+    emptyPacketSelection,
+    packetSelectionFailure,
+    packetIds: selectedPackets.map((packet) => packet.packetId),
+    blockIds: [...new Set(selectedPackets.flatMap((packet) => packet.blockIds))],
+    characterSpans: selectedPackets.map((packet) => ({
+      packetId: packet.packetId, charStart: packet.charStart, charEnd: packet.charEnd,
+    })),
+    extractionStatus: extraction?.status ?? "not_attempted",
+    extractionRequestHash: extraction?.requestHash ?? null,
+    extractionPromptHash: extraction?.promptHash ?? null,
+    extractionSchemaHash: extraction?.schemaHash ?? null,
+    extractionProviderCallCount: extraction?.providerCallCount ?? 0,
+    extractionModel: extraction?.model ?? null,
+    extractionUsage: extraction?.usage ?? null,
+    extractionLatencyMs: extraction?.latencyMs ?? null,
+    extractionError: extraction?.error ?? null,
+    acceptedRows: extraction?.acceptedRows ?? [],
+    rejectedRows: extraction?.rejectedRows ?? [],
+  };
+
+  if (artifacts) {
+    const base = `assertion-relative-extraction/${documentKey}/${propositionId}`;
+    await artifacts.write(`${base}/packet-selection-input.json`, packetSelectionInput);
+    await artifacts.write(
+      `${base}/packet-selection-output.json`,
+      packetSelectionOutput || { failure: packetSelectionFailure },
+    );
+    await artifacts.write(`${base}/extraction-result.json`, record);
+  }
+
+  return record;
 }
 
 export async function runCfxProductionEvidencePipeline({
@@ -996,6 +1144,21 @@ export async function runCfxProductionEvidencePipeline({
   documentsPerAssertion = Number(process.env.CFX_DOCUMENTS_PER_ASSERTION || 5),
   schemaPreflight = assertCfxProductionSchemaReady,
   phase2Only = false,
+  // Explicit rollback configuration: the existing document-centric
+  // bearingProcessor path remains the default. Setting this true (or
+  // CFX_ASSERTION_RELATIVE_EXTRACTION_ENABLED=true) switches this run to the
+  // new assertion-relative packet-selection/extraction path INSTEAD of
+  // bearingProcessor -- the two paths are mutually exclusive per run, never
+  // both invoked.
+  assertionRelativeExtraction = process.env.CFX_ASSERTION_RELATIVE_EXTRACTION_ENABLED === "true",
+  extractionProvider = provider,
+  assertionRelativeExtractionModel = process.env.CFX_ASSERTION_RELATIVE_EXTRACTION_MODEL || "gpt-4o-mini",
+  packetSelectionOptions = {
+    pythonExecutable: process.env.CFX_PACKET_SELECTION_PYTHON_EXECUTABLE || "python3",
+    embeddingModelCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_MODEL_CACHE || undefined,
+    embeddingCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_CACHE || undefined,
+    lexicalOnly: process.env.CFX_PACKET_SELECTION_LEXICAL_ONLY === "true",
+  },
 } = {}) {
   if (typeof query !== "function" || !pool) throw new TypeError("query and pool are required");
   const taskId = positive(taskContentId, "taskContentId");
@@ -1108,6 +1271,19 @@ export async function runCfxProductionEvidencePipeline({
     const selectedDocumentKeys = new Set(selectedCanonicalDocuments.map(
       (document) => document.documentKey,
     ));
+    // The assertion-relative fan-out is keyed off this live per-run
+    // selection result (selection.perAssertion), not document.
+    // discoveryAssignments -- a document can carry discovery assignments
+    // from propositions whose top-five selection later excluded it.
+    const inputByProposition = new Map(inputs.map((input) => [input.propositionId, input]));
+    const propositionIdsByDocumentKey = new Map();
+    for (const assertionSelection of selection.perAssertion) {
+      for (const selectedDocument of assertionSelection.selected) {
+        const existing = propositionIdsByDocumentKey.get(selectedDocument.documentKey) || [];
+        existing.push(assertionSelection.propositionId);
+        propositionIdsByDocumentKey.set(selectedDocument.documentKey, existing);
+      }
+    }
     await artifacts.write("selected_canonical_documents.json", {
       policy: selection.policy,
       maximumPerAssertion: selection.maximumPerAssertion,
@@ -1195,26 +1371,56 @@ export async function runCfxProductionEvidencePipeline({
       const semanticallyEligible = acquired && [
         "full_text", "substantial_excerpt", "abstract",
       ].includes(acquired.accessLevel);
-      const bearing = semanticallyEligible && !phase2Only
-        ? await bearingProcessor({
-            bindingId: bindingRecord.binding.bindingId,
-            resultContentId: bindingRecord.referenceContentId,
-            query,
-            pool,
-            provider: bearingProvider,
-            sourceQualityEnricher,
-            sourceCrestProcessor,
-            sourceQualityAlreadyProcessed: acquired.sourceQualityProcessed,
-            sourceCrestAlreadyProcessed: acquired.sourceCrestAttempted === true,
-            retrievalQuality: legacyDocumentQuality(candidate),
-            publicationDate: candidate.publicationDate || academic?.publicationDate || null,
-          })
-        : {
-            status: acquired?.accessLevel === "user_action_required"
-              ? "user_action_required"
-              : acquired ? "phase2_complete" : "awaiting_scrape",
-            providerCalls: 0,
-          };
+      const notEligibleStatus = acquired?.accessLevel === "user_action_required"
+        ? "user_action_required"
+        : acquired ? "phase2_complete" : "awaiting_scrape";
+      // Mutually exclusive per run: exactly one of bearingProcessor or the
+      // new assertion-relative extraction seam runs for this document, never
+      // both. Ends after validated extraction results and artifact capture
+      // -- no source-assertion or link persistence in this seam.
+      let bearing = null;
+      let assertionRelativeExtractionResult = null;
+      if (assertionRelativeExtraction) {
+        if (semanticallyEligible && !phase2Only) {
+          const propositionIds = propositionIdsByDocumentKey.get(document.documentKey) || [];
+          const propositions = [];
+          for (const propositionId of propositionIds) {
+            const evidenceInput = inputByProposition.get(propositionId);
+            if (!evidenceInput) continue;
+            propositions.push(await runCfxAssertionRelativePacketExtractionForPair({
+              runtime,
+              provider: extractionProvider,
+              model: assertionRelativeExtractionModel,
+              propositionId,
+              evidenceInput,
+              documentKey: document.documentKey,
+              referenceContentId: bindingRecord.referenceContentId,
+              acquiredText: acquired.cleanedText,
+              packetSelectionOptions,
+              artifacts,
+            }));
+          }
+          assertionRelativeExtractionResult = { status: "attempted", propositions };
+        } else {
+          assertionRelativeExtractionResult = { status: notEligibleStatus, propositions: [] };
+        }
+      } else {
+        bearing = semanticallyEligible && !phase2Only
+          ? await bearingProcessor({
+              bindingId: bindingRecord.binding.bindingId,
+              resultContentId: bindingRecord.referenceContentId,
+              query,
+              pool,
+              provider: bearingProvider,
+              sourceQualityEnricher,
+              sourceCrestProcessor,
+              sourceQualityAlreadyProcessed: acquired.sourceQualityProcessed,
+              sourceCrestAlreadyProcessed: acquired.sourceCrestAttempted === true,
+              retrievalQuality: legacyDocumentQuality(candidate),
+              publicationDate: candidate.publicationDate || academic?.publicationDate || null,
+            })
+          : { status: notEligibleStatus, providerCalls: 0 };
+      }
       // bindingRecord.scrapeJobId is a pre-acquisition snapshot (bindings are
       // now created without an eager scrape_jobs row); persistCfxAcquiredText
       // may have since queued one via retryCfxCanonicalAcquisition after a
@@ -1225,7 +1431,7 @@ export async function runCfxProductionEvidencePipeline({
         [bindingRecord.binding.bindingId],
       );
       const currentScrapeJobId = bindingNow?.[0]?.scrape_job_id ?? null;
-      console.log(`[CFX] run ${runId}: document ${documentOrdinal}/${selectedDocumentRecords.length} bearing=${bearing?.status || "n/a"}`);
+      console.log(`[CFX] run ${runId}: document ${documentOrdinal}/${selectedDocumentRecords.length} bearing=${bearing?.status || assertionRelativeExtractionResult?.status || "n/a"}`);
       results.push({
         documentKey: document.documentKey,
         canonicalIdentity: document.canonicalIdentity,
@@ -1235,28 +1441,65 @@ export async function runCfxProductionEvidencePipeline({
         scrapeJobId: currentScrapeJobId,
         acquired,
         bearing,
+        assertionRelativeExtraction: assertionRelativeExtractionResult,
       });
     }
     // "The pipeline function returned without throwing" is not the same
     // claim as "every document reached a terminal accepted state" -- a
     // hardcoded "completed" here would say the latter while only the former
     // is true. Roll the honest state up from what each document's bearing
-    // status actually resolved to.
-    const REJECTED_BEARING_STATUSES = new Set(["rejected", "provider_failed"]);
-    const anyRejectedBearing = results.some(
-      (row) => REJECTED_BEARING_STATUSES.has(row.bearing?.status),
-    );
-    const anyPendingBearing = results.some(
-      (row) => row.bearing?.status !== "completed"
-        && !REJECTED_BEARING_STATUSES.has(row.bearing?.status),
-    );
-    const overallStatus = anyRejectedBearing && anyPendingBearing
-      ? "completed_with_pending_and_rejected"
-      : anyRejectedBearing
-        ? "completed_with_rejected"
-        : anyPendingBearing
-          ? "completed_with_pending"
-          : "completed";
+    // (or, under the assertion-relative path, extraction) status actually
+    // resolved to. The two roll-ups are computed separately because the two
+    // paths are mutually exclusive per run and use different status
+    // vocabularies (bearingProcessor's vs. runCfxSingleAssertionPacketExtraction's).
+    let overallStatus;
+    let assertionRelativeExtractionSummary = null;
+    if (assertionRelativeExtraction) {
+      const allPropositionResults = results.flatMap(
+        (row) => row.assertionRelativeExtraction?.propositions || [],
+      );
+      const anyFailedExtraction = allPropositionResults.some(
+        (row) => row.extractionStatus === "failed" || row.packetSelectionFailure,
+      );
+      const anyPendingDocument = results.some(
+        (row) => row.assertionRelativeExtraction?.status !== "attempted",
+      );
+      overallStatus = anyFailedExtraction && anyPendingDocument
+        ? "completed_with_pending_and_failed_extractions"
+        : anyFailedExtraction
+          ? "completed_with_failed_extractions"
+          : anyPendingDocument
+            ? "completed_with_pending"
+            : "completed";
+      assertionRelativeExtractionSummary = {
+        documentsAttempted: results.filter((row) => row.assertionRelativeExtraction?.status === "attempted").length,
+        propositionDocumentPairs: allPropositionResults.length,
+        emptyPacketSelections: allPropositionResults.filter((row) => row.emptyPacketSelection).length,
+        packetSelectionFailures: allPropositionResults.filter((row) => row.packetSelectionFailure).length,
+        extractionProviderCalls: allPropositionResults.reduce((sum, row) => sum + Number(row.extractionProviderCallCount || 0), 0),
+        acceptedRowCount: allPropositionResults.reduce((sum, row) => sum + row.acceptedRows.length, 0),
+        rejectedRowCount: allPropositionResults.reduce((sum, row) => sum + row.rejectedRows.length, 0),
+        failedExtractions: allPropositionResults.filter((row) => row.extractionStatus === "failed").length,
+        persistedSourceAssertions: 0,
+        persistedLinks: 0,
+      };
+    } else {
+      const REJECTED_BEARING_STATUSES = new Set(["rejected", "provider_failed"]);
+      const anyRejectedBearing = results.some(
+        (row) => REJECTED_BEARING_STATUSES.has(row.bearing?.status),
+      );
+      const anyPendingBearing = results.some(
+        (row) => row.bearing?.status !== "completed"
+          && !REJECTED_BEARING_STATUSES.has(row.bearing?.status),
+      );
+      overallStatus = anyRejectedBearing && anyPendingBearing
+        ? "completed_with_pending_and_rejected"
+        : anyRejectedBearing
+          ? "completed_with_rejected"
+          : anyPendingBearing
+            ? "completed_with_pending"
+            : "completed";
+    }
     const summary = {
       status: overallStatus,
       runId,
@@ -1276,6 +1519,8 @@ export async function runCfxProductionEvidencePipeline({
         (sum, document) => sum + document.discoveryAssignments.length, 0),
       queuedScrapeJobs: results.filter((row) => row.scrapeJobId).length,
       targetedBearingProviderCalls: results.reduce((sum, row) => sum + Number(row.bearing?.providerCalls || 0), 0),
+      assertionRelativeExtractionEnabled: assertionRelativeExtraction,
+      assertionRelativeExtractionSummary,
       results,
       planningRawResponsePreserved: planningRawResponse !== null,
     };

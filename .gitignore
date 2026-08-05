@@ -54,3 +54,8 @@ node_modules/
 backend/node_modules/
 AIS_1_5.mp4
 .DS_Store
+
+# local python virtualenvs
+.venv-cfx/
+__pycache__/
+*.pyc
