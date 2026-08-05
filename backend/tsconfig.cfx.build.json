@@ -14,6 +14,7 @@
     "src/claimfoundry/shared/**/*.ts"
   ],
   "exclude": [
-    "src/claimfoundry/cfx/runtime/runCurrentFixtureEndChain.ts"
+    "src/claimfoundry/cfx/runtime/runCurrentFixtureEndChain.ts",
+    "src/claimfoundry/cfx/runtime/runFinalSourceAssertionLinking.ts"
   ]
 }
