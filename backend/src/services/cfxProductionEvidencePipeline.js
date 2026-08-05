@@ -197,7 +197,7 @@ export function legacyDocumentQuality(candidate) {
 async function defaultRuntime() {
   const [
     handoff, planning, retrieval, candidates, canonicalDocuments, artifacts, sourceUnits,
-    packetSelection, assertionRelativeExtractionModule,
+    packetSelection, assertionRelativeExtractionModule, sourceAssertionLinkSuggestion, sourceAssertionPersistence,
   ] = await Promise.all([
     import("../../dist/claimfoundry/cfx/evidenceSearch/buildEvidenceSearchHandoff.js"),
     import("../../dist/claimfoundry/cfx/retrieval/queryPlanning.js"),
@@ -210,10 +210,16 @@ async function defaultRuntime() {
     import("../../dist/claimfoundry/cfx/retrieval/assertion_relative/packetSelectionBridge.js"),
     // Proven, unmodified single-assertion packet-extraction runner.
     import("../../dist/claimfoundry/cfx/experiments/singleAssertionPacketExtraction/runExtraction.js"),
+    // Proven, unmodified stable source-assertion ID contract (link suggestion
+    // itself is not invoked by this seam).
+    import("../../dist/claimfoundry/cfx/finalLinking/linkSuggestion.js"),
+    // Proven, unmodified provisional source-assertion persistence.
+    import("../../dist/claimfoundry/cfx/finalLinking/persistence.js"),
   ]);
   return {
     ...handoff, ...planning, ...retrieval, ...candidates, ...canonicalDocuments, ...artifacts, ...sourceUnits,
     ...packetSelection, ...assertionRelativeExtractionModule,
+    ...sourceAssertionLinkSuggestion, ...sourceAssertionPersistence,
   };
 }
 
@@ -1070,6 +1076,7 @@ export async function runCfxAssertionRelativePacketExtractionForPair({
 
   const record = {
     propositionId,
+    caseAssertionText: evidenceInput.substantiveAssertion,
     claimId: evidenceInput.claimId,
     targetClaimId: evidenceInput.claimId,
     referenceContentId,
@@ -1085,6 +1092,12 @@ export async function runCfxAssertionRelativePacketExtractionForPair({
     })),
     extractionStatus: extraction?.status ?? "not_attempted",
     extractionRequestHash: extraction?.requestHash ?? null,
+    // The provider's own request ID for the one model call this pair made
+    // (null when no call was made, e.g. empty packet selection): the live
+    // extractionModelCallId source for provisional source-assertion
+    // persistence, already returned by the unmodified extraction runner but
+    // not otherwise surfaced.
+    extractionModelCallId: extraction?.requestId ?? null,
     extractionPromptHash: extraction?.promptHash ?? null,
     extractionSchemaHash: extraction?.schemaHash ?? null,
     extractionProviderCallCount: extraction?.providerCallCount ?? 0,
@@ -1107,6 +1120,53 @@ export async function runCfxAssertionRelativePacketExtractionForPair({
   }
 
   return record;
+}
+
+/**
+ * Deterministic projection from validated accepted extraction rows to the
+ * proven CfxPersistableSourceAssertion shape (finalLinking/linkSuggestion.js).
+ * One accepted extraction row produces exactly one projected row. Rejected
+ * rows are never projected. relevanceType is read only to be dropped -- it
+ * must never become stance, score, confidence, or any other semantic link
+ * field; that mapping belongs to the not-yet-run link-suggestion seam.
+ */
+export function projectCfxAssertionRelativeSourceAssertions({
+  runtime,
+  runId,
+  documentMetaByKey,
+  propositionRecords,
+}) {
+  const rows = [];
+  for (const record of propositionRecords) {
+    const documentMeta = documentMetaByKey.get(record.documentId);
+    if (!documentMeta) throw new Error(`missing document metadata for ${record.documentId}`);
+    for (const accepted of record.acceptedRows) {
+      rows.push({
+        sourceAssertionId: runtime.stableCfxSourceAssertionId({
+          caseAssertionId: record.propositionId,
+          documentId: record.documentId,
+          exactExcerpt: accepted.exactExcerpt,
+          sourceAssertion: accepted.sourceAssertion,
+        }),
+        caseAssertionId: record.propositionId,
+        caseAssertionText: record.caseAssertionText,
+        documentId: record.documentId,
+        documentTitle: documentMeta.documentTitle,
+        documentUrl: documentMeta.documentUrl,
+        sourceAssertion: accepted.sourceAssertion,
+        exactExcerpt: accepted.exactExcerpt,
+        documentCharStart: accepted.grounding.documentCharStart,
+        documentCharEnd: accepted.grounding.documentCharEnd,
+        sourceBlockIds: accepted.blockIds,
+        sourcePacketIds: accepted.packetIds,
+        extractionRunId: runId,
+        extractionModelCallId: record.extractionModelCallId,
+        extractionPromptHash: record.extractionPromptHash,
+        extractionSchemaHash: record.extractionSchemaHash,
+      });
+    }
+  }
+  return rows;
 }
 
 export async function runCfxProductionEvidencePipeline({
@@ -1153,6 +1213,14 @@ export async function runCfxProductionEvidencePipeline({
   assertionRelativeExtraction = process.env.CFX_ASSERTION_RELATIVE_EXTRACTION_ENABLED === "true",
   extractionProvider = provider,
   assertionRelativeExtractionModel = process.env.CFX_ASSERTION_RELATIVE_EXTRACTION_MODEL || "gpt-4o-mini",
+  // Separately gated seam, off by default even when assertionRelativeExtraction
+  // is on: projects validated accepted extraction rows to provisional
+  // cfx_source_assertion_provenance rows via the proven, unmodified
+  // persistCfxSourceAssertions(). Stops there -- no link suggestion, no
+  // reference_claim_task_links writes. Has no effect unless
+  // assertionRelativeExtraction is also enabled.
+  assertionRelativeSourceAssertionPersistence =
+    process.env.CFX_ASSERTION_RELATIVE_SOURCE_PERSISTENCE_ENABLED === "true",
   packetSelectionOptions = {
     pythonExecutable: process.env.CFX_PACKET_SELECTION_PYTHON_EXECUTABLE || "python3",
     embeddingModelCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_MODEL_CACHE || undefined,
@@ -1340,12 +1408,24 @@ export async function runCfxProductionEvidencePipeline({
     const selectedDocumentRecords = phase2.persisted.filter(
       (record) => selectedDocumentKeys.has(record.document.documentKey),
     );
+    // Populated once per document below, reused as both the `documents` map
+    // persistCfxSourceAssertions() requires and the documentTitle/documentUrl
+    // source for the source-assertion projection -- the same candidate.title /
+    // candidate.canonicalUrl||candidate.url pair this file already treats as
+    // canonical everywhere else it creates or references this document.
+    const documentMetaByKey = new Map();
     let documentOrdinal = 0;
     for (const documentRecord of selectedDocumentRecords) {
       documentOrdinal += 1;
       const { document, bindingRecord } = documentRecord;
       const candidate = document.representative;
       const academic = academicByDocumentKey.get(document.documentKey);
+      documentMetaByKey.set(document.documentKey, {
+        documentId: document.documentKey,
+        referenceContentId: bindingRecord.referenceContentId,
+        documentTitle: candidate.title,
+        documentUrl: candidate.canonicalUrl || candidate.url,
+      });
       // Direct, in-process progress signal for /api/run-evidence: this loop
       // runs synchronously inside that request with no other feedback while
       // it's in flight, and acquisition/bearing on one document can take a
@@ -1481,8 +1561,67 @@ export async function runCfxProductionEvidencePipeline({
         rejectedRowCount: allPropositionResults.reduce((sum, row) => sum + row.rejectedRows.length, 0),
         failedExtractions: allPropositionResults.filter((row) => row.extractionStatus === "failed").length,
         persistedSourceAssertions: 0,
+        // Never non-zero in this seam: no link suggestion, no
+        // reference_claim_task_links writes -- see below.
         persistedLinks: 0,
       };
+      // Provisional source-assertion persistence: a second, separately gated
+      // flag on top of assertionRelativeExtraction itself. Projects every
+      // accepted extraction row across the whole run to the proven
+      // CfxPersistableSourceAssertion shape and persists all of them in one
+      // explicit transaction -- never per document, never per row -- so a
+      // mid-run failure (e.g. a provenance collision) leaves nothing
+      // persisted rather than a partial write. Ends at persistence; no
+      // buildCfxLinkSuggestionRequest, validateCfxLinkSuggestions,
+      // persistCfxLinkSuggestions, or persistAcceptedBearingAssertions call
+      // exists past this point.
+      if (assertionRelativeSourceAssertionPersistence) {
+        const taskClaimIds = new Map(
+          [...inputByProposition].map(([propositionId, input]) => [propositionId, input.claimId]),
+        );
+        const documentsForPersistence = new Map(
+          [...documentMetaByKey].map(([documentId, meta]) => [
+            documentId,
+            { documentId: meta.documentId, referenceContentId: meta.referenceContentId },
+          ]),
+        );
+        const projectedRows = projectCfxAssertionRelativeSourceAssertions({
+          runtime, runId, documentMetaByKey, propositionRecords: allPropositionResults,
+        });
+        await artifacts.write(
+          "assertion-relative-extraction/source-assertion-projection.json",
+          projectedRows,
+        );
+        let persistedSourceAssertions = [];
+        let persistenceFailure = null;
+        if (projectedRows.length > 0) {
+          try {
+            persistedSourceAssertions = await withTransaction(async ({ query: tx }) =>
+              runtime.persistCfxSourceAssertions({
+                query: tx, taskClaimIds, documents: documentsForPersistence, rows: projectedRows,
+              }), { pool });
+          } catch (error) {
+            persistenceFailure = { name: error?.name || "Error", message: error?.message || String(error) };
+            throw error;
+          } finally {
+            await artifacts.write("assertion-relative-extraction/source-assertion-persistence-result.json", {
+              transactionOutcome: persistenceFailure ? "rolled_back" : "committed",
+              failure: persistenceFailure,
+              persisted: persistedSourceAssertions.map((row) => ({
+                sourceAssertionId: row.sourceAssertionId,
+                caseAssertionId: row.caseAssertionId,
+                documentId: row.documentId,
+                taskClaimId: row.taskClaimId,
+                referenceContentId: row.referenceContentId,
+                evidenceClaimId: row.evidenceClaimId,
+                claimSourceId: row.claimSourceId,
+                persistenceStatus: row.persistenceStatus,
+              })),
+            });
+          }
+        }
+        assertionRelativeExtractionSummary.persistedSourceAssertions = persistedSourceAssertions.length;
+      }
     } else {
       const REJECTED_BEARING_STATUSES = new Set(["rejected", "provider_failed"]);
       const anyRejectedBearing = results.some(
