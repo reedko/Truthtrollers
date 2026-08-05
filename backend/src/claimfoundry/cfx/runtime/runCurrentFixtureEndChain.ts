@@ -18,7 +18,10 @@ import {
 import { processPublishingIdentity } from "../../../services/publishingIdentityPipeline.js";
 import { ensureCfxSourceCrest } from "../../../services/cfxSourceCrestCompatibility.js";
 import {
+  ensureClaimSource,
+  ensureContentClaim,
   ensureContentRelation,
+  findOrCreateCanonicalClaim,
   findOrCreateReferenceContent,
 } from "../../../services/cfxProductionEvidenceStore.js";
 import {
@@ -43,6 +46,7 @@ import {
 import {
   persistCfxLinkSuggestions,
   persistCfxSourceAssertions,
+  type CfxFinalLinkingPersistenceStore,
   type CfxPersistedSourceAssertion,
   type CfxSourceDocumentIdentity,
 } from "../finalLinking/persistence.js";
@@ -1009,14 +1013,19 @@ async function main(): Promise<void> {
       snapshots: sourceCrest.persistence,
     });
 
+    const persistenceStore: CfxFinalLinkingPersistenceStore = {
+      ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim,
+    };
     const sourcePersistence = await transaction(pool, (tx) => persistCfxSourceAssertions({
       query: tx,
+      store: persistenceStore,
       taskClaimIds: caseClaimIds,
       documents: materialized.documents,
       rows,
     }));
     const sourcePersistenceRepeat = await transaction(pool, (tx) => persistCfxSourceAssertions({
       query: tx,
+      store: persistenceStore,
       taskClaimIds: caseClaimIds,
       documents: materialized.documents,
       rows,
@@ -1034,6 +1043,7 @@ async function main(): Promise<void> {
 
     const callIds = new Map(linkRun.calls.map((call) => [call.caseAssertionId, call.callId]));
     const persistInput = {
+      store: persistenceStore,
       taskContentId,
       rows: sourcePersistence,
       suggestions: linkRun.accepted,

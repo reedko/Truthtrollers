@@ -3,7 +3,20 @@ import test from "node:test";
 import * as productionEvidencePipeline from "../../../src/services/cfxProductionEvidencePipeline.js";
 import { aggregateCfxCanonicalDocuments } from "../../../src/claimfoundry/cfx/acquisition/canonicalDocuments.js";
 import { stableCfxSourceAssertionId } from "../../../src/claimfoundry/cfx/finalLinking/linkSuggestion.js";
-import { persistCfxSourceAssertions } from "../../../src/claimfoundry/cfx/finalLinking/persistence.js";
+import {
+  persistCfxSourceAssertions,
+  type CfxFinalLinkingPersistenceStore,
+} from "../../../src/claimfoundry/cfx/finalLinking/persistence.js";
+import {
+  ensureClaimSource,
+  ensureContentClaim,
+  ensureContentRelation,
+  findOrCreateCanonicalClaim,
+} from "../../../src/services/cfxProductionEvidenceStore.js";
+
+const directPersistenceStore: CfxFinalLinkingPersistenceStore = {
+  ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim,
+};
 
 const { runCfxProductionEvidencePipeline } = productionEvidencePipeline as any;
 const projectCfxAssertionRelativeSourceAssertions =
@@ -230,8 +243,8 @@ test("persistence: re-running identical rows through persistCfxSourceAssertions 
   const taskClaimIds = new Map([["P1", 11]]);
   const documents = new Map([["DOC-1", { documentId: "DOC-1", referenceContentId: 20 }]]);
   const rows = [persistableRow()];
-  const first = await persistCfxSourceAssertions({ query: database.query, taskClaimIds, documents, rows });
-  const second = await persistCfxSourceAssertions({ query: database.query, taskClaimIds, documents, rows });
+  const first = await persistCfxSourceAssertions({ query: database.query, store: directPersistenceStore, taskClaimIds, documents, rows });
+  const second = await persistCfxSourceAssertions({ query: database.query, store: directPersistenceStore, taskClaimIds, documents, rows });
   assert.equal(first[0]!.persistenceStatus, "inserted");
   assert.equal(second[0]!.persistenceStatus, "reused");
   assert.equal(first[0]!.sourceAssertionId, second[0]!.sourceAssertionId);
@@ -243,13 +256,13 @@ test("persistence: conflicting provenance for the same stable sourceAssertionId 
   const database = inMemoryProvenanceDatabase();
   const taskClaimIds = new Map([["P1", 11]]);
   const documents = new Map([["DOC-1", { documentId: "DOC-1", referenceContentId: 20 }]]);
-  await persistCfxSourceAssertions({ query: database.query, taskClaimIds, documents, rows: [persistableRow()] });
+  await persistCfxSourceAssertions({ query: database.query, store: directPersistenceStore, taskClaimIds, documents, rows: [persistableRow()] });
   // Same sourceAssertionId (same caseAssertionId/documentId/excerpt/assertion)
   // but a conflicting grounding offset -- e.g. a second run whose acquired
   // text shifted the excerpt's position in the document.
   const conflicting = [persistableRow({ documentCharStart: 6, documentCharEnd: 31 })];
   await assert.rejects(
-    () => persistCfxSourceAssertions({ query: database.query, taskClaimIds, documents, rows: conflicting }),
+    () => persistCfxSourceAssertions({ query: database.query, store: directPersistenceStore, taskClaimIds, documents, rows: conflicting }),
     /sourceAssertionId collision/,
   );
 });

@@ -24,7 +24,14 @@ import {
 import {
   persistCfxLinkSuggestions,
   persistCfxSourceAssertions,
+  type CfxFinalLinkingPersistenceStore,
 } from "../finalLinking/persistence.js";
+import {
+  ensureClaimSource,
+  ensureContentClaim,
+  ensureContentRelation,
+  findOrCreateCanonicalClaim,
+} from "../../../services/cfxProductionEvidenceStore.js";
 import { createOpenAiCf7StructuredProvider } from "../../shared/provider/index.js";
 import { canonicalHash } from "../../shared/sourceUnits/index.js";
 
@@ -318,8 +325,11 @@ async function execute() {
     const seeded = await seedCfxFinalLinkFixture({
       database, caseAssertions: inputs.caseAssertions, documents: inputs.documents,
     });
+    const store: CfxFinalLinkingPersistenceStore = {
+      ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim,
+    };
     const sourcePersistence = await persistCfxSourceAssertions({
-      query: database.query, taskClaimIds: seeded.taskClaimIds,
+      query: database.query, store, taskClaimIds: seeded.taskClaimIds,
       documents: seeded.documents, rows: inputs.rows,
     });
     const provider = createOpenAiCf7StructuredProvider();
@@ -376,18 +386,18 @@ async function execute() {
     const rejected = results.flatMap((row) => row.validation.rejectedRows) as CfxRejectedLinkSuggestion[];
     const modelCallIds = new Map(calls.map((call) => [call.caseAssertionId, call.callId]));
     const persistedLinks = await persistCfxLinkSuggestions({
-      query: database.query, taskContentId: seeded.taskContentId,
+      query: database.query, store, taskContentId: seeded.taskContentId,
       rows: sourcePersistence, suggestions: accepted, suggestionRunId: runId,
       suggestionModelCallIds: modelCallIds,
       suggestionPromptHash: cfxLinkSuggestionPromptHash(),
       suggestionSchemaHash: cfxLinkSuggestionSchemaHash(), model: config.model,
     });
     const rerunSources = await persistCfxSourceAssertions({
-      query: database.query, taskClaimIds: seeded.taskClaimIds,
+      query: database.query, store, taskClaimIds: seeded.taskClaimIds,
       documents: seeded.documents, rows: inputs.rows,
     });
     const rerunLinks = await persistCfxLinkSuggestions({
-      query: database.query, taskContentId: seeded.taskContentId,
+      query: database.query, store, taskContentId: seeded.taskContentId,
       rows: rerunSources, suggestions: accepted, suggestionRunId: runId,
       suggestionModelCallIds: modelCallIds,
       suggestionPromptHash: cfxLinkSuggestionPromptHash(),

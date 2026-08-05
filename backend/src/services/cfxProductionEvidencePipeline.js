@@ -25,8 +25,11 @@ import {
   upsertCfxCanonicalDocument,
 } from "./cfxCanonicalDocumentStore.js";
 import {
+  ensureClaimSource,
+  ensureContentClaim,
   ensureContentRelation,
   ensureCfxDocumentDiscoveryLink,
+  findOrCreateCanonicalClaim,
   findOrCreateReferenceContent,
 } from "./cfxProductionEvidenceStore.js";
 import { ensureCfxSourceQuality } from "./cfxSourceQualityCompatibility.js";
@@ -194,7 +197,7 @@ export function legacyDocumentQuality(candidate) {
   return Math.max(0, Math.min(1.2, base + legacyDomainBoost));
 }
 
-async function defaultRuntime() {
+export async function defaultRuntime() {
   const [
     handoff, planning, retrieval, candidates, canonicalDocuments, artifacts, sourceUnits,
     packetSelection, assertionRelativeExtractionModule, sourceAssertionLinkSuggestion, sourceAssertionPersistence,
@@ -1704,7 +1707,9 @@ export async function runCfxProductionEvidencePipeline({
           try {
             persistedSourceAssertions = await withTransaction(async ({ query: tx }) =>
               runtime.persistCfxSourceAssertions({
-                query: tx, taskClaimIds, documents: documentsForPersistence, rows: projectedRows,
+                query: tx,
+                store: { ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim },
+                taskClaimIds, documents: documentsForPersistence, rows: projectedRows,
               }), { pool });
           } catch (error) {
             persistenceFailure = { name: error?.name || "Error", message: error?.message || String(error) };
@@ -1766,6 +1771,7 @@ export async function runCfxProductionEvidencePipeline({
               persistedLinks = await withTransaction(async ({ query: tx }) =>
                 runtime.persistCfxLinkSuggestions({
                   query: tx,
+                  store: { ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim },
                   taskContentId: taskId,
                   rows: persistedSourceAssertions,
                   suggestions: approvedLinkSuggestions,

@@ -1,16 +1,37 @@
 import {
-  ensureClaimSource,
-  ensureContentClaim,
-  ensureContentRelation,
-  findOrCreateCanonicalClaim,
-} from "../../../services/cfxProductionEvidenceStore.js";
-import {
   projectCfxSuggestedScore,
   type CfxAcceptedLinkSuggestion,
   type CfxPersistableSourceAssertion,
 } from "./linkSuggestion.js";
 
 type Query = (sql: string, values?: unknown[]) => Promise<any>;
+
+/**
+ * Four find-or-create/ensure persistence primitives this module needs, owned
+ * by and implemented in src/services/cfxProductionEvidenceStore.js. Received
+ * by dependency injection rather than imported directly: this compiled CFX
+ * module (emitted under dist/claimfoundry) must not hold a source-relative
+ * import into src/services, since that relative path's meaning changes once
+ * TypeScript emits this file to a different directory under dist/. Callers
+ * going through defaultRuntime() (cfxProductionEvidencePipeline.js) supply
+ * the real implementations from cfxProductionEvidenceStore.js; direct
+ * callers/tests supply them explicitly.
+ */
+export type CfxFinalLinkingPersistenceStore = {
+  findOrCreateCanonicalClaim(query: Query, input: { claimText: string; claimType: "task" | "reference" | "snippet" }): Promise<number>;
+  ensureContentClaim(query: Query, input: {
+    contentId: number;
+    claimId: number;
+    relationshipType?: string;
+    claimRole?: string;
+    objectClaimText?: string | null;
+    speakerEntity?: string | null;
+    articleStance?: string | null;
+    visibility?: string;
+  }): Promise<number>;
+  ensureClaimSource(query: Query, input: { claimId: number; referenceContentId: number }): Promise<number>;
+  ensureContentRelation(query: Query, input: { taskContentId: number; referenceContentId: number }): Promise<number>;
+};
 
 export type CfxSourceDocumentIdentity = {
   documentId: string;
@@ -79,6 +100,7 @@ function assertExistingProvenanceMatches(
 
 export async function persistCfxSourceAssertions(input: {
   query: Query;
+  store: CfxFinalLinkingPersistenceStore;
   taskClaimIds: ReadonlyMap<string, number>;
   documents: ReadonlyMap<string, CfxSourceDocumentIdentity>;
   rows: CfxPersistableSourceAssertion[];
@@ -112,11 +134,11 @@ export async function persistCfxSourceAssertions(input: {
       continue;
     }
 
-    const evidenceClaimId = await findOrCreateCanonicalClaim(input.query, {
+    const evidenceClaimId = await input.store.findOrCreateCanonicalClaim(input.query, {
       claimText: exact(row.sourceAssertion, "sourceAssertion"),
       claimType: "reference",
     });
-    await ensureContentClaim(input.query, {
+    await input.store.ensureContentClaim(input.query, {
       contentId: referenceContentId,
       claimId: evidenceClaimId,
       relationshipType: "contains",
@@ -124,7 +146,7 @@ export async function persistCfxSourceAssertions(input: {
       objectClaimText: row.sourceAssertion,
       visibility: "source_only",
     });
-    const claimSourceId = await ensureClaimSource(input.query, {
+    const claimSourceId = await input.store.ensureClaimSource(input.query, {
       claimId: evidenceClaimId,
       referenceContentId,
     });
@@ -168,6 +190,7 @@ export type CfxPersistedLinkSuggestion = {
 
 export async function persistCfxLinkSuggestions(input: {
   query: Query;
+  store: CfxFinalLinkingPersistenceStore;
   taskContentId: number;
   rows: CfxPersistedSourceAssertion[];
   suggestions: CfxAcceptedLinkSuggestion[];
@@ -185,7 +208,7 @@ export async function persistCfxLinkSuggestions(input: {
     if (row.caseAssertionId !== suggestion.caseAssertionId) {
       throw new Error(`case assertion mismatch for ${suggestion.sourceAssertionId}`);
     }
-    const relationId = await ensureContentRelation(input.query, {
+    const relationId = await input.store.ensureContentRelation(input.query, {
       taskContentId: input.taskContentId,
       referenceContentId: row.referenceContentId,
     });

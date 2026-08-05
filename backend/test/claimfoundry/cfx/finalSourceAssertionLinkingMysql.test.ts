@@ -9,7 +9,14 @@ import type { CfxAcceptedLinkSuggestion } from "../../../src/claimfoundry/cfx/fi
 import {
   persistCfxLinkSuggestions,
   persistCfxSourceAssertions,
+  type CfxFinalLinkingPersistenceStore,
 } from "../../../src/claimfoundry/cfx/finalLinking/persistence.js";
+import {
+  ensureClaimSource,
+  ensureContentClaim,
+  ensureContentRelation,
+  findOrCreateCanonicalClaim,
+} from "../../../src/services/cfxProductionEvidenceStore.js";
 
 dotenv.config({ path: path.resolve(".env") });
 const enabled = process.env.CFX_REAL_MYSQL_TEST === "1";
@@ -129,8 +136,11 @@ test("final source-assertion and suggested-link persistence is FK-safe and idemp
       documents.set(document.documentId, { documentId: document.documentId, referenceContentId: result.insertId });
     }
 
-    const first = await persistCfxSourceAssertions({ query, taskClaimIds, documents, rows: fixture.rows });
-    const second = await persistCfxSourceAssertions({ query, taskClaimIds, documents, rows: fixture.rows });
+    const store: CfxFinalLinkingPersistenceStore = {
+      ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim,
+    };
+    const first = await persistCfxSourceAssertions({ query, store, taskClaimIds, documents, rows: fixture.rows });
+    const second = await persistCfxSourceAssertions({ query, store, taskClaimIds, documents, rows: fixture.rows });
     assert.equal(first.length, 14);
     assert.equal(first.every((row) => row.persistenceStatus === "inserted"), true);
     assert.equal(second.every((row) => row.persistenceStatus === "reused"), true);
@@ -146,7 +156,7 @@ test("final source-assertion and suggested-link persistence is FK-safe and idemp
     }));
     const modelCallIds = new Map([["P54895", "link-request-001"], ["P54897", "link-request-002"]]);
     const linkInput = {
-      query, taskContentId, rows: first, suggestions, suggestionRunId: "offline-fixture-link-run",
+      query, store, taskContentId, rows: first, suggestions, suggestionRunId: "offline-fixture-link-run",
       suggestionModelCallIds: modelCallIds, suggestionPromptHash: "c".repeat(64),
       suggestionSchemaHash: "d".repeat(64), model: "offline-fixture",
     };
@@ -172,7 +182,7 @@ test("final source-assertion and suggested-link persistence is FK-safe and idemp
       await connection.beginTransaction();
       const rollbackQuery = rowQuery(connection);
       const rollbackRow = { ...fixture.rows[0]!, sourceAssertionId: "SA-rollback-only" };
-      await persistCfxSourceAssertions({ query: rollbackQuery, taskClaimIds, documents, rows: [rollbackRow] });
+      await persistCfxSourceAssertions({ query: rollbackQuery, store, taskClaimIds, documents, rows: [rollbackRow] });
       await connection.rollback();
     } finally { connection.release(); }
     const [[rollbackCount]] = await pool.query<mysql.RowDataPacket[]>(

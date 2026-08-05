@@ -11,9 +11,23 @@ import {
   cfxLinkSuggestionSchemaHash,
   validateCfxLinkSuggestions,
 } from "../../../src/claimfoundry/cfx/finalLinking/linkSuggestion.js";
-import { persistCfxLinkSuggestions, persistCfxSourceAssertions } from "../../../src/claimfoundry/cfx/finalLinking/persistence.js";
+import {
+  persistCfxLinkSuggestions,
+  persistCfxSourceAssertions,
+  type CfxFinalLinkingPersistenceStore,
+} from "../../../src/claimfoundry/cfx/finalLinking/persistence.js";
 import { canonicalHash } from "../../../src/claimfoundry/shared/sourceUnits/index.js";
 import type { Cf7StructuredModelRequest, Cf7StructuredProvider } from "../../../src/claimfoundry/shared/provider/index.js";
+import {
+  ensureClaimSource,
+  ensureContentClaim,
+  ensureContentRelation,
+  findOrCreateCanonicalClaim,
+} from "../../../src/services/cfxProductionEvidenceStore.js";
+
+const directPersistenceStore: CfxFinalLinkingPersistenceStore = {
+  ensureClaimSource, ensureContentClaim, ensureContentRelation, findOrCreateCanonicalClaim,
+};
 
 const { runCfxProductionEvidencePipeline } = productionEvidencePipeline as any;
 const runCfxLinkSuggestionForCaseAssertion =
@@ -286,7 +300,7 @@ test("persistCfxLinkSuggestions: re-running identical approved links is idempote
   const rows = [persistedSourceAssertionRow()];
   const suggestion = { sourceAssertionId: "SA-1", caseAssertionId: "P1", suggestedStance: "support" as const, suggestedScore: 0.8, rationale: "ok", rowIndex: 0 };
   const args = {
-    query: database.query, taskContentId: 10, rows, suggestions: [suggestion],
+    query: database.query, store: directPersistenceStore, taskContentId: 10, rows, suggestions: [suggestion],
     suggestionRunId: "run-1", suggestionModelCallIds: new Map([["P1", "req-1"]]),
     suggestionPromptHash: "p".repeat(64), suggestionSchemaHash: "s".repeat(64), model: "gpt-4o-mini",
   };
@@ -303,7 +317,7 @@ test("persistCfxLinkSuggestions: a human-verified existing link fails closed aga
   const rows = [persistedSourceAssertionRow({ evidenceClaimId: 30, taskClaimId: 11, referenceContentId: 20 })];
   const suggestion = { sourceAssertionId: "SA-1", caseAssertionId: "P1", suggestedStance: "refute" as const, suggestedScore: 0.9, rationale: "conflicts with verified value", rowIndex: 0 };
   const persisted = await persistCfxLinkSuggestions({
-    query: database.query, taskContentId: 10, rows, suggestions: [suggestion],
+    query: database.query, store: directPersistenceStore, taskContentId: 10, rows, suggestions: [suggestion],
     suggestionRunId: "run-1", suggestionModelCallIds: new Map([["P1", "req-1"]]),
     suggestionPromptHash: "p".repeat(64), suggestionSchemaHash: "s".repeat(64), model: "gpt-4o-mini",
   });

@@ -36,3 +36,4 @@ export function runCfxLinkSuggestionForCaseAssertion(
 ): Promise<Record<string, any>>;
 export function runCfxProductionEvidencePipeline(input: Record<string, any>): Promise<Record<string, any>>;
 export function runCfxPhase2Acquisition(input: Record<string, any>): Promise<Record<string, any>>;
+export function defaultRuntime(): Promise<Record<string, any>>;
