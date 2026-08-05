@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import createContentScrapeRoutes from "../../../src/routes/content/content.scrape.routes.js";
+
+function response(): { statusCode: number; body: any; status(code: number): any; json(body: unknown): any; headersSent: boolean } {
+  return {
+    statusCode: 200, body: null,
+    status(code: number) { this.statusCode = code; return this; },
+    json(body: unknown) { this.body = body; return this; },
+    headersSent: false,
+  };
+}
 
 test("bound production scrape preserves raw evidence before parsing and exits before semantic work", async () => {
   const route = await readFile(
@@ -56,17 +66,56 @@ test("extension recovery retains specialized PDF and Facebook capture before the
   assert.match(extension, /extractCompactPageForScrape/u);
 });
 
-test("/api/scrape-task defaults to CFX and keeps legacy behind explicit rollback, matching /api/run-evidence", async () => {
+test("/api/scrape-task defaults to CFX: with CFX_LEGACY_EVIDENCE_ENABLED unset, the injected evidence pipeline is called", async () => {
+  const saved = process.env.CFX_LEGACY_EVIDENCE_ENABLED;
+  delete process.env.CFX_LEGACY_EVIDENCE_ENABLED;
+  try {
+    const url = "https://example.test/production-scrape-wiring-cfx-default";
+    const contentId = 90101;
+    let pipelineCalls = 0;
+    const router = createContentScrapeRoutes({
+      query: async (sql: string, values: unknown[] = []) => {
+        if (sql.startsWith("SELECT content_id, content_name FROM content WHERE url = ?")) return [];
+        if (sql.trim().startsWith("CALL InsertContentAndTopics")) return { affectedRows: 1 };
+        if (sql.startsWith("SELECT content_id, thumbnail FROM content WHERE url = ?")) return [{ content_id: contentId, thumbnail: null }];
+        throw new Error(`unexpected query: ${sql}`);
+      },
+      pool: {},
+      testOpenAiConnection: async () => ({ accessible: true }),
+      runCaseAssertionExtractionStage: async () => ({ claimIds: [1], propositionIds: ["P01"], status: "completed" }),
+      runProductionEvidencePipeline: async () => { pipelineCalls += 1; return { status: "completed", results: [] }; },
+    } as any);
+    const layer = (router as any).stack.find((entry: any) => entry.route?.path === "/api/scrape-task");
+    const handler = layer.route.stack.at(-1).handle;
+    const res = response();
+    await handler({
+      body: { url, raw_text: "Production scrape wiring test article.", content_name: "Wiring test" },
+      user: null,
+    }, res);
+    assert.equal(pipelineCalls, 1, "the CFX evidence pipeline must run by default");
+    assert.equal(res.statusCode, 200);
+  } finally {
+    if (saved === undefined) delete process.env.CFX_LEGACY_EVIDENCE_ENABLED;
+    else process.env.CFX_LEGACY_EVIDENCE_ENABLED = saved;
+  }
+});
+
+// runEvidenceEngine (the legacy evidence path) is not part of the new
+// dependency-injection seam and makes its own live model/retrieval calls
+// with no query-gated step before them, so -- exactly as with the legacy
+// case-assertion extractor in freshArticleExtractionRouteWiring.test.ts --
+// branch selection for the legacy rollback is proven structurally rather
+// than by actually executing it.
+test("keeps legacy evidence gathering behind an explicit rollback flag, matching /api/run-evidence", async () => {
   const route = await readFile("src/routes/content/content.scrape.routes.js", "utf8");
-  const start = route.indexOf('router.post("/api/scrape-task"');
+  const start = route.indexOf("🔵 [/api/scrape-task] RECEIVED REQUEST");
   assert.ok(start >= 0);
   const nextRoute = route.indexOf('router.post("/api/scrape-reference"');
   assert.ok(nextRoute > start);
   const section = route.slice(start, nextRoute);
   assert.match(section, /CFX_LEGACY_EVIDENCE_ENABLED === "true"/u);
-  assert.match(section, /runCfxProductionEvidencePipeline/u);
   const legacyCall = section.indexOf("await runEvidenceEngine(");
-  const cfxCall = section.indexOf("await runCfxProductionEvidencePipeline(");
+  const cfxCall = section.indexOf("await runProductionEvidencePipeline(");
   const legacyBranchStart = section.lastIndexOf("if (legacyEvidenceEnabled)", legacyCall);
   const cfxBranchStart = section.lastIndexOf("} else {", cfxCall);
   assert.ok(legacyCall >= 0 && cfxCall >= 0);

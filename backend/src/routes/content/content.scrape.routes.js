@@ -72,7 +72,18 @@ import {
 // every source prompt.
 const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
-export default function createContentScrapeRoutes({ query, pool }) {
+export default function createContentScrapeRoutes({
+  query, pool,
+  // Testability seam only: production callers pass none of these three, so
+  // all default to the exact real production functions imported above --
+  // not a behavioral fork, just a way for tests to inject fakes at the
+  // existing call sites below without touching request behavior, provider
+  // construction, S0/S1/S2, pipeline semantics, error behavior, or response
+  // shapes.
+  runCaseAssertionExtractionStage = runCfxCaseAssertionExtractionStage,
+  runProductionEvidencePipeline = runCfxProductionEvidencePipeline,
+  testOpenAiConnection = () => openAiLLM.testConnection(),
+}) {
   // CFX case-assertion extraction (S0/S1/S2) is the default; legacy
   // processTaskClaims/mapArgumentFunctions extraction is an explicit,
   // named rollback (CFX_LEGACY_CASE_ASSERTION_EXTRACTION_ENABLED=true).
@@ -575,7 +586,107 @@ export default function createContentScrapeRoutes({ query, pool }) {
         authors: providedAuthors,
         platform, distribution_channel, linked_url, linked_publisher,
         defer_evaluation,
+        cfx_resume_content_id,
       } = req.body;
+
+      // ═════════════════════════════════════════════════════════════
+      // RESUME MODE: cfx_resume_content_id -- an explicit, mutually
+      // exclusive alternate request shape. Resumes the production CFX
+      // evidence pipeline for an EXISTING task content row whose case
+      // assertions were already persisted by a prior S0/S1/S2 run: never
+      // scrapes, never creates a content row, never re-runs S0/S1/S2, never
+      // modifies the existing case assertions. Uses this route's own
+      // query/pool (identical to the fresh-ingestion call below), the exact
+      // same runCfxProductionEvidencePipeline() call shape, and lets the
+      // assertion-relative CFX flags flow through that function's own
+      // process.env-driven defaults -- no custom provider, no explicit flag
+      // arguments, no parallel artifact writer, no bespoke DB-count logic.
+      // ═════════════════════════════════════════════════════════════
+      if (cfx_resume_content_id !== undefined) {
+        if (url || raw_html || raw_text || force) {
+          return res.status(400).json({
+            success: false,
+            error: "cfx_resume_content_id cannot be combined with url, raw_html, raw_text, or force",
+          });
+        }
+        const resumeContentId = Number(cfx_resume_content_id);
+        if (!Number.isSafeInteger(resumeContentId) || resumeContentId <= 0) {
+          return res.status(400).json({
+            success: false,
+            error: "cfx_resume_content_id must be a positive integer",
+          });
+        }
+        const existingContent = await query(
+          "SELECT content_id FROM content WHERE content_id=? LIMIT 1",
+          [resumeContentId],
+        );
+        if (!existingContent[0]) {
+          return res.status(404).json({
+            success: false,
+            error: "cfx_resume_content_id does not exist",
+            contentId: resumeContentId,
+          });
+        }
+        // Same content_claims.selected_for_evaluation=1 marker
+        // persistCfxCaseAssertions() already sets on every case assertion it
+        // writes (cfxCaseAssertionPersistence.js), scoped strictly by this
+        // content_id's own content_claims membership -- never by claim_id
+        // alone, so a claim_id a different content row happens to share (via
+        // findOrCreateClaim's global exact-text dedup) can never pull that
+        // other row's case assertions, source assertions, or links into this
+        // resume. No model call, no query-hint regeneration: read-only.
+        const caseAssertionRows = await query(
+          `SELECT cc.claim_id FROM content_claims cc
+            WHERE cc.content_id=? AND cc.selected_for_evaluation=1
+            ORDER BY cc.claim_order`,
+          [resumeContentId],
+        );
+        const claimIds = caseAssertionRows.map((row) => Number(row.claim_id));
+        if (claimIds.length === 0 || claimIds.some((id) => !Number.isSafeInteger(id) || id <= 0)) {
+          return res.status(409).json({
+            success: false,
+            error: "no valid persisted case assertions found for cfx_resume_content_id",
+            contentId: resumeContentId,
+            caseAssertionCount: claimIds.length,
+          });
+        }
+
+        taskContentId = resumeContentId;
+        logger.log(`🔁 [/api/scrape-task] RESUME MODE: content_id=${resumeContentId}, `
+          + `${claimIds.length} persisted case assertions, skipping S0/S1/S2`);
+
+        // Identical call shape to the fresh-ingestion CFX branch below: no
+        // explicit provider, no explicit assertion-relative flags -- both
+        // come from runCfxProductionEvidencePipeline's own
+        // process.env-driven defaults, exactly as production already does.
+        // Already idempotent (persistCfxSourceAssertions/
+        // persistCfxLinkSuggestions reuse or update existing rows rather
+        // than duplicate them), so no additional "already completed" gate
+        // is added here -- the existing pipeline contract already permits a
+        // safe rerun.
+        const cfxEvidenceSummary = await runProductionEvidencePipeline({
+          query, pool, taskContentId: resumeContentId, claimIds,
+          userId: req.user?.user_id || null,
+        });
+
+        const aiRefs = (cfxEvidenceSummary?.results || []).map((cfxResult) => ({
+          referenceContentId: cfxResult.referenceContentId,
+          contentId: cfxResult.referenceContentId,
+        }));
+
+        finalizeTokenUsage();
+        return res.json({
+          success: true,
+          contentId: resumeContentId,
+          references: { dom: [], ai: aiRefs },
+          failedCandidates: [],
+          resume: {
+            contentId: resumeContentId,
+            skippedStages: ["S0", "S1", "S2"],
+            caseAssertionCount: claimIds.length,
+          },
+        });
+      }
 
       logger.log(`\n${'='.repeat(80)}`);
       logger.log(`🔵 [/api/scrape-task] RECEIVED REQUEST`);
@@ -618,8 +729,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
       // EARLY VALIDATION: Check OpenAI API accessibility BEFORE any DB writes
       // ═════════════════════════════════════════════════════════════
       logger.log("🔍 [/api/scrape-task] Checking OpenAI API accessibility...");
-      const { openAiLLM } = await import("../../core/openAiLLM.js");
-      const apiCheck = await openAiLLM.testConnection();
+      const apiCheck = await testOpenAiConnection();
 
       if (!apiCheck.accessible) {
         logger.error("❌ [/api/scrape-task] OpenAI API not accessible:", apiCheck.error);
@@ -868,7 +978,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
       let mappedTaskClaims;
       if (!legacyCaseAssertionExtractionEnabled) {
         const provider = createOpenAiCf7StructuredProvider();
-        const extraction = await runCfxCaseAssertionExtractionStage({
+        const extraction = await runCaseAssertionExtractionStage({
           pool,
           taskContentId,
           title,
@@ -950,7 +1060,7 @@ export default function createContentScrapeRoutes({ query, pool }) {
             },
           }));
       } else {
-        cfxEvidenceSummary = await runCfxProductionEvidencePipeline({
+        cfxEvidenceSummary = await runProductionEvidencePipeline({
           query,
           pool,
           taskContentId,
