@@ -13,7 +13,7 @@
 // and contains no retry logic.
 
 import { withTransaction } from "../storage/dbTransaction.js";
-import { runCfxFreshArticleCaseAssertions } from "../claimfoundry/cfx/freshArticle/runFreshArticleCaseAssertions.js";
+import { runCfxFreshArticleCaseAssertions } from "../../dist/claimfoundry/cfx/freshArticle/runFreshArticleCaseAssertions.js";
 import { persistCfxCaseAssertions } from "./cfxCaseAssertionPersistence.js";
 
 /**

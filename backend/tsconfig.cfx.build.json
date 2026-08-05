@@ -12,5 +12,8 @@
   "include": [
     "src/claimfoundry/cfx/**/*.ts",
     "src/claimfoundry/shared/**/*.ts"
+  ],
+  "exclude": [
+    "src/claimfoundry/cfx/runtime/runCurrentFixtureEndChain.ts"
   ]
 }

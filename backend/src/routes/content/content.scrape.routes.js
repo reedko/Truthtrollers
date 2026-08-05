@@ -31,7 +31,7 @@ import {
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { runCfxProductionEvidencePipeline } from "../../services/cfxProductionEvidencePipeline.js";
 import { runCfxCaseAssertionExtractionStage } from "../../services/cfxCaseAssertionExtractionStage.js";
-import { createOpenAiCf7StructuredProvider } from "../../claimfoundry/shared/provider/index.js";
+import { createOpenAiCf7StructuredProvider } from "../../../dist/claimfoundry/shared/provider/index.js";
 import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
