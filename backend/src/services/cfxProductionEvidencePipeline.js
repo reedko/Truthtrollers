@@ -1169,6 +1169,98 @@ export function projectCfxAssertionRelativeSourceAssertions({
   return rows;
 }
 
+/**
+ * Proven link-suggestion model configuration, unchanged from the frozen
+ * governed run demonstrated by runFinalSourceAssertionLinking.ts: temperature
+ * 0.1, 4,000-token output limit, 180,000 ms timeout. Only the model name has
+ * an env override, matching this file's existing per-stage convention.
+ */
+const LINK_SUGGESTION_MODEL_CONFIG = Object.freeze({
+  temperature: 0.1,
+  maxOutputTokens: 4_000,
+  timeoutMs: 180_000,
+});
+
+/**
+ * One batched link-suggestion model call for one case assertion against
+ * every provisional source assertion persisted for it this run: the real,
+ * unmodified buildCfxLinkSuggestionRequest() and validateCfxLinkSuggestions().
+ * insufficient decisions are validator-accepted (syntactically valid) but are
+ * separated out here, never coerced into nuance and never forwarded to
+ * persistCfxLinkSuggestions() -- persistence only ever sees
+ * support/refute/nuance. Persists nothing itself. Writes matching artifacts;
+ * never includes queryIntent.
+ */
+export async function runCfxLinkSuggestionForCaseAssertion({
+  runtime,
+  provider,
+  model,
+  caseAssertionId,
+  caseAssertionText,
+  sourceAssertions,
+  artifacts,
+}) {
+  const request = runtime.buildCfxLinkSuggestionRequest({
+    caseAssertionId,
+    caseAssertionText,
+    sourceAssertions,
+    model,
+    ...LINK_SUGGESTION_MODEL_CONFIG,
+  });
+  const requestHash = runtime.canonicalHash(request);
+  const suppliedSourceAssertionIds = sourceAssertions.map((row) => row.sourceAssertionId);
+
+  let response = null;
+  let failure = null;
+  let validation = { acceptedRows: [], rejectedRows: [] };
+  try {
+    response = await provider.invokeStructured(request);
+    validation = runtime.validateCfxLinkSuggestions({
+      caseAssertionId,
+      suppliedSourceAssertionIds,
+      rawOutput: response.output,
+    });
+  } catch (error) {
+    failure = { name: error?.name || "Error", message: error?.message || String(error) };
+  }
+
+  const approvedSuggestions = validation.acceptedRows.filter((row) => row.suggestedStance !== "insufficient");
+  const insufficientSuggestions = validation.acceptedRows.filter((row) => row.suggestedStance === "insufficient");
+
+  const record = {
+    caseAssertionId,
+    requestHash,
+    promptHash: runtime.cfxLinkSuggestionPromptHash(),
+    schemaHash: runtime.cfxLinkSuggestionSchemaHash(),
+    modelCallId: response?.requestId ?? null,
+    responseId: response?.responseId ?? null,
+    model: response?.model ?? model,
+    usage: response?.usage ?? null,
+    providerCallCount: 1,
+    failure,
+    acceptedRows: validation.acceptedRows,
+    rejectedRows: validation.rejectedRows,
+    approvedSuggestions,
+    insufficientSuggestions,
+  };
+
+  if (artifacts) {
+    const base = `assertion-relative-link-suggestion/${caseAssertionId}`;
+    await artifacts.write(`${base}/candidate-source-assertions.json`, sourceAssertions);
+    await artifacts.write(`${base}/request.json`, request);
+    await artifacts.write(`${base}/raw-response.json`, {
+      rawResponse: response?.rawResponse ?? null,
+      parsedOutput: response?.output ?? null,
+      failure,
+    });
+    await artifacts.write(`${base}/validation.json`, validation);
+    await artifacts.write(`${base}/approved-links.json`, approvedSuggestions);
+    await artifacts.write(`${base}/insufficient-decisions.json`, insufficientSuggestions);
+  }
+
+  return record;
+}
+
 export async function runCfxProductionEvidencePipeline({
   query,
   pool,
@@ -1216,11 +1308,24 @@ export async function runCfxProductionEvidencePipeline({
   // Separately gated seam, off by default even when assertionRelativeExtraction
   // is on: projects validated accepted extraction rows to provisional
   // cfx_source_assertion_provenance rows via the proven, unmodified
-  // persistCfxSourceAssertions(). Stops there -- no link suggestion, no
-  // reference_claim_task_links writes. Has no effect unless
-  // assertionRelativeExtraction is also enabled.
+  // persistCfxSourceAssertions(). Has no effect unless assertionRelativeExtraction
+  // is also enabled. Stops there -- no link suggestion, no
+  // reference_claim_task_links writes -- unless the further-gated
+  // assertionRelativeLinkSuggestion stage below is also enabled.
   assertionRelativeSourceAssertionPersistence =
     process.env.CFX_ASSERTION_RELATIVE_SOURCE_PERSISTENCE_ENABLED === "true",
+  // Third and final gate: batched link suggestion over this run's persisted
+  // provisional source assertions, via the proven, unmodified
+  // buildCfxLinkSuggestionRequest()/validateCfxLinkSuggestions()/
+  // persistCfxLinkSuggestions(). Has no effect unless both
+  // assertionRelativeExtraction and assertionRelativeSourceAssertionPersistence
+  // are also enabled. Only support/refute/nuance decisions are ever persisted;
+  // insufficient decisions are never coerced into a link.
+  assertionRelativeLinkSuggestion =
+    process.env.CFX_ASSERTION_RELATIVE_LINK_SUGGESTION_ENABLED === "true",
+  linkSuggestionProvider = provider,
+  assertionRelativeLinkSuggestionModel =
+    process.env.CFX_ASSERTION_RELATIVE_LINK_SUGGESTION_MODEL || "gpt-4o-mini",
   packetSelectionOptions = {
     pythonExecutable: process.env.CFX_PACKET_SELECTION_PYTHON_EXECUTABLE || "python3",
     embeddingModelCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_MODEL_CACHE || undefined,
@@ -1561,8 +1666,9 @@ export async function runCfxProductionEvidencePipeline({
         rejectedRowCount: allPropositionResults.reduce((sum, row) => sum + row.rejectedRows.length, 0),
         failedExtractions: allPropositionResults.filter((row) => row.extractionStatus === "failed").length,
         persistedSourceAssertions: 0,
-        // Never non-zero in this seam: no link suggestion, no
-        // reference_claim_task_links writes -- see below.
+        // Stays 0 unless the further-gated assertionRelativeLinkSuggestion
+        // stage below both runs and produces at least one approved
+        // support/refute/nuance decision.
         persistedLinks: 0,
       };
       // Provisional source-assertion persistence: a second, separately gated
@@ -1621,6 +1727,79 @@ export async function runCfxProductionEvidencePipeline({
           }
         }
         assertionRelativeExtractionSummary.persistedSourceAssertions = persistedSourceAssertions.length;
+
+        // Batched link suggestion: a third gate, on top of the first two.
+        // Model calls (one per case assertion with at least one persisted
+        // provisional source assertion) all happen before the one explicit
+        // persistence transaction opens -- never inside it. Only
+        // support/refute/nuance decisions ever reach persistCfxLinkSuggestions();
+        // insufficient decisions are computed, reported in artifacts, and
+        // dropped here, never persisted as a link.
+        if (assertionRelativeLinkSuggestion && persistedSourceAssertions.length > 0) {
+          const groupedByCaseAssertion = new Map();
+          for (const row of persistedSourceAssertions) {
+            const group = groupedByCaseAssertion.get(row.caseAssertionId) || [];
+            group.push(row);
+            groupedByCaseAssertion.set(row.caseAssertionId, group);
+          }
+          const linkSuggestionResults = await Promise.all(
+            [...groupedByCaseAssertion.entries()].map(([caseAssertionId, sourceAssertions]) =>
+              runCfxLinkSuggestionForCaseAssertion({
+                runtime,
+                provider: linkSuggestionProvider,
+                model: assertionRelativeLinkSuggestionModel,
+                caseAssertionId,
+                caseAssertionText: sourceAssertions[0].caseAssertionText,
+                sourceAssertions,
+                artifacts,
+              })),
+          );
+          const approvedLinkSuggestions = linkSuggestionResults.flatMap((row) => row.approvedSuggestions);
+
+          let persistedLinks = [];
+          let linkPersistenceFailure = null;
+          if (approvedLinkSuggestions.length > 0) {
+            const suggestionModelCallIds = new Map(
+              linkSuggestionResults.map((row) => [row.caseAssertionId, row.modelCallId]),
+            );
+            try {
+              persistedLinks = await withTransaction(async ({ query: tx }) =>
+                runtime.persistCfxLinkSuggestions({
+                  query: tx,
+                  taskContentId: taskId,
+                  rows: persistedSourceAssertions,
+                  suggestions: approvedLinkSuggestions,
+                  suggestionRunId: runId,
+                  suggestionModelCallIds,
+                  suggestionPromptHash: runtime.cfxLinkSuggestionPromptHash(),
+                  suggestionSchemaHash: runtime.cfxLinkSuggestionSchemaHash(),
+                  model: assertionRelativeLinkSuggestionModel,
+                }), { pool });
+            } catch (error) {
+              linkPersistenceFailure = { name: error?.name || "Error", message: error?.message || String(error) };
+              throw error;
+            } finally {
+              await artifacts.write("assertion-relative-link-suggestion/persistence-result.json", {
+                transactionOutcome: linkPersistenceFailure ? "rolled_back" : "committed",
+                failure: linkPersistenceFailure,
+                persisted: persistedLinks.map((row) => ({
+                  sourceAssertionId: row.sourceAssertionId,
+                  referenceClaimTaskLinkId: row.referenceClaimTaskLinkId,
+                  taskClaimId: row.taskClaimId,
+                  referenceContentId: row.referenceContentId,
+                  suggestedStance: row.suggestedStance,
+                  persistenceStatus: row.persistenceStatus,
+                })),
+              });
+            }
+          }
+          assertionRelativeExtractionSummary.persistedLinks = persistedLinks.length;
+          assertionRelativeExtractionSummary.linkSuggestionCalls = linkSuggestionResults.length;
+          assertionRelativeExtractionSummary.approvedLinks = approvedLinkSuggestions.length;
+          assertionRelativeExtractionSummary.insufficientDecisions = linkSuggestionResults.reduce(
+            (sum, row) => sum + row.insufficientSuggestions.length, 0,
+          );
+        }
       }
     } else {
       const REJECTED_BEARING_STATUSES = new Set(["rejected", "provider_failed"]);

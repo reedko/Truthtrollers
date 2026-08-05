@@ -31,5 +31,8 @@ export function runCfxAssertionRelativePacketExtractionForPair(
 export function projectCfxAssertionRelativeSourceAssertions(
   input: Record<string, any>,
 ): Array<Record<string, any>>;
+export function runCfxLinkSuggestionForCaseAssertion(
+  input: Record<string, any>,
+): Promise<Record<string, any>>;
 export function runCfxProductionEvidencePipeline(input: Record<string, any>): Promise<Record<string, any>>;
 export function runCfxPhase2Acquisition(input: Record<string, any>): Promise<Record<string, any>>;
