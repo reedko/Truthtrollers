@@ -6,6 +6,7 @@ import {
   findReusableEvidenceTextVersion,
   insertEvidenceScrapeBinding,
   normalizeEvidenceScrapeContext,
+  persistEvidenceAcquisitionAttempt,
   persistEvidenceScrapeCapture,
   persistEvidenceTextVersion,
   persistRawEvidenceScrapeReceipt,
@@ -126,6 +127,75 @@ test("raw provider/browser payload is inserted before derived capture", async ()
   assert.match(calls[0]!.sql, /^SELECT COALESCE\(MAX\(attempt_ordinal\)/m);
   assert.match(calls[1]!.sql, /^INSERT INTO cfx_evidence_acquisition_attempts/m);
   assert.equal(receipt.rawResponseSha256?.length, 64);
+});
+
+test("persistEvidenceAcquisitionAttempt accepts every governed cfx_evidence_acquisition_attempts.outcome value", async () => {
+  // Governed set from migrations/2026-07-31-01-cfx-evidence-scrape-bindings.sql;
+  // this list must stay in sync with that ENUM exactly.
+  const governedOutcomes = [
+    "acquired", "blocked", "failed", "unavailable", "snippet_only", "metadata_only",
+  ] as const;
+  for (const outcome of governedOutcomes) {
+    const calls: QueryCall[] = [];
+    const result = await persistEvidenceAcquisitionAttempt(
+      async (sql: string, values: unknown[] = []) => {
+        calls.push({ sql, values });
+        return { affectedRows: 1, insertId: 5 };
+      },
+      {
+        binding: { bindingId: 7, requestedUrl: "https://example.test/original" },
+        attemptOrdinal: 1,
+        acquisitionLane: "direct_http",
+        provider: "test",
+        requestUrl: "https://example.test/original",
+        outcome,
+      },
+    );
+    assert.equal(calls.length, 1);
+    assert.match(calls[0]!.sql, /^INSERT INTO cfx_evidence_acquisition_attempts/m);
+    assert.equal(calls[0]!.values[6], outcome, `outcome "${outcome}" must persist unchanged`);
+    assert.equal(result.acquisitionAttemptId, 5);
+  }
+});
+
+test("persistEvidenceAcquisitionAttempt fails closed before any SQL runs when outcome is not governed", async () => {
+  const calls: QueryCall[] = [];
+  await assert.rejects(
+    persistEvidenceAcquisitionAttempt(
+      async (sql: string, values: unknown[] = []) => {
+        calls.push({ sql, values });
+        return { affectedRows: 1, insertId: 5 };
+      },
+      {
+        binding: { bindingId: 7, requestedUrl: "https://example.test/original" },
+        attemptOrdinal: 1,
+        acquisitionLane: "direct_http",
+        provider: "test",
+        requestUrl: "https://example.test/original",
+        outcome: "parse_failure" as any,
+      },
+    ),
+    /outcome must be one of/,
+  );
+  assert.equal(calls.length, 0, "no query -- including the attempt-ordinal lookup or the INSERT -- may run once outcome fails validation");
+});
+
+test("persistEvidenceAcquisitionAttempt defaults to the governed \"acquired\" outcome when none is supplied", async () => {
+  const calls: QueryCall[] = [];
+  await persistEvidenceAcquisitionAttempt(
+    async (sql: string, values: unknown[] = []) => {
+      calls.push({ sql, values });
+      return { affectedRows: 1, insertId: 5 };
+    },
+    {
+      binding: { bindingId: 7, requestedUrl: "https://example.test/original" },
+      attemptOrdinal: 1,
+      acquisitionLane: "direct_http",
+      provider: "test",
+      requestUrl: "https://example.test/original",
+    },
+  );
+  assert.equal(calls[0]!.values[6], "acquired");
 });
 
 test("same hash is idempotent and changed content creates an immutable successor", async () => {

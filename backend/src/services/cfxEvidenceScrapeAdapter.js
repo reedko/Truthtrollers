@@ -3,6 +3,19 @@ import { createHash } from "node:crypto";
 const ID_RE = /^[A-Za-z0-9._:-]{1,191}$/;
 const SHA_RE = /^[a-f0-9]{64}$/;
 const TERMINAL = new Set(["completed", "failed", "expired"]);
+// Must match cfx_evidence_acquisition_attempts.outcome in
+// migrations/2026-07-31-01-cfx-evidence-scrape-bindings.sql exactly.
+const ACQUISITION_OUTCOMES = new Set([
+  "acquired", "blocked", "failed", "unavailable", "snippet_only", "metadata_only",
+]);
+
+function governedOutcome(value) {
+  const normalized = value || "acquired";
+  if (!ACQUISITION_OUTCOMES.has(normalized)) {
+    throw new TypeError(`outcome must be one of ${[...ACQUISITION_OUTCOMES].join(", ")}, got "${normalized}"`);
+  }
+  return normalized;
+}
 
 const hash = (value) => value == null
   ? null
@@ -141,7 +154,7 @@ export async function persistEvidenceAcquisitionAttempt(query, input) {
     [bindingId, positiveInteger(attemptOrdinal, "attemptOrdinal"),
       input.acquisitionLane || "production_scrape", input.provider || "extension",
       externalUrl(input.requestUrl ?? input.binding.requestedUrl, "requestUrl"),
-      externalUrl(input.resolvedUrl, "resolvedUrl", true), input.outcome || "acquired",
+      externalUrl(input.resolvedUrl, "resolvedUrl", true), governedOutcome(input.outcome),
       input.httpStatus ?? null, input.providerRequestId ?? null, input.errorCode ?? null,
       input.errorMessage ?? null, raw, hash(raw), json(input.responseMetadata ?? null),
       input.startedAt ?? new Date(), input.completedAt ?? new Date()],

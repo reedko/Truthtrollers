@@ -6,6 +6,9 @@ export class CfxQueryInputError extends Error {
   missingFields?: string[];
 }
 export function legacyDocumentQuality(candidate: Record<string, any>): number;
+export function outcomeForAcquisitionStatus(
+  status: string,
+): "acquired" | "failed" | "unavailable";
 export function assertCfxProductionSchemaReady(
   query: (sql: string, values?: unknown[]) => Promise<any>,
 ): Promise<void>;

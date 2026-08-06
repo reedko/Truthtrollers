@@ -13,6 +13,7 @@ const {
 } = productionEvidencePipeline;
 const persistCfxAcquiredText = (productionEvidencePipeline as any).persistCfxAcquiredText;
 const legacyDocumentQuality = (productionEvidencePipeline as any).legacyDocumentQuality;
+const outcomeForAcquisitionStatus = (productionEvidencePipeline as any).outcomeForAcquisitionStatus;
 
 test("document quality preserves the legacy trusted-domain boost without a provider call", () => {
   assert.ok(Math.abs(legacyDocumentQuality({
@@ -24,6 +25,23 @@ test("document quality preserves the legacy trusted-domain boost without a provi
   assert.equal(legacyDocumentQuality({
     retrievalScore:1.1,url:"https://www.nature.com/paper",
   }), 1.2);
+});
+
+test("outcomeForAcquisitionStatus maps every automatic-acquisition status to a governed cfx_evidence_acquisition_attempts.outcome value", () => {
+  // Governed set from migrations/2026-07-31-01-cfx-evidence-scrape-bindings.sql:
+  // 'acquired','blocked','failed','unavailable','snippet_only','metadata_only'.
+  const governed = new Set([
+    "acquired", "blocked", "failed", "unavailable", "snippet_only", "metadata_only",
+  ]);
+  assert.equal(outcomeForAcquisitionStatus("success"), "acquired");
+  assert.equal(outcomeForAcquisitionStatus("failed"), "failed");
+  assert.equal(outcomeForAcquisitionStatus("timeout"), "failed");
+  assert.equal(outcomeForAcquisitionStatus("not_found"), "unavailable");
+  assert.equal(outcomeForAcquisitionStatus("empty"), "unavailable");
+  assert.equal(outcomeForAcquisitionStatus("parse_failure"), "unavailable");
+  for (const status of ["success", "failed", "timeout", "not_found", "empty", "parse_failure", "anything_unrecognized"]) {
+    assert.ok(governed.has(outcomeForAcquisitionStatus(status)), `"${status}" must map to a governed outcome`);
+  }
 });
 
 test("structured academic acquisition reuses production identity and source-quality seams", async () => {

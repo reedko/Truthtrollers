@@ -339,6 +339,21 @@ function boundedDocumentsPerAssertion(value) {
   return parsed;
 }
 
+// fetchWithFallbacks/cfxAutomaticAcquisition report forensic-detail status
+// strings ("timeout", "not_found", "empty", "parse_failure", ...); the
+// production table stores a smaller, stable outcome enum. Never write a
+// raw status string into that enum -- map it down, same as acquisition lane.
+// The exact status is never lost: it is preserved verbatim in error_code.
+export function outcomeForAcquisitionStatus(status) {
+  if (status === "success") return "acquired";
+  if (status === "timeout" || status === "failed") return "failed";
+  // The request completed but no usable content resulted (nothing found,
+  // an empty/too-short body, or content that failed the genuine-article
+  // text guard) -- distinct from a technical failure to complete the request.
+  if (status === "not_found" || status === "empty" || status === "parse_failure") return "unavailable";
+  return "failed";
+}
+
 function earliestAssertionDiscovery(document, propositionId) {
   return (document.discoveryAssignments || [])
     .filter((assignment) => assignment.propositionId === propositionId)
@@ -814,7 +829,7 @@ export async function persistCfxAcquiredText({
       provider: row.method || "automatic",
       requestUrl: row.url || bindingRecord.sourceUrl,
       resolvedUrl: row.resolvedUrl,
-      outcome: row.status === "success" ? "acquired" : row.status,
+      outcome: outcomeForAcquisitionStatus(row.status),
       httpStatus: row.httpStatus,
       errorCode: row.status === "success" ? null : String(row.status || "failed").toUpperCase(),
       errorMessage: row.diagnostic,
