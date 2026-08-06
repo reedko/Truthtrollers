@@ -460,6 +460,8 @@ function buildPersistencePipelineHarness(options: { acceptedRows?: any[] } = {})
     artifactStoreFactory() {
       return { root: "memory/run", async initialize() {}, async write(file: string, value: unknown) { artifacts.set(file, value); }, async finalize() { return { root: "memory/run", aggregateSha256: "c".repeat(64) }; } };
     },
+    resolvePacketSelectionPythonExecutable() { return { executable: "stub-python3", source: "configured" }; },
+    async validatePacketSelectionPythonRuntime() { return { executable: "stub-python3", pythonVersion: "Python 3.12.0" }; },
     ...extra,
   });
 

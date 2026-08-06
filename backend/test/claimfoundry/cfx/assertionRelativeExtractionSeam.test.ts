@@ -279,6 +279,7 @@ function buildTwoPropositionSharedDocumentHarness() {
 
   let acquisitionCalls = 0;
   const packetSelectionCalls: string[] = [];
+  const packetSelectionOptionsCalls: any[] = [];
   const extractionCalls: string[] = [];
   const runtime: Record<string, unknown> = {
     aggregateCfxCanonicalDocuments,
@@ -299,8 +300,9 @@ function buildTwoPropositionSharedDocumentHarness() {
       await input.afterResponse({ request: requestP2, response: { results: [candB] }, provider: "tavily", providerRequestId: "web-2", latencyMs: 1 });
       return { outcomes: [{ request: requestP1, candidates: [candA] }, { request: requestP2, candidates: [candB] }], requestCount: 2, providerRequestCount: 2, providerFailureCount: 0 };
     },
-    async selectCfxAssertionRelativePackets(input: any) {
+    async selectCfxAssertionRelativePackets(input: any, options: any) {
       packetSelectionCalls.push(input.assertion.assertionId);
+      packetSelectionOptionsCalls.push(options);
       return {
         assertionId: input.assertion.assertionId, documentId: input.document.documentId,
         selectedPackets: [{ packetId: "PACKET-0001", blockIds: ["SOURCE-0001"], charStart: 0, charEnd: 20, text: "stub packet text." }],
@@ -320,10 +322,11 @@ function buildTwoPropositionSharedDocumentHarness() {
   };
 
   const artifacts = new Map<string, unknown>();
+  let runtimeLoaderCalls = 0;
   const runPipeline = (extra: Record<string, unknown>) => runCfxProductionEvidencePipeline({
     query, pool, taskContentId: 10, claimIds: [11, 12], expectedClaimCount: 2, documentsPerAssertion: 1,
     async schemaPreflight() {}, provider: {}, bearingProvider: {}, retrievalTransport: {},
-    async runtimeLoader() { return runtime; },
+    async runtimeLoader() { runtimeLoaderCalls += 1; return runtime; },
     async academicResolver() { return null; },
     async persistedTextResolver() { return null; },
     async automaticAcquirer() {
@@ -343,10 +346,16 @@ function buildTwoPropositionSharedDocumentHarness() {
     artifactStoreFactory() {
       return { root: "memory/run", async initialize() {}, async write(file: string, value: unknown) { artifacts.set(file, value); }, async finalize() { return { root: "memory/run", aggregateSha256: "c".repeat(64) }; } };
     },
+    resolvePacketSelectionPythonExecutable() { return { executable: "stub-python3", source: "configured" }; },
+    async validatePacketSelectionPythonRuntime() { return { executable: "stub-python3", pythonVersion: "Python 3.12.0" }; },
     ...extra,
   });
 
-  return { runPipeline, sqlCalls, artifacts, get acquisitionCalls() { return acquisitionCalls; }, packetSelectionCalls, extractionCalls };
+  return {
+    runPipeline, sqlCalls, artifacts, get acquisitionCalls() { return acquisitionCalls; },
+    packetSelectionCalls, packetSelectionOptionsCalls, extractionCalls,
+    get runtimeLoaderCalls() { return runtimeLoaderCalls; },
+  };
 }
 
 test("one document selected by two propositions: one acquisition, two independent packet-selection calls, two independent extraction calls", async () => {
@@ -406,5 +415,39 @@ test("assertion-relative extraction artifacts are captured per document/proposit
   for (const key of written) {
     const value = JSON.stringify(harness.artifacts.get(key));
     assert.ok(!value.includes("queryIntent"), `${key} must not include queryIntent`);
+  }
+});
+
+test("Python runtime gate: a failing validator rejects the whole pipeline before query planning/retrieval/runtimeLoader run", async () => {
+  const harness = buildTwoPropositionSharedDocumentHarness();
+  await assert.rejects(
+    harness.runPipeline({
+      assertionRelativeExtraction: true,
+      resolvePacketSelectionPythonExecutable() { return { executable: "/broken/python3", source: "configured" }; },
+      async validatePacketSelectionPythonRuntime() {
+        throw new Error("CFX packet-selection CLI failed to start under /broken/python3 (exit 1): ModuleNotFoundError: No module named 'numpy'");
+      },
+    }),
+    /packet-selection CLI failed to start/,
+  );
+  assert.equal(harness.runtimeLoaderCalls, 0, "must fail before the CFX runtime (query planning/retrieval) is even loaded");
+  assert.deepEqual(harness.packetSelectionCalls, [], "must fail before any per-document packet selection is attempted");
+});
+
+test("Python runtime gate: the resolved executable is exactly what reaches the packet-selection subprocess call, once per run", async () => {
+  const harness = buildTwoPropositionSharedDocumentHarness();
+  let resolveCalls = 0;
+  await harness.runPipeline({
+    assertionRelativeExtraction: true,
+    resolvePacketSelectionPythonExecutable() { resolveCalls += 1; return { executable: "/governed/.venv-cfx/bin/python3", source: "local_venv" }; },
+    async validatePacketSelectionPythonRuntime(input: any) {
+      assert.equal(input.executable, "/governed/.venv-cfx/bin/python3", "validation must run against the exact resolved executable");
+      return { executable: input.executable, pythonVersion: "Python 3.12.13" };
+    },
+  });
+  assert.equal(resolveCalls, 1, "resolution must happen exactly once per pipeline run, not once per document/proposition");
+  assert.ok(harness.packetSelectionOptionsCalls.length >= 1, "packet selection must actually run for at least one pair");
+  for (const options of harness.packetSelectionOptionsCalls) {
+    assert.equal(options.pythonExecutable, "/governed/.venv-cfx/bin/python3", "every packet-selection call must receive the governed resolved executable, never a bare default");
   }
 });

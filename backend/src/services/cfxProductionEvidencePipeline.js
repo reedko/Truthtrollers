@@ -36,6 +36,10 @@ import { ensureCfxSourceQuality } from "./cfxSourceQualityCompatibility.js";
 import { ensureCfxSourceCrest } from "./cfxSourceCrestCompatibility.js";
 import { acquireCfxDocumentAutomatically } from "./cfxAutomaticAcquisition.js";
 import { buildCfxOptionAAliases } from "./cfxOptionAAliases.js";
+import {
+  resolveCfxPacketSelectionPythonExecutable,
+  validateCfxPacketSelectionPythonRuntime,
+} from "./cfxPacketSelectionPythonRuntime.js";
 import logger from "../utils/logger.js";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -1344,12 +1348,18 @@ export async function runCfxProductionEvidencePipeline({
   linkSuggestionProvider = provider,
   assertionRelativeLinkSuggestionModel =
     process.env.CFX_ASSERTION_RELATIVE_LINK_SUGGESTION_MODEL || "gpt-4o-mini",
+  // pythonExecutable is intentionally absent here: it is resolved and
+  // validated below via resolvePacketSelectionPythonExecutable /
+  // validatePacketSelectionPythonRuntime, never defaulted to a bare
+  // "python3" that could silently pick up an interpreter lacking CFX's
+  // pinned dependencies (numpy, spacy, sentence-transformers, ...).
   packetSelectionOptions = {
-    pythonExecutable: process.env.CFX_PACKET_SELECTION_PYTHON_EXECUTABLE || "python3",
     embeddingModelCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_MODEL_CACHE || undefined,
     embeddingCache: process.env.CFX_PACKET_SELECTION_EMBEDDING_CACHE || undefined,
     lexicalOnly: process.env.CFX_PACKET_SELECTION_LEXICAL_ONLY === "true",
   },
+  resolvePacketSelectionPythonExecutable = resolveCfxPacketSelectionPythonExecutable,
+  validatePacketSelectionPythonRuntime = validateCfxPacketSelectionPythonRuntime,
 } = {}) {
   if (typeof query !== "function" || !pool) throw new TypeError("query and pool are required");
   const taskId = positive(taskContentId, "taskContentId");
@@ -1360,6 +1370,16 @@ export async function runCfxProductionEvidencePipeline({
     throw new TypeError(`CFX production evidence requires exactly ${expectedClaimCount} canonical claims`);
   }
   await schemaPreflight(query);
+  // Fail closed before query planning/retrieval spend any time or provider
+  // budget: the assertion-relative path shells out to a Python CLI with
+  // heavy pinned dependencies, so prove that interpreter is governed and
+  // actually starts before doing anything expensive. Never runs otherwise.
+  let resolvedPacketSelectionOptions = packetSelectionOptions;
+  if (assertionRelativeExtraction) {
+    const { executable } = resolvePacketSelectionPythonExecutable();
+    await validatePacketSelectionPythonRuntime({ executable });
+    resolvedPacketSelectionOptions = { ...packetSelectionOptions, pythonExecutable: executable };
+  }
   const runtime = await runtimeLoader();
   const runId = `cfx-prod-${taskId}-${Date.now()}-${randomUUID().slice(0, 8)}`;
   const artifacts = artifactStoreFactory(runtime, taskId, runId);
@@ -1599,7 +1619,7 @@ export async function runCfxProductionEvidencePipeline({
               documentKey: document.documentKey,
               referenceContentId: bindingRecord.referenceContentId,
               acquiredText: acquired.cleanedText,
-              packetSelectionOptions,
+              packetSelectionOptions: resolvedPacketSelectionOptions,
               artifacts,
             }));
           }
