@@ -83,7 +83,7 @@ export const wikidataProvider = {
           OPTIONAL { ?item wdt:P571 ?inception . }
           OPTIONAL { ?item wdt:P576 ?dissolved . }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-        } LIMIT 3
+        } LIMIT 10
       `;
       const data = await sparqlQuery(sparql);
       let bindings = data?.results?.bindings ?? [];
@@ -109,7 +109,7 @@ export const wikidataProvider = {
             OPTIONAL { ?item wdt:P571 ?inception . }
             OPTIONAL { ?item wdt:P576 ?dissolved . }
             SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
-          } LIMIT 3
+          } LIMIT 10
         `;
         const nameData = await sparqlQuery(nameSparql);
         bindings = nameData?.results?.bindings ?? [];
@@ -125,10 +125,20 @@ export const wikidataProvider = {
         ["operated_by", getVal(b, "operatorLabel")],
         ["founder", getVal(b, "founderLabel")],
       ].filter(([, name]) => name).map(([type, name]) => ({ type, name }));
+      // The SPARQL join fans out one row per P31 (instance-of) statement, so an
+      // entity with several instance-of values (e.g. ITU is both a "standards
+      // organization" and a "specialized agency of the United Nations") lands
+      // across multiple bindings for the same ?item. Classifying only
+      // bindings[0] picks whichever happened to sort first — often the least
+      // specific label. Classify against all instance-of labels for this item.
+      const sameItemInstanceLabels = bindings
+        .filter((row) => getVal(row, "item") === getVal(b, "item"))
+        .map((row) => getVal(row, "instanceLabel"))
+        .filter(Boolean);
       const normalized = {
         publisherName: getVal(b, "itemLabel"),
         domain: dom,
-        sourceType: classifyFromInstance(getVal(b, "instanceLabel") ?? ""),
+        sourceType: classifyFromInstance(sameItemInstanceLabels.join(" | ")),
         country: getVal(b, "countryLabel"),
         aliases: getVal(b, "itemAltLabel")?.split(", ") ?? [],
         instanceOf: getVal(b, "instanceLabel"),

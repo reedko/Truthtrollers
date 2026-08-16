@@ -10,46 +10,22 @@
 import React, { useId } from "react";
 import { Tooltip } from "@chakra-ui/react";
 import { SourceType, Reliability } from "../utils/normalizeSourceProfile";
-import { buildSourceCrestSashStops, clampAlignmentRiskScore, sourceCrestMarkerFontSize } from "../utils/sourceCrestVisual";
+import {
+  buildSourceCrestSashStops,
+  clampAlignmentRiskScore,
+  sourceCrestMarkerFontSize,
+  parseAdmiraltyCode,
+  ADMIRALTY_COLORS,
+  ADMIRALTY_LETTER_LABEL,
+  ADMIRALTY_NUMBER_LABEL,
+  SOURCE_CREST_SHIELD as SHIELD,
+  SOURCE_CREST_BEVEL as BEVEL,
+  SOURCE_CREST_SHINE as SHINE,
+  SOURCE_CREST_SASH as SASH,
+  type SourceAlignment,
+} from "../utils/sourceCrestVisual";
 
-// Admiralty letter A-E → color  green → teal → blue → amber → red  (Ø = gray)
-const ADMIRALTY_COLORS: Record<string, { base: string; mid: string; glow: string; rim: string }> = {
-  A:   { base: "#052E12", mid: "#16A34A", glow: "#22C55E", rim: "#86EFAC" }, // green
-  B:   { base: "#0D2E2E", mid: "#0F766E", glow: "#14B8A6", rim: "#99F6E4" }, // teal
-  C:   { base: "#061428", mid: "#1D6FA8", glow: "#00A2FF", rim: "#BAE6FD" }, // MR-blue (neutral center)
-  D:   { base: "#4A2C07", mid: "#B7791F", glow: "#F6AD55", rim: "#FBD38D" }, // amber
-  E:   { base: "#450A0A", mid: "#B91C1C", glow: "#EF4444", rim: "#FCA5A5" }, // red
-  "Ø": { base: "#1A202C", mid: "#4A5568", glow: "#718096", rim: "#A0AEC0" }, // gray
-};
-
-const ADMIRALTY_LETTER_LABEL: Record<string, string> = {
-  A:   "Highly reliable source",
-  B:   "Usually reliable source",
-  C:   "Mixed / context-dependent",
-  D:   "Questionable source",
-  E:   "Unreliable source",
-  "Ø": "Source not yet assessed",
-};
-
-const ADMIRALTY_NUMBER_LABEL: Record<string, string> = {
-  "1": "Confirmed by authoritative evidence",
-  "2": "Probably true",
-  "3": "Possibly true, needs corroboration",
-  "4": "Doubtful / contested",
-  "5": "Probably false",
-  "Ø": "Claim not yet assessed",
-};
-
-export interface SourceAlignment {
-  marker: "IND" | "ADV" | "GOV" | "CORP" | "PART" | "SPON" | "STATE" | string;
-  type?: string;
-  label: string;
-  riskScore?: number | null;
-  degree?: "low" | "moderate" | "high" | "unknown" | string;
-  explanation?: string | null;
-  confidence?: number | null;
-  provenance?: string;
-}
+export type { SourceAlignment };
 
 // Width in px — height is always width × 1.25 (64:80 shield ratio)
 const SIZE_PX: Record<"xs" | "sm" | "md" | "lg" | "xl", number> = {
@@ -75,11 +51,6 @@ interface SourceCrestProps {
   onClick?: (e?: React.MouseEvent) => void;
 }
 
-const SHIELD = "M32,76 C13,67 5,55 5,43 L5,12 Q5,5 12,5 L52,5 Q59,5 59,12 L59,43 C59,55 51,67 32,76 Z";
-const BEVEL  = "M32,74 C15,65 7,54 7,43 L7,13 Q7,7 13,7 L51,7 Q57,7 57,13 L57,43 C57,54 49,65 32,74 Z";
-const SHINE  = "M14,8 Q14,7 20,7 L44,7 Q50,7 50,8 L50,22 Q32,28 14,22 Z";
-const SASH   = "M2,22 L62,42 L62,67 L2,47 Z";
-
 const SourceCrest: React.FC<SourceCrestProps> = ({
   publisherName,
   sourceType = "unknown",
@@ -99,10 +70,7 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
 
   // Always Admiralty mode. F and 6 are legacy DB values that display as Ø.
   // No code → ØØ (not yet assessed).
-  const rawLetter = (admiraltyCode?.match(/^([A-EFØ])/u)?.[1] ?? "Ø");
-  const rawNumber = (admiraltyCode?.match(/([1-6Ø])$/u)?.[1] ?? "Ø");
-  const admLetter = rawLetter === "F" ? "Ø" : rawLetter;
-  const admNumber = rawNumber === "6" ? "Ø" : rawNumber;
+  const { letter: admLetter, number: admNumber } = parseAdmiraltyCode(admiraltyCode);
 
   const c = ADMIRALTY_COLORS[admLetter] ?? ADMIRALTY_COLORS["Ø"];
 

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requirePermission, userHasPermission, userHasRole } from "../../middleware/permissions.js";
 import { authenticateToken } from "../../middleware/auth.js";
+import { attachSourceAlignments } from "../../services/ownSiteOrgStatusService.js";
 
 export default function createReferencesRoutes({ query, pool }) {
   const router = Router();
@@ -219,7 +220,14 @@ export default function createReferencesRoutes({ query, pool }) {
           return { ...ref, claims };
         });
 
-        res.json(filteredReferences);
+        // The SourceCrest sash must come from one place: attachSourceAlignments
+        // (same helper SourceDetailModal's /api/publishers/:id/enrichment uses).
+        // Do not re-derive IND/GOV/ADV markers here.
+        const alignedReferences = await attachSourceAlignments(query, filteredReferences, {
+          publisherIdField: "publisher_id",
+        });
+
+        res.json(alignedReferences);
       } catch (err) {
         console.error("Error fetching references with claims:", err);
         res.status(500).json({ error: "Database error" });

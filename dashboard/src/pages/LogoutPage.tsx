@@ -2,12 +2,14 @@ import React, { useEffect } from "react";
 import { Box, Heading, Text, Spinner } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { generateDeviceFingerprint } from "../utils/generateDeviceFingerprint";
+import { useAuthStore } from "../store/useAuthStore";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Import your generateExtensionFingerprint util if possible
 // (If you have to duplicate it, just copy the logic from your extension)
 
 const LogoutPage: React.FC = () => {
   const navigate = useNavigate();
+  const logout = useAuthStore((s) => s.logout);
 
   useEffect(() => {
     // Immediately attempt to clear backend session
@@ -20,11 +22,16 @@ const LogoutPage: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fingerprint }),
         });
-        // Optionally: clear local storage, etc.
-        localStorage.removeItem("jwt");
-        sessionStorage.removeItem("jwt");
       } catch (err) {
         console.error("Error logging out on backend:", err);
+      } finally {
+        logout();
+        localStorage.removeItem("auth-storage");
+        localStorage.removeItem("jwt");
+        sessionStorage.removeItem("jwt");
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+        document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       }
     }
     logoutBackend();
@@ -34,7 +41,7 @@ const LogoutPage: React.FC = () => {
     }, 2000);
 
     return () => clearTimeout(timeout);
-  }, [navigate]);
+  }, [navigate, logout]);
 
   return (
     <Box textAlign="center" mt={20}>

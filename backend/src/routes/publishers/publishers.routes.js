@@ -2,6 +2,8 @@
 import { Router } from "express";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
 import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
+import logger from "../../utils/logger.js";
+import { attachSourceAlignments } from "../../services/ownSiteOrgStatusService.js";
 
 // Reject localhost, loopback, and RFC-1918 URLs — these are dev-server or API
 // self-references that should never be treated as article source URLs.
@@ -16,7 +18,8 @@ function sanitizeSourceUrl(raw) {
       /^10\./.test(hostname) ||
       /^192\.168\./.test(hostname) ||
       /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
-    ) return null;
+    )
+      return null;
     return raw;
   } catch {
     return null;
@@ -30,48 +33,97 @@ function buildProviderResultsFromDb(ratings, profiles) {
   for (const r of ratings) {
     const src = (r.source ?? "").toLowerCase();
     if (src.includes("allsides")) {
-      results.push({ providerName: "allsides", matchFound: true, status: "found",
-        normalized: { biasLabel: r.rating_label, biasScore: r.bias_score } });
+      results.push({
+        providerName: "allsides",
+        matchFound: true,
+        status: "found",
+        normalized: { biasLabel: r.rating_label, biasScore: r.bias_score },
+      });
     } else if (src.includes("ad fontes") || src.includes("adfont")) {
       const score = r.veracity_score;
-      const reliability = score == null ? null
-        : score >= 60 ? "high" : score >= 40 ? "medium" : score >= 30 ? "mixed" : "low";
-      results.push({ providerName: "adfontes", matchFound: true, status: "found",
-        normalized: { reliability, veracityScore: score, biasScore: r.bias_score } });
+      const reliability =
+        score == null
+          ? null
+          : score >= 60
+            ? "high"
+            : score >= 40
+              ? "medium"
+              : score >= 30
+                ? "mixed"
+                : "low";
+      results.push({
+        providerName: "adfontes",
+        matchFound: true,
+        status: "found",
+        normalized: {
+          reliability,
+          veracityScore: score,
+          biasScore: r.bias_score,
+        },
+      });
     } else if (src.includes("mbfc") || src.includes("media bias")) {
       const score = r.veracity_score;
-      const reliability = score == null ? null : score >= 60 ? "high" : score >= 40 ? "medium" : "low";
-      results.push({ providerName: "mbfc", matchFound: true, status: "found",
-        normalized: { reliability } });
+      const reliability =
+        score == null
+          ? null
+          : score >= 60
+            ? "high"
+            : score >= 40
+              ? "medium"
+              : "low";
+      results.push({
+        providerName: "mbfc",
+        matchFound: true,
+        status: "found",
+        normalized: { reliability },
+      });
     }
   }
   for (const p of profiles) {
     const src = (p.source ?? "").toLowerCase();
     if (src.includes("wikipedia"))
-      results.push({ providerName: "wikipedia", matchFound: true, status: "found" });
+      results.push({
+        providerName: "wikipedia",
+        matchFound: true,
+        status: "found",
+      });
     if (src.includes("wikidata"))
-      results.push({ providerName: "wikidata", matchFound: true, status: "found" });
+      results.push({
+        providerName: "wikidata",
+        matchFound: true,
+        status: "found",
+      });
   }
   return results;
 }
 
 function isAutomaticScholarlyOrWikiRow(row) {
-  return /^(wikipedia|wikidata|scimago)$/i.test(String(row?.source || row?.provider || ""));
+  return /^(wikipedia|wikidata|scimago)$/i.test(
+    String(row?.source || row?.provider || ""),
+  );
 }
 
 function hasDirectRatingSignal(ratings) {
-  return ratings.some((rating) =>
-    rating.veracity_score != null ||
-    rating.bias_score != null ||
-    (rating.rating_label && !isAutomaticScholarlyOrWikiRow(rating))
+  return ratings.some(
+    (rating) =>
+      rating.veracity_score != null ||
+      rating.bias_score != null ||
+      (rating.rating_label && !isAutomaticScholarlyOrWikiRow(rating)),
   );
 }
 
 function isGenericSocialPublisher(publisher) {
-  const name = String(publisher?.publisher_name || "").trim().toLowerCase();
-  const domain = String(publisher?.domain || "").trim().toLowerCase();
-  return /^(facebook|facebook\.com|twitter\/x|twitter|twitter\.com|x|x\.com|instagram|instagram\.com|tiktok|tiktok\.com)$/.test(name) ||
-    /^(facebook|twitter|x|instagram|tiktok)\.com$/.test(domain);
+  const name = String(publisher?.publisher_name || "")
+    .trim()
+    .toLowerCase();
+  const domain = String(publisher?.domain || "")
+    .trim()
+    .toLowerCase();
+  return (
+    /^(facebook|facebook\.com|twitter\/x|twitter|twitter\.com|x|x\.com|instagram|instagram\.com|tiktok|tiktok\.com)$/.test(
+      name,
+    ) || /^(facebook|twitter|x|instagram|tiktok)\.com$/.test(domain)
+  );
 }
 
 export default function createPublishersRoutes({ query, pool }) {
@@ -84,9 +136,13 @@ export default function createPublishersRoutes({ query, pool }) {
    */
   router.get("/api/source-identity", async (req, res) => {
     const { url, force } = req.query;
-    if (!url) return res.status(400).json({ error: "url query param required" });
+    if (!url)
+      return res.status(400).json({ error: "url query param required" });
     const safeUrl = sanitizeSourceUrl(url);
-    if (!safeUrl) return res.status(400).json({ error: "url must be a public external URL" });
+    if (!safeUrl)
+      return res
+        .status(400)
+        .json({ error: "url must be a public external URL" });
     try {
       const identity = await resolveSourceIdentity(safeUrl, {
         query,
@@ -104,27 +160,29 @@ export default function createPublishersRoutes({ query, pool }) {
    */
   router.get("/api/source-identity/debug-report", async (req, res) => {
     try {
-      const [total]     = await query(`SELECT COUNT(*) AS n FROM source_identity_cache`);
-      const byLevel     = await query(
-        `SELECT resolution_level, COUNT(*) AS n FROM source_identity_cache GROUP BY resolution_level ORDER BY resolution_level`
+      const [total] = await query(
+        `SELECT COUNT(*) AS n FROM source_identity_cache`,
       );
-      const byStatus    = await query(
-        `SELECT resolution_status, COUNT(*) AS n FROM source_identity_cache GROUP BY resolution_status`
+      const byLevel = await query(
+        `SELECT resolution_level, COUNT(*) AS n FROM source_identity_cache GROUP BY resolution_level ORDER BY resolution_level`,
       );
-      const byKind      = await query(
-        `SELECT source_identity_kind, COUNT(*) AS n FROM source_identity_cache GROUP BY source_identity_kind`
+      const byStatus = await query(
+        `SELECT resolution_status, COUNT(*) AS n FROM source_identity_cache GROUP BY resolution_status`,
+      );
+      const byKind = await query(
+        `SELECT source_identity_kind, COUNT(*) AS n FROM source_identity_cache GROUP BY source_identity_kind`,
       );
       const needsReview = await query(
-        `SELECT COUNT(*) AS n FROM source_identity_cache WHERE needs_human_review = 1`
+        `SELECT COUNT(*) AS n FROM source_identity_cache WHERE needs_human_review = 1`,
       );
       const withPublisher = await query(
-        `SELECT COUNT(*) AS n FROM source_identity_cache WHERE publisher_id IS NOT NULL`
+        `SELECT COUNT(*) AS n FROM source_identity_cache WHERE publisher_id IS NOT NULL`,
       );
       res.json({
-        total:              total[0]?.n ?? 0,
-        withPublisher:      withPublisher[0]?.n ?? 0,
-        needsHumanReview:   needsReview[0]?.n ?? 0,
-        byResolutionLevel:  byLevel,
+        total: total[0]?.n ?? 0,
+        withPublisher: withPublisher[0]?.n ?? 0,
+        needsHumanReview: needsReview[0]?.n ?? 0,
+        byResolutionLevel: byLevel,
         byResolutionStatus: byStatus,
         byKind,
       });
@@ -140,9 +198,13 @@ export default function createPublishersRoutes({ query, pool }) {
    */
   router.get("/api/source-lineage", async (req, res) => {
     const { url, force } = req.query;
-    if (!url) return res.status(400).json({ error: "url query param required" });
+    if (!url)
+      return res.status(400).json({ error: "url query param required" });
     const safeUrl = sanitizeSourceUrl(url);
-    if (!safeUrl) return res.status(400).json({ error: "url must be a public external URL" });
+    if (!safeUrl)
+      return res
+        .status(400)
+        .json({ error: "url must be a public external URL" });
     try {
       const lineage = await resolveSourceLineage(safeUrl, {
         query,
@@ -212,10 +274,15 @@ export default function createPublishersRoutes({ query, pool }) {
          WHERE cp.content_id = ?
          ORDER BY cp.content_publisher_id DESC
          LIMIT 1`,
-        [contentId]
+        [contentId],
       );
       if (!rows.length) {
-        return res.json({ publisher_id: null, publisher_name: null, admiralty_code: null, admiralty_source: null });
+        return res.json({
+          publisher_id: null,
+          publisher_name: null,
+          admiralty_code: null,
+          admiralty_source: null,
+        });
       }
       res.json({
         publisher_id: rows[0].publisher_id,
@@ -239,14 +306,20 @@ export default function createPublishersRoutes({ query, pool }) {
     const { url, contentId } = req.body;
     if (!url) return res.status(400).json({ error: "url required" });
     const safeUrl = sanitizeSourceUrl(url);
-    if (!safeUrl) return res.status(400).json({ error: "url must be a public external URL" });
+    if (!safeUrl)
+      return res
+        .status(400)
+        .json({ error: "url must be a public external URL" });
     try {
-      const identity = await resolveSourceIdentity(safeUrl, { query, force: true });
+      const identity = await resolveSourceIdentity(safeUrl, {
+        query,
+        force: true,
+      });
       // If we matched a publisher and have a contentId, link them
       if (identity.publisherId && contentId) {
         await query(
           `INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`,
-          [contentId, identity.publisherId]
+          [contentId, identity.publisherId],
         );
       }
       res.json(identity);
@@ -271,26 +344,38 @@ export default function createPublishersRoutes({ query, pool }) {
       // 1. Create or find publisher (owner/icon slots are NULL — domain used only for enrichment)
       const rows = await query(
         `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`,
-        [name.trim()]
+        [name.trim()],
       );
       const publisherId = rows[0]?.[0]?.publisherId;
       if (!publisherId) {
-        return res.status(500).json({ error: "InsertOrGetPublisher returned no ID" });
+        return res
+          .status(500)
+          .json({ error: "InsertOrGetPublisher returned no ID" });
       }
 
       // 2. Replace any existing publisher link for this content (re-link replaces, not appends)
       if (contentId) {
-        await query(`DELETE FROM content_publishers WHERE content_id = ?`, [contentId]);
-        await query(`INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`, [contentId, publisherId]);
+        await query(`DELETE FROM content_publishers WHERE content_id = ?`, [
+          contentId,
+        ]);
+        await query(
+          `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`,
+          [contentId, publisherId],
+        );
       }
 
       // 3. Update source_identity_cache with the confirmed publisher name + real article URL
       if (sourceUrl) {
-        resolveSourceIdentity(sourceUrl, { query, hintName: name.trim(), force: true }).catch(() => {});
+        resolveSourceIdentity(sourceUrl, {
+          query,
+          hintName: name.trim(),
+          force: true,
+        }).catch(() => {});
       }
 
       // 4. Run enrichment (awaited — user wants results now)
-      const { enrichPublisherIfNeeded } = await import("../../services/publisherEnrichmentService.js");
+      const { enrichPublisherIfNeeded } =
+        await import("../../services/publisherEnrichmentService.js");
       const enrichResult = await enrichPublisherIfNeeded({
         query,
         publisherId,
@@ -305,38 +390,62 @@ export default function createPublishersRoutes({ query, pool }) {
       let admiraltyCode = null;
       const admiraltyUpdates = {};
       try {
-        const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../../services/admiraltyEvaluator.js");
+        const { evaluateAdmiraltyCode, storeEvaluation } =
+          await import("../../../services/admiraltyEvaluator.js");
         const [profileRows, ratingRows] = await Promise.all([
-          query(`SELECT source, source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`, [publisherId]),
-          query(`SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`, [publisherId]),
+          query(
+            `SELECT source, source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
+            [publisherId],
+          ),
+          query(
+            `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`,
+            [publisherId],
+          ),
         ]);
         const evaluation = await evaluateAdmiraltyCode({
           publisherName: name.trim(),
-          sourceIdentity: { sourceType: profileRows[0]?.source_type ?? null, resolutionLevel: ratingRows.length > 0 ? 5 : 3 },
+          sourceIdentity: {
+            sourceType: profileRows[0]?.source_type ?? null,
+            resolutionLevel: ratingRows.length > 0 ? 5 : 3,
+          },
           existingSourceRatings: ratingRows,
           providerResults: buildProviderResultsFromDb(ratingRows, profileRows),
         });
-        if (evaluation.sourceReliabilityLetter && evaluation.sourceReliabilityLetter !== "Ø") {
+        if (
+          evaluation.sourceReliabilityLetter &&
+          evaluation.sourceReliabilityLetter !== "Ø"
+        ) {
           admiraltyCode = evaluation.admiraltyCode;
           await storeEvaluation(query, {
-            targetType: "publisher", targetId: publisherId,
-            sourceUrl: sourceUrl ?? null, publisherId,
+            targetType: "publisher",
+            targetId: publisherId,
+            sourceUrl: sourceUrl ?? null,
+            publisherId,
             evaluation,
           });
           if (contentId) {
             await storeEvaluation(query, {
-              targetType: "content", targetId: contentId,
-              sourceUrl: sourceUrl ?? null, publisherId,
+              targetType: "content",
+              targetId: contentId,
+              sourceUrl: sourceUrl ?? null,
+              publisherId,
               evaluation,
             });
             admiraltyUpdates[contentId] = admiraltyCode;
           }
         }
       } catch (e) {
-        console.error("[enrich-and-link] Admiralty evaluation failed:", e.message);
+        console.error(
+          "[enrich-and-link] Admiralty evaluation failed:",
+          e.message,
+        );
       }
 
-      res.json({ publisherId, publisherName: name.trim(), enrichResult: { ...enrichResult, admiraltyCode, admiraltyUpdates } });
+      res.json({
+        publisherId,
+        publisherName: name.trim(),
+        enrichResult: { ...enrichResult, admiraltyCode, admiraltyUpdates },
+      });
     } catch (err) {
       console.error("Error in enrich-and-link:", err);
       res.status(500).json({ error: err.message });
@@ -395,54 +504,86 @@ export default function createPublishersRoutes({ query, pool }) {
         FROM publishers a
         JOIN content_publishers ta ON a.publisher_id = ta.publisher_id
         WHERE ta.content_id = ?`,
-        [taskId]
+        [taskId],
       );
 
-      console.log(`[publishers/${taskId}] rows returned: ${rows.length}, codes: ${rows.map(r => r.publisher_name + ':' + r.admiralty_code).join(', ')}`);
+      console.log(
+        `[publishers/${taskId}] rows returned: ${rows.length}, codes: ${rows.map((r) => r.publisher_name + ":" + r.admiralty_code).join(", ")}`,
+      );
 
       // Auto-evaluate any publisher missing a code but with existing ratings/profiles.
-      const missing = rows.filter(r => !r.admiralty_code);
-      console.log(`[publishers/${taskId}] missing codes: ${missing.map(r => r.publisher_name).join(', ') || 'none'}`);
+      const missing = rows.filter((r) => !r.admiralty_code);
+      console.log(
+        `[publishers/${taskId}] missing codes: ${missing.map((r) => r.publisher_name).join(", ") || "none"}`,
+      );
       if (missing.length > 0) {
         try {
-          const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../../services/admiraltyEvaluator.js");
-          await Promise.all(missing.map(async (pub) => {
-            const [ratings, profiles] = await Promise.all([
-              query(
-                `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence
+          const { evaluateAdmiraltyCode, storeEvaluation } =
+            await import("../../../services/admiraltyEvaluator.js");
+          await Promise.all(
+            missing.map(async (pub) => {
+              const [ratings, profiles] = await Promise.all([
+                query(
+                  `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence
                  FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`,
-                [pub.publisher_id]
-              ),
-              query(
-                `SELECT source, source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
-                [pub.publisher_id]
-              ),
-            ]);
-            console.log(`[publishers/${taskId}] ${pub.publisher_name}: ratings=${ratings.length}, profiles=${profiles.length}, sourceType=${profiles[0]?.source_type}`);
-            if (ratings.length === 0 && profiles.length === 0) return;
-            const evaluation = await evaluateAdmiraltyCode({
-              publisherName: pub.publisher_name,
-              sourceIdentity: { sourceType: profiles[0]?.source_type ?? null, resolutionLevel: ratings.length > 0 ? 5 : 3 },
-              existingSourceRatings: ratings,
-              providerResults: buildProviderResultsFromDb(ratings, profiles),
-            });
-            console.log(`[publishers/${taskId}] ${pub.publisher_name}: evaluated → ${evaluation.admiraltyCode} (letter=${evaluation.sourceReliabilityLetter})`);
-            if (evaluation.sourceReliabilityLetter && evaluation.sourceReliabilityLetter !== "Ø") {
-              pub.admiralty_code = evaluation.admiraltyCode;
-              await storeEvaluation(query, {
-                targetType: "publisher", targetId: pub.publisher_id,
-                sourceUrl: null, publisherId: pub.publisher_id,
-                evaluation,
+                  [pub.publisher_id],
+                ),
+                query(
+                  `SELECT source, source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
+                  [pub.publisher_id],
+                ),
+              ]);
+              console.log(
+                `[publishers/${taskId}] ${pub.publisher_name}: ratings=${ratings.length}, profiles=${profiles.length}, sourceType=${profiles[0]?.source_type}`,
+              );
+              if (ratings.length === 0 && profiles.length === 0) return;
+              const evaluation = await evaluateAdmiraltyCode({
+                publisherName: pub.publisher_name,
+                sourceIdentity: {
+                  sourceType: profiles[0]?.source_type ?? null,
+                  resolutionLevel: ratings.length > 0 ? 5 : 3,
+                },
+                existingSourceRatings: ratings,
+                providerResults: buildProviderResultsFromDb(ratings, profiles),
               });
-              console.log(`[publishers/${taskId}] ${pub.publisher_name}: stored ${evaluation.admiraltyCode}`);
-            }
-          }));
+              console.log(
+                `[publishers/${taskId}] ${pub.publisher_name}: evaluated → ${evaluation.admiraltyCode} (letter=${evaluation.sourceReliabilityLetter})`,
+              );
+              if (
+                evaluation.sourceReliabilityLetter &&
+                evaluation.sourceReliabilityLetter !== "Ø"
+              ) {
+                pub.admiralty_code = evaluation.admiraltyCode;
+                await storeEvaluation(query, {
+                  targetType: "publisher",
+                  targetId: pub.publisher_id,
+                  sourceUrl: null,
+                  publisherId: pub.publisher_id,
+                  evaluation,
+                });
+                console.log(
+                  `[publishers/${taskId}] ${pub.publisher_name}: stored ${evaluation.admiraltyCode}`,
+                );
+              }
+            }),
+          );
         } catch (e) {
-          console.error("[publishers list] Auto-admiralty failed:", e.message, e.stack);
+          console.error(
+            "[publishers list] Auto-admiralty failed:",
+            e.message,
+            e.stack,
+          );
         }
       }
 
-      res.json(rows);
+      // The SourceCrest sash must come from one place: attachSourceAlignments
+      // (same helper SourceDetailModal's /api/publishers/:id/enrichment uses).
+      // Do not re-derive IND/GOV/ADV markers here.
+      const alignedRows = await attachSourceAlignments(query, rows, {
+        publisherIdField: "publisher_id",
+      });
+
+      res.json(alignedRows);
     } catch (err) {
       console.error(err);
       res.status(500).send("Error fetching publishers");
@@ -459,19 +600,31 @@ export default function createPublishersRoutes({ query, pool }) {
     const publisher = req.body.publisher; // Expect a single publisher object
 
     if (!contentId || !publisher?.name) {
-      return res.status(400).json({ error: "contentId and publisher.name are required" });
+      return res
+        .status(400)
+        .json({ error: "contentId and publisher.name are required" });
     }
 
     try {
-      const result = await query(`CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`, [publisher.name]);
+      const result = await query(
+        `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`,
+        [publisher.name],
+      );
       const publisherId = result[0][0].publisherId;
 
       if (!publisherId) {
-        return res.status(500).json({ error: "InsertOrGetPublisher returned no ID" });
+        return res
+          .status(500)
+          .json({ error: "InsertOrGetPublisher returned no ID" });
       }
 
-      await query(`INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`, [contentId, publisherId]);
-      res.status(200).json({ publisherId, message: "Publisher linked successfully" });
+      await query(
+        `INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`,
+        [contentId, publisherId],
+      );
+      res
+        .status(200)
+        .json({ publisherId, message: "Publisher linked successfully" });
     } catch (error) {
       console.error("Error inserting publisher:", error);
       res.status(500).json({ error: "Error adding publisher" });
@@ -482,18 +635,21 @@ export default function createPublishersRoutes({ query, pool }) {
    * DELETE /api/content/:contentId/publishers/:publisherId
    * Remove publisher from content
    */
-  router.delete("/api/content/:contentId/publishers/:publisherId", async (req, res) => {
-    const { contentId, publisherId } = req.params;
+  router.delete(
+    "/api/content/:contentId/publishers/:publisherId",
+    async (req, res) => {
+      const { contentId, publisherId } = req.params;
 
-    try {
-      const sql = `DELETE FROM content_publishers WHERE content_id = ? AND publisher_id = ?`;
-      await query(sql, [contentId, publisherId]);
-      res.status(200).send("Publisher removed successfully");
-    } catch (error) {
-      console.error("Error removing publisher:", error);
-      res.status(500).send("Error removing publisher");
-    }
-  });
+      try {
+        const sql = `DELETE FROM content_publishers WHERE content_id = ? AND publisher_id = ?`;
+        await query(sql, [contentId, publisherId]);
+        res.status(200).send("Publisher removed successfully");
+      } catch (error) {
+        console.error("Error removing publisher:", error);
+        res.status(500).send("Error removing publisher");
+      }
+    },
+  );
 
   /**
    * PUT /api/publishers/:publisherId/bio
@@ -506,7 +662,7 @@ export default function createPublishersRoutes({ query, pool }) {
     try {
       await query(
         `UPDATE publishers SET description = ? WHERE publisher_id = ?`,
-        [description, publisherId]
+        [description, publisherId],
       );
       res.send({ success: true });
     } catch (err) {
@@ -555,7 +711,7 @@ export default function createPublishersRoutes({ query, pool }) {
       const rows = await query(
         `SELECT DISTINCT t.topic_id, t.topic_name
          FROM publisher_ratings pr
-         JOIN topics t ON pr.topic_id = t.topic_id`
+         JOIN topics t ON pr.topic_id = t.topic_id`,
       );
       res.send(rows);
     } catch (err) {
@@ -593,7 +749,7 @@ export default function createPublishersRoutes({ query, pool }) {
           (err) => {
             if (err) reject(err);
             else resolve();
-          }
+          },
         );
       });
 
@@ -615,7 +771,7 @@ export default function createPublishersRoutes({ query, pool }) {
             (err) => {
               if (err) reject(err);
               else resolve();
-            }
+            },
           );
         });
       }
@@ -647,11 +803,13 @@ export default function createPublishersRoutes({ query, pool }) {
       // Verify ownership before updating
       const [existing] = await query(
         `SELECT user_id FROM publisher_ratings WHERE publisher_rating_id = ?`,
-        [publisherRatingId]
+        [publisherRatingId],
       );
 
       if (!existing || existing.user_id !== userId) {
-        return res.status(403).json({ error: "Cannot update another user's rating" });
+        return res
+          .status(403)
+          .json({ error: "Cannot update another user's rating" });
       }
 
       await query(
@@ -666,7 +824,7 @@ export default function createPublishersRoutes({ query, pool }) {
           veracity_score,
           notes || null,
           publisherRatingId,
-        ]
+        ],
       );
 
       res.send({ success: true });
@@ -688,11 +846,17 @@ export default function createPublishersRoutes({ query, pool }) {
     const hasContentId = Number.isFinite(contentId);
 
     try {
-      const [[publisher], rawRatings, rawProfiles, rawExternalSignals, [admRow]] = await Promise.all([
+      const [
+        [publisher],
+        rawRatings,
+        rawProfiles,
+        rawExternalSignals,
+        [admRow],
+      ] = await Promise.all([
         query(
           `SELECT publisher_id, publisher_name, domain, publisher_icon, description
            FROM publishers WHERE publisher_id = ? LIMIT 1`,
-          [publisherId]
+          [publisherId],
         ),
         query(
           `SELECT publisher_rating_id, source, rating_label, rating_type,
@@ -701,7 +865,7 @@ export default function createPublishersRoutes({ query, pool }) {
            FROM publisher_ratings
            WHERE publisher_id = ? AND user_id IS NULL
            ORDER BY last_checked DESC`,
-          [publisherId]
+          [publisherId],
         ),
         query(
           `SELECT publisher_profile_id, source, profile_url, description,
@@ -711,7 +875,7 @@ export default function createPublishersRoutes({ query, pool }) {
            FROM publisher_profiles
            WHERE publisher_id = ?
            ORDER BY last_checked DESC`,
-          [publisherId]
+          [publisherId],
         ),
         query(
           `SELECT provider, signal_type, admiralty_effect_type, normalized_score,
@@ -723,7 +887,7 @@ export default function createPublishersRoutes({ query, pool }) {
               AND (expires_at IS NULL OR expires_at > NOW())
             ORDER BY retrieved_at DESC, id DESC
             LIMIT 80`,
-          [publisherId]
+          [publisherId],
         ).catch((err) => {
           if (err?.code === "ER_NO_SUCH_TABLE") return [];
           throw err;
@@ -735,7 +899,7 @@ export default function createPublishersRoutes({ query, pool }) {
            ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
                     updated_at DESC
            LIMIT 1`,
-          [publisherId]
+          [publisherId],
         ),
       ]);
 
@@ -751,7 +915,12 @@ export default function createPublishersRoutes({ query, pool }) {
         ? rawProfiles.filter((row) => !isAutomaticScholarlyOrWikiRow(row))
         : rawProfiles;
       const externalSignals = isSocialDistributionPublisher
-        ? rawExternalSignals.filter((row) => !/^(wikipedia|wikidata|scimago|crossref|openalex)$/i.test(String(row.provider || "")))
+        ? rawExternalSignals.filter(
+            (row) =>
+              !/^(wikipedia|wikidata|scimago|crossref|openalex)$/i.test(
+                String(row.provider || ""),
+              ),
+          )
         : rawExternalSignals;
 
       // Auto-evaluate admiralty if no code stored yet but we have rating/profile data.
@@ -770,7 +939,7 @@ export default function createPublishersRoutes({ query, pool }) {
             ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
                      updated_at DESC
             LIMIT 1`,
-          [contentId, publisherId]
+          [contentId, publisherId],
         );
         admiraltyCode = contentAdmRow?.admiralty_code ?? admiraltyCode;
       }
@@ -778,12 +947,21 @@ export default function createPublishersRoutes({ query, pool }) {
         !admRow?.evaluation_status ||
         admRow.evaluation_status === "machine_suggested";
       const hasUsableSignal = hasDirectRatingSignal(ratings);
-      if (isSocialDistributionPublisher && !hasUsableSignal && canRefreshMachineCode) {
+      if (
+        isSocialDistributionPublisher &&
+        !hasUsableSignal &&
+        canRefreshMachineCode
+      ) {
         admiraltyCode = null;
       }
-      if ((!admiraltyCode || (canRefreshMachineCode && admiraltyCode.startsWith("Ø"))) && hasUsableSignal) {
+      if (
+        (!admiraltyCode ||
+          (canRefreshMachineCode && admiraltyCode.startsWith("Ø"))) &&
+        hasUsableSignal
+      ) {
         try {
-          const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../../services/admiraltyEvaluator.js");
+          const { evaluateAdmiraltyCode, storeEvaluation } =
+            await import("../../../services/admiraltyEvaluator.js");
           const evaluation = await evaluateAdmiraltyCode({
             publisherName: publisher.publisher_name,
             sourceIdentity: {
@@ -793,20 +971,42 @@ export default function createPublishersRoutes({ query, pool }) {
             existingSourceRatings: ratings,
             providerResults: buildProviderResultsFromDb(ratings, profiles),
           });
-          if (evaluation.sourceReliabilityLetter && evaluation.sourceReliabilityLetter !== "Ø") {
+          if (
+            evaluation.sourceReliabilityLetter &&
+            evaluation.sourceReliabilityLetter !== "Ø"
+          ) {
             await storeEvaluation(query, {
-              targetType: "publisher", targetId: parseInt(publisherId),
-              sourceUrl: null, publisherId: parseInt(publisherId),
+              targetType: "publisher",
+              targetId: parseInt(publisherId),
+              sourceUrl: null,
+              publisherId: parseInt(publisherId),
               evaluation,
             });
             admiraltyCode = evaluation.admiraltyCode;
           }
         } catch (e) {
-          console.error("[publishers/enrichment] Auto-admiralty failed:", e.message);
+          console.error(
+            "[publishers/enrichment] Auto-admiralty failed:",
+            e.message,
+          );
         }
       }
 
-      res.json({ publisher, ratings, profiles, externalSignals, admiraltyCode });
+      // The SourceCrest sash must come from one place: attachSourceAlignments
+      // (same helper the publisher-list and references-with-claims routes use).
+      // Do not re-derive IND/GOV/ADV markers here.
+      const [alignedPublisher] = await attachSourceAlignments(query, [publisher], {
+        attach: "sourceAlignment",
+      });
+
+      res.json({
+        publisher,
+        ratings,
+        profiles,
+        externalSignals,
+        admiraltyCode,
+        sourceAlignment: alignedPublisher.sourceAlignment,
+      });
     } catch (err) {
       console.error("Error fetching publisher enrichment:", err);
       res.status(500).json({ error: "Failed to fetch publisher enrichment" });
@@ -820,28 +1020,142 @@ export default function createPublishersRoutes({ query, pool }) {
    */
   router.post("/api/publishers/:publisherId/enrich", async (req, res) => {
     const { publisherId } = req.params;
-    const { force = false, contentId = null, sourceUrl: reqSourceUrl = null } = req.body;
-
+    const {
+      force = false,
+      contentId = null,
+      sourceUrl: reqSourceUrl = null,
+      refreshPublishingIdentity = false,
+      skipExternalSignals = false,
+      skipOwnSiteOrgStatus = false,
+      maxProviderConcurrency = 1,
+    } = req.body;
     try {
-      const [publisher] = await query(
+      let [publisher] = await query(
         `SELECT publisher_id, publisher_name, domain FROM publishers WHERE publisher_id = ? LIMIT 1`,
-        [publisherId]
+        [publisherId],
       );
 
       if (!publisher) {
         return res.status(404).json({ error: "Publisher not found" });
       }
 
-      const { enrichPublisherIfNeeded } = await import(
-        "../../services/publisherEnrichmentService.js"
-      );
+      const { enrichPublisherIfNeeded } =
+        await import("../../services/publisherEnrichmentService.js");
 
       let sourceUrl = reqSourceUrl;
       if (!sourceUrl && contentId) {
-        const [contentRow] = await query(`SELECT url FROM content WHERE content_id = ? LIMIT 1`, [contentId]);
+        const [contentRow] = await query(
+          `SELECT url FROM content WHERE content_id = ? LIMIT 1`,
+          [contentId],
+        );
         sourceUrl = contentRow?.url || null;
       }
+      // Force Refresh may be invoked while the content is linked to a weak
+      // domain-fallback publisher such as "itu.int". Before enriching that weak
+      // identity, prefer an already-known canonical publisher for the exact domain.
+      //
+      // This is deliberately conservative: if the domain has no known publisher,
+      // keep the existing publisher rather than guessing a new identity.
+      if (force && refreshPublishingIdentity && contentId && sourceUrl) {
+        let sourceDomain = null;
 
+        try {
+          sourceDomain = new URL(sourceUrl).hostname
+            .replace(/^www\./i, "")
+            .toLowerCase();
+        } catch {
+          sourceDomain = null;
+        }
+
+        if (sourceDomain) {
+          const knownPublishers = await query(
+            `SELECT DISTINCT
+     p.publisher_id,
+     p.publisher_name,
+     p.domain
+   FROM publishers p
+   LEFT JOIN publisher_domains pd
+     ON pd.publisher_id = p.publisher_id
+   WHERE LOWER(p.domain) = ?
+      OR LOWER(pd.domain) = ?
+   ORDER BY
+     CASE
+       WHEN LOWER(p.publisher_name) = ? THEN 1
+       ELSE 0
+     END ASC,
+     CASE
+       WHEN p.publisher_id = ? THEN 1
+       ELSE 0
+     END ASC,
+     p.publisher_id ASC
+   LIMIT 1`,
+            [sourceDomain, sourceDomain, sourceDomain, publisher.publisher_id],
+          );
+
+          const canonicalPublisher = knownPublishers?.[0] || null;
+
+          if (
+            canonicalPublisher &&
+            Number(canonicalPublisher.publisher_id) !==
+              Number(publisher.publisher_id)
+          ) {
+            logger.log(
+              `[SourceCrest refresh] Reusing known publisher for ${sourceDomain}: ` +
+                `"${publisher.publisher_name}" (${publisher.publisher_id}) → ` +
+                `"${canonicalPublisher.publisher_name}" (${canonicalPublisher.publisher_id})`,
+            );
+
+            // Preserve the existing content_publishers row/role when possible.
+            const alreadyLinked = await query(
+              `SELECT content_publisher_id
+           FROM content_publishers
+          WHERE content_id = ?
+            AND publisher_id = ?
+          LIMIT 1`,
+              [contentId, canonicalPublisher.publisher_id],
+            );
+
+            if (alreadyLinked.length > 0) {
+              // Canonical publisher is already linked. Remove only the stale
+              // domain-fallback link, not the content's other publisher roles.
+              await query(
+                `DELETE FROM content_publishers
+            WHERE content_id = ?
+              AND publisher_id = ?`,
+                [contentId, publisher.publisher_id],
+              );
+            } else {
+              const updateResult = await query(
+                `UPDATE content_publishers
+              SET publisher_id = ?
+            WHERE content_id = ?
+              AND publisher_id = ?`,
+                [
+                  canonicalPublisher.publisher_id,
+                  contentId,
+                  publisher.publisher_id,
+                ],
+              );
+
+              // Defensive fallback if the requested publisher was not actually linked.
+              if (!updateResult?.affectedRows) {
+                await query(
+                  `INSERT INTO content_publishers (content_id, publisher_id)
+             VALUES (?, ?)`,
+                  [contentId, canonicalPublisher.publisher_id],
+                );
+              }
+            }
+
+            publisher = canonicalPublisher;
+          } else {
+            logger.log(
+              `[SourceCrest refresh] ${sourceDomain}: no better known publisher than ` +
+                `"${publisher.publisher_name}" (${publisher.publisher_id})`,
+            );
+          }
+        }
+      }
       const enrichResult = await enrichPublisherIfNeeded({
         query,
         publisherId: publisher.publisher_id,
@@ -850,7 +1164,13 @@ export default function createPublishersRoutes({ query, pool }) {
         sourceUrl: sourceUrl || null,
         force,
         context: "case_content",
+        skipExternalSignals,
+        skipOwnSiteOrgStatus,
+        maxProviderConcurrency,
       });
+
+      const renamedTo = enrichResult?.results?.publisherRename?.to || null;
+      if (renamedTo) publisher.publisher_name = renamedTo;
 
       let admiraltyCode = enrichResult?.admiraltyCode || null;
       const admiraltyUpdates = { ...(enrichResult?.admiraltyUpdates || {}) };
@@ -862,14 +1182,18 @@ export default function createPublishersRoutes({ query, pool }) {
             ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
                      updated_at DESC
             LIMIT 1`,
-          [publisher.publisher_id]
+          [publisher.publisher_id],
         );
         admiraltyCode = admiraltyCode || admRow?.admiralty_code || null;
         if (contentId) {
-          admiraltyUpdates[contentId] = admiraltyUpdates[contentId] || admiraltyCode;
+          admiraltyUpdates[contentId] =
+            admiraltyUpdates[contentId] || admiraltyCode;
         }
       } catch (admiraltyErr) {
-        console.error("[publishers/enrich] Admiralty lookup after enrichment failed:", admiraltyErr.message);
+        console.error(
+          "[publishers/enrich] Admiralty lookup after enrichment failed:",
+          admiraltyErr.message,
+        );
       }
 
       // Refresh source-identity cache so "URL only / needs review" clears after enrichment
@@ -877,16 +1201,32 @@ export default function createPublishersRoutes({ query, pool }) {
         let refreshUrl = sourceUrl;
         if (!refreshUrl && contentId) {
           try {
-            const [c] = await query(`SELECT url FROM content WHERE content_id = ? LIMIT 1`, [contentId]);
+            const [c] = await query(
+              `SELECT url FROM content WHERE content_id = ? LIMIT 1`,
+              [contentId],
+            );
             refreshUrl = c?.url;
           } catch {}
         }
         if (refreshUrl) {
-          resolveSourceIdentity(refreshUrl, { query, force: true, hintName: publisher.publisher_name }).catch(() => {});
+          resolveSourceIdentity(refreshUrl, {
+            query,
+            force: true,
+            hintName: publisher.publisher_name,
+          }).catch(() => {});
         }
       }
 
-      res.json({ success: true, result: { ...enrichResult, admiraltyCode, admiraltyUpdates } });
+      res.json({
+        success: true,
+        result: {
+          ...enrichResult,
+          publisherId: publisher.publisher_id,
+          publisherName: publisher.publisher_name,
+          admiraltyCode,
+          admiraltyUpdates,
+        },
+      });
     } catch (err) {
       console.error("Error triggering publisher enrichment:", err);
       res.status(500).json({ error: "Enrichment failed" });

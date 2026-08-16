@@ -13,8 +13,6 @@ import {
   Stat,
   Tooltip,
 } from "@chakra-ui/react";
-import "./Popup.css";
-import "../styles/minorityReport.css";
 import UserConsensusBar from "./UserConsensusBar";
 import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
@@ -365,6 +363,8 @@ const TaskCard: React.FC = () => {
               justify="space-between"
               mt={2}
               px={1}
+              minHeight="118px"
+              mb={3}
             >
               <Box flexShrink={0}>
                 <TruthGauge
@@ -487,7 +487,7 @@ const TaskCard: React.FC = () => {
             </Center>
           </Box>
         ) : imageUrl || task?.content_id ? (
-          <Box width="280px">
+          <Box width="280px" mt={2}>
             <Box width="100%" mb={2}>
               <Tooltip label={task?.content_name || "No title"} fontSize="sm">
                 <Text
@@ -519,9 +519,9 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const popupRoot = document.getElementById("tt-popup-root");
-                    if (popupRoot) {
-                      popupRoot.style.display = "none";
+                    const popupHost = document.getElementById("tt-popup-host");
+                    if (popupHost) {
+                      popupHost.style.display = "none";
                     }
                   }}
                 >
@@ -609,9 +609,9 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const popupRoot = document.getElementById("tt-popup-root");
-                    if (popupRoot) {
-                      popupRoot.style.display = "none";
+                    const popupHost = document.getElementById("tt-popup-host");
+                    if (popupHost) {
+                      popupHost.style.display = "none";
                     }
                   }}
                 >

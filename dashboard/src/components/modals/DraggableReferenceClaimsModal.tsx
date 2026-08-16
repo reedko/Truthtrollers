@@ -12,7 +12,12 @@ import {
 import { CloseIcon, Search2Icon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import SourceCrest from "../SourceCrest";
+import ReferenceAuthors from "../ReferenceAuthors";
 import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
+import type {
+  WorkspaceClaimLink,
+  WorkspaceEvidenceRelation,
+} from "../evidenceLinkPresentation";
 
 interface Props {
   anchorSelector?: string;
@@ -26,16 +31,10 @@ interface Props {
   onVerifyClaim?: (claim: Claim) => void;
   onEditClaim?: (claim: Claim) => void;
   onDeleteClaim?: (claimId: number) => void;
-  claimLinks?: Array<{
-    id?: string;
-    claimId: number;
-    referenceId: number;
-    sourceClaimId: number;
-    relation: "support" | "refute" | "nuance";
-    confidence: number;
-  }>;
+  claimLinks?: WorkspaceClaimLink[];
   taskClaims?: Claim[];
   onClaimClick?: (claim: Claim) => void;
+  onRescrape?: () => void;
 }
 
 const DraggableReferenceClaimsModal: React.FC<Props> = ({
@@ -51,6 +50,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   claimLinks = [],
   taskClaims = [],
   onClaimClick,
+  onRescrape,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -91,7 +91,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       y1: number;
       x2: number;
       y2: number;
-      relation: "support" | "refute" | "nuance";
+      relation: WorkspaceEvidenceRelation;
       isAI: boolean;
     }>
   >([]);
@@ -247,7 +247,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             x2,
             y2,
             relation: link.relation,
-            isAI: link.id?.toString().startsWith("ai-") ?? false,
+            isAI: link.linkKind !== "human",
           });
         }
       }
@@ -310,14 +310,18 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                   ? "#00ff00"
                   : line.relation === "refute"
                     ? "#ff0000"
-                    : "#00aaff";
+                    : line.relation === "nuance"
+                      ? "#00aaff"
+                      : "#718096";
 
               const strokeColor = line.isAI
                 ? line.relation === "support"
                   ? "rgba(0, 255, 0, 0.7)"
                   : line.relation === "refute"
                     ? "rgba(255, 0, 0, 0.7)"
-                    : "rgba(0, 170, 255, 0.7)"
+                    : line.relation === "nuance"
+                      ? "rgba(0, 170, 255, 0.7)"
+                      : "rgba(113, 128, 150, 0.7)"
                 : color;
 
               return (
@@ -411,15 +415,35 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           >
             Reference Details
           </Heading>
-          <IconButton
-            aria-label="Close"
-            icon={<CloseIcon />}
-            size="sm"
-            variant="ghost"
-            color="rgba(113, 219, 255, 0.7)"
-            _hover={{ bg: "rgba(113, 219, 255, 0.12)", color: "rgba(113, 219, 255, 1)" }}
-            onClick={onClose}
-          />
+          <HStack spacing={2}>
+            {onRescrape && reference?.url && (
+              <Button
+                size="xs"
+                leftIcon={<Search2Icon />}
+                variant="outline"
+                color="rgba(113, 219, 255, 0.9)"
+                borderColor="rgba(113, 219, 255, 0.4)"
+                _hover={{ bg: "rgba(113, 219, 255, 0.12)" }}
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onRescrape();
+                }}
+              >
+                Re-scrape source
+              </Button>
+            )}
+            <IconButton
+              aria-label="Close"
+              icon={<CloseIcon />}
+              size="sm"
+              variant="ghost"
+              color="rgba(113, 219, 255, 0.7)"
+              _hover={{ bg: "rgba(113, 219, 255, 0.12)", color: "rgba(113, 219, 255, 1)" }}
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={onClose}
+            />
+          </HStack>
         </Box>
 
         <Box ref={scrollContainerRef} p={3} maxH="70vh" overflowY="auto" position="relative" zIndex={1}>
@@ -485,8 +509,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                         is_primary_source: reference.is_primary_source,
                         media_source: reference.media_source,
                         veracity_score: reference.publisher_veracity ?? undefined,
+                        source_type: reference.source_type ?? undefined,
                         admiralty_code: reference.admiralty_code ?? undefined,
                       })}
+                      alignment={reference.alignment ?? null}
                       size="xs"
                     />
                   )}
@@ -496,12 +522,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                       {reference?.publisher_name ?? "—"}
                     </Text>
                   </Text>
-                  <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+                  <HStack spacing={0} fontSize="xs" color="rgba(0,162,255,0.7)">
                     <Text as="span" opacity={0.6}>Auth: </Text>
-                    <Text as="span" color={reference?.author_name?.trim() ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
-                      {reference?.author_name?.trim() ?? "—"}
-                    </Text>
-                  </Text>
+                    <ReferenceAuthors authors={reference?.authors} fallbackName={reference?.author_name} />
+                  </HStack>
                 </HStack>
                 <Box w="100%">
                   <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" textTransform="uppercase" mb="1px">url</Text>

@@ -791,6 +791,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                               veracity_score: reference.publisher_veracity ?? undefined,
                               admiralty_code: reference.admiralty_code ?? undefined,
                             })}
+                            alignment={reference.alignment ?? null}
                             size="sm"
                             onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
                           />
@@ -927,6 +928,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                               veracity_score: reference.publisher_veracity ?? undefined,
                               admiralty_code: reference.admiralty_code ?? undefined,
                             })}
+                            alignment={reference.alignment ?? null}
                             size="sm"
                             onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
                           />

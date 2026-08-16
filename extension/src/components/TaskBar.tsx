@@ -191,15 +191,6 @@ const TaskBar: React.FC = () => {
   }, [task?.content_id, setTask]);
 
 
-  // Push page content down so the bar doesn't cover top nav
-  useEffect(() => {
-    if (!visible) return;
-    const prev = document.body.style.paddingTop;
-    const existing = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
-    document.body.style.paddingTop = `${existing + BAR_HEIGHT}px`;
-    return () => { document.body.style.paddingTop = prev; };
-  }, [visible]);
-
   if (!visible || !task) return null;
 
   // Fixed MR palette — backdrop-filter naturally picks up page colors underneath
@@ -235,7 +226,7 @@ const TaskBar: React.FC = () => {
 
   const handleClose = () => {
     setVisible(false);
-    const root = document.getElementById("tt-popup-root");
+    const root = document.getElementById("tt-popup-host");
     if (root) root.style.display = "none";
   };
 

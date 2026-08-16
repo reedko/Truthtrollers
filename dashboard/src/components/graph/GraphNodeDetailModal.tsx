@@ -229,8 +229,10 @@ export default function GraphNodeDetailModal({
                       veracity_score: reference.publisher_veracity ?? undefined,
                       rating_label: reference.rating_label ?? undefined,
                       rating_type: reference.rating_type ?? undefined,
+                      source_type: reference.source_type ?? undefined,
                       admiralty_code: reference.admiralty_code ?? undefined,
                     })}
+                    alignment={reference.alignment ?? null}
                     size="sm"
                     onClick={(event) => {
                       event?.stopPropagation();
@@ -334,8 +336,10 @@ export default function GraphNodeDetailModal({
                             veracity_score: claim.reference.publisher_veracity ?? undefined,
                             rating_label: claim.reference.rating_label ?? undefined,
                             rating_type: claim.reference.rating_type ?? undefined,
+                            source_type: claim.reference.source_type ?? undefined,
                             admiralty_code: claim.reference.admiralty_code ?? undefined,
                           })}
+                          alignment={claim.reference.alignment ?? null}
                           size="xs"
                           onClick={(event) => {
                             event?.stopPropagation();

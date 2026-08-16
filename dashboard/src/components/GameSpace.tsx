@@ -810,8 +810,10 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
                     is_primary_source: reference.is_primary_source,
                     media_source: reference.media_source,
                     veracity_score: reference.publisher_veracity ?? undefined,
+                    source_type: reference.source_type ?? undefined,
                     admiralty_code: reference.admiralty_code ?? undefined,
                   })}
+                  alignment={reference.alignment ?? null}
                   size="sm"
                   onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
                 />

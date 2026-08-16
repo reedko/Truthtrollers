@@ -17,14 +17,13 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTaskStore } from "../store/useTaskStore";
 import { UserSelectorModal } from "./UserSelectorModal";
+import { buildAssetUrl } from "../utils/assetUrl";
 
 export const AccountMenu: React.FC = () => {
   const navigate = useNavigate();
   const { isOpen: isModalOpen, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
   const clearTask = useTaskStore.getState().setSelectedTask;
 
   const handleLogout = () => {
@@ -40,9 +39,7 @@ export const AccountMenu: React.FC = () => {
 
   const isDemo = user?.isDemo === true;
   const displayName = user?.username || "Guest";
-  const avatarSrc = user?.user_profile_image
-    ? `${API_BASE_URL}/${user.user_profile_image}`
-    : undefined;
+  const avatarSrc = buildAssetUrl(user?.user_profile_image);
 
   return (
     <>
@@ -97,7 +94,11 @@ export const AccountMenu: React.FC = () => {
           <MenuItem onClick={onOpenModal}>
             Switch Viewer
           </MenuItem>
+          <MenuItem onClick={handleLogout} color="red.300" fontWeight="bold">
+            Log out
+          </MenuItem>
 
+          <MenuDivider />
           <MenuItem onClick={() => navigate("/account")}>Account Settings</MenuItem>
           <MenuItem onClick={() => navigate("/admin/social")}>Social Admin</MenuItem>
           {!isDemo && (
@@ -137,8 +138,6 @@ export const AccountMenu: React.FC = () => {
             </>
           )}
 
-          <MenuDivider />
-          <MenuItem onClick={handleLogout}>Log out</MenuItem>
         </MenuList>
       </Menu>
 

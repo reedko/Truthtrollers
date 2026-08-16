@@ -134,13 +134,24 @@ function sentenceFor(text, pattern) {
 
 export function discoverOrgStatusLinksFromHtml(html, baseUrl, rootDomain = normalizeDomain(baseUrl)) {
   const $ = cheerio.load(html || "");
+
+  // Scoped to chrome (header/nav/footer) when the page actually has those
+  // landmarks. A trailing bare "a" here previously matched every link on the
+  // page, including ordinary article teasers -- on a news homepage that
+  // pulls in unrelated article bodies whose incidental vocabulary
+  // ("manufacturers", "members", "board") gets misread as the outlet's own
+  // organizational self-description. But plenty of institutional/government
+  // sites (e.g. itu.int) build their chrome out of plain <div>s with no
+  // <header>/<nav>/<footer> tags at all -- scoping to those landmarks then
+  // finds zero links and the classifier silently returns no_match. Only
+  // fall back to scanning every link on the page when no chrome landmarks
+  // exist to scope to; sites that do have real landmarks keep the narrow,
+  // false-positive-safe selector.
+  const hasChromeLandmarks = $("header, nav, footer").length > 0;
+  const selector = hasChromeLandmarks ? "header a, nav a, footer a" : "a";
+
   const links = [];
-  // Scoped to chrome (header/nav/footer) only. A trailing bare "a" here
-  // previously matched every link on the page, including ordinary article
-  // teasers -- on a news homepage that pulls in unrelated article bodies
-  // whose incidental vocabulary ("manufacturers", "members", "board") gets
-  // misread as the outlet's own organizational self-description.
-  $("header a, nav a, footer a").each((_, el) => {
+  $(selector).each((_, el) => {
     const href = $(el).attr("href");
     const label = $(el).text().replace(/\s+/g, " ").trim();
     if (!href) return;

@@ -26,7 +26,7 @@ import { ClaimLink } from "../RelationshipMap";
 import { useTaskStore } from "../../store/useTaskStore";
 import { calculateLinkPoints } from "../../services/gameScoring";
 import { useVerimeterMode } from "../../contexts/VerimeterModeContext";
-import SourceCrest from "../SourceCrest";
+import SourceCrest, { SourceAlignment } from "../SourceCrest";
 import SourceDetailModal from "../modals/SourceDetailModal";
 import { SourceType, Reliability, SOURCE_TYPE_LABEL, RELIABILITY_LABEL } from "../../utils/normalizeSourceProfile";
 
@@ -35,6 +35,7 @@ interface SourcePublisherInfo {
   sourceType?: SourceType;
   reliability?: Reliability;
   admiraltyCode?: string;
+  alignment?: SourceAlignment | null;
 }
 
 interface ClaimLinkOverlayProps {
@@ -349,6 +350,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
                 sourceType={sourcePublisher.sourceType}
                 reliability={sourcePublisher.reliability}
                 admiraltyCode={sourcePublisher.admiraltyCode}
+                alignment={sourcePublisher.alignment ?? null}
                 size="sm"
                 onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
               />

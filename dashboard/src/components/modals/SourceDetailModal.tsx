@@ -55,6 +55,12 @@ interface PublisherRating {
   last_checked?: string;
   notes?: string;
   evidence_quote?: string;
+  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null; entityRole?: string | null };
+  executionProvenance?: {
+    cacheState?: "provider_result" | "provider_cache" | string;
+    attemptedAt?: string | null;
+    datasetVersion?: string | null;
+  };
 }
 
 interface PublisherProfile {
@@ -87,6 +93,12 @@ interface ExternalSignal {
   explanation?: string | null;
   retrieved_at?: string | null;
   error_status?: string | null;
+  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null; entityRole?: string | null };
+  executionProvenance?: {
+    cacheState?: "provider_result" | "provider_cache" | string;
+    attemptedAt?: string | null;
+    datasetVersion?: string | null;
+  };
 }
 
 interface EnrichmentRun {
@@ -96,6 +108,23 @@ interface EnrichmentRun {
   confidence?: string | null;
   error_message?: string | null;
   created_at?: string | null;
+}
+
+interface NormalizedSourceEntity {
+  publisher_id: number;
+  publisher_name: string;
+  entity_type?: string | null;
+  publisher_role?: string | null;
+  identity_confidence?: number | null;
+  extraction_method?: string | null;
+}
+
+interface PublishingIdentifier {
+  identifier_type: string;
+  identifier_scope: string;
+  normalized_value: string;
+  extraction_method?: string | null;
+  extraction_confidence?: string | null;
 }
 
 interface EnrichmentData {
@@ -113,6 +142,39 @@ interface EnrichmentData {
   } | null;
   sourceAlignment?: SourceAlignment | null;
   admiraltyCode?: string;
+  primarySource?: NormalizedSourceEntity | null;
+  publishingOrganization?: NormalizedSourceEntity | null;
+  publicationVenue?: NormalizedSourceEntity | null;
+  distribution?: NormalizedSourceEntity | null;
+  parentOrganization?: NormalizedSourceEntity | null;
+  originalPublisher?: NormalizedSourceEntity | null;
+  publicationRelationship?: {
+    type?: string | null;
+    license?: string | null;
+    evidenceText?: string | null;
+    originalUrl?: string | null;
+  } | null;
+  publishingContext?: {
+    context_type?: string;
+    platform?: string | null;
+    distribution_channel?: string | null;
+    article_type?: string | null;
+    publication_date?: string | null;
+    publisher_name_observed?: string | null;
+    venue_name?: string | null;
+    venue_type?: string | null;
+    extraction_method?: string | null;
+    extraction_confidence?: string | null;
+  } | null;
+  identifiers?: PublishingIdentifier[];
+  authors?: Array<{
+    author_id: number;
+    display_name?: string | null;
+    first_name?: string | null;
+    middle_name?: string | null;
+    last_name?: string | null;
+  }>;
+  extractionEvidence?: Record<string, unknown>;
 }
 
 interface EnrichRunResult {
@@ -139,6 +201,7 @@ const PROVIDER_KEY: Record<string, string> = {
   Wayback: "wayback",
   Wikidata: "wikidata",
   Wikipedia: "wikipedia",
+  "Wikipedia Perennial Sources": "wikipedia_perennial_sources",
 };
 
 function isGenericSocialPublisherName(value?: string | null) {
@@ -342,6 +405,7 @@ const ENRICHMENT_PROVIDERS: Array<{
   { key: "AllSides",  label: "AllSides",    desc: "Historical ratings remain visible", enabled: false, disabledReason: "data access pending" },
   { key: "Ad Fontes", label: "Ad Fontes",   desc: "Historical ratings remain visible", enabled: false, disabledReason: "disabled" },
   { key: "Wikipedia", label: "Wikipedia",   desc: "Publisher profile" },
+  { key: "Wikipedia Perennial Sources", label: "Wikipedia Perennial Sources", desc: "Community-maintained source classification" },
   { key: "Wikidata",  label: "Wikidata",    desc: "Entity identity and relationships" },
   { key: "SCImago",   label: "SCImago",     desc: "Journal impact ranking (academic)" },
   { key: "MBFC",      label: "MBFC",        desc: "Factuality / credibility where seeded", requiresConfig: false },
@@ -358,7 +422,7 @@ const ENRICHMENT_PROVIDERS: Array<{
 
 // The top-level Force refresh intentionally runs only the lightweight first
 // pass. External-signal providers and own-site re-scraping are separate jobs.
-const QUICK_REFRESH_PROVIDER_KEYS = new Set(["Wikipedia", "Wikidata", "SCImago"]);
+const QUICK_REFRESH_PROVIDER_KEYS = new Set(["Wikipedia", "Wikipedia Perennial Sources", "Wikidata", "SCImago"]);
 
 const CREDIBILITY_PROVIDERS = [
   { label: "OpenSanctions", desc: "Sanctions & PEP lists" },
@@ -764,18 +828,20 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   const scrapeForPublisher = useCallback(async (targetUrl?: string, useExtension = false) => {
     const scrapeUrl = targetUrl || sourceUrl;
     if (!scrapeUrl || scrapePolling) return;
+
+    if (useExtension) {
+      // Always open the source first. Even when this modal lacks enough task
+      // context to queue a scrape job, the user still needs the tab to clear
+      // bot checks, paywalls, or consent screens.
+      window.open(scrapeUrl, '_blank', 'noopener');
+    }
+
     if (useExtension && !contentId) {
       setScrapeStatus("Extension scrape requires a content id.");
       return;
     }
     setScrapePolling(true);
     setScrapeStatus(useExtension ? "Opening tab…" : "Refreshing from backend…");
-
-    if (useExtension) {
-      // Open the URL only for explicit extension scrapes so normal SourceCrest
-      // refreshes do not steal focus from the dashboard.
-      window.open(scrapeUrl, '_blank', 'noopener');
-    }
 
     if (useExtension) setScrapeStatus("Submitting scrape job…");
     try {
@@ -868,7 +934,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
         return;
       }
 
-      const jobBody = { mode: "scrape_specific_url", url: scrapeUrl };
+      // Include this reference id so an already-stored URL is deliberately
+      // reprocessed instead of taking /api/scrape-reference's duplicate fast path.
+      const jobBody = { mode: "scrape_specific_url", url: scrapeUrl, taskContentId: contentId };
       console.log("[scrapeForPublisher] POST /api/scrape-request", jobBody);
       const jobRes = await fetch(`${API_BASE_URL}/api/scrape-request`, {
         method: "POST",
@@ -1109,8 +1177,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     }
   };
 
-  // Refresh ratings and the crest for the publisher already linked here.
-  // Identity discovery and extension scraping are intentionally separate.
+  // Re-scrape the source first, persist its full publishing-role graph, then
+  // refresh ratings for the resulting rated content supplier.
   const forceRefreshPublisher = async () => {
     const targetId = resolvedId ?? sourceIdentity?.publisherId ?? domainCheckResult?.publisherId ?? undefined;
     if (!targetId || enrichRunning) return;
@@ -1126,8 +1194,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           force: true,
           contentId: contentId ?? null,
           sourceUrl: sourceUrl ?? null,
-          skipExternalSignals: true,
-          skipOwnSiteOrgStatus: true,
+          refreshPublishingIdentity: true,
+          skipExternalSignals: false,
+          skipOwnSiteOrgStatus: false,
           maxProviderConcurrency: 1,
         }),
       });
@@ -1135,12 +1204,15 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       const data = await res.json();
       const result = data.result ?? data;
       setEnrichResult(result);
+      const refreshedPublisherId = Number(result?.publisherId || targetId);
+      const refreshedPublisherName = result?.publisherName ?? enrichment?.publisher.publisher_name ?? publisherName;
+      if (Number.isFinite(refreshedPublisherId)) setResolvedId(refreshedPublisherId);
       const newCode = result?.admiraltyUpdates?.[contentId ?? ""] ?? result?.admiraltyCode;
       if (newCode) {
         applyAdmiraltyCode(newCode);
-        onPublisherLinked?.(targetId, enrichment?.publisher.publisher_name ?? publisherName, newCode);
+        onPublisherLinked?.(refreshedPublisherId, refreshedPublisherName, newCode);
       }
-      loadEnrichment(targetId, true);
+      loadEnrichment(refreshedPublisherId, true);
     } catch (err: any) {
       setEnrichError(err?.message ?? "Force refresh failed");
     } finally {
@@ -1149,7 +1221,18 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   };
 
   // ── Derived values ────────────────────────────────────────────────────────
-  const firstProfile  = enrichment?.profiles[0];
+  const profileForDisplay = useMemo(() => {
+    const profiles = enrichment?.profiles ?? [];
+    if (!profiles.length) return undefined;
+    const detailScore = (profile: PublisherProfile) =>
+      [profile.description, profile.ownership_notes, profile.funding_notes,
+       profile.credibility_notes, profile.political_notes, profile.country]
+        .filter(Boolean).length;
+    return [...profiles].sort((a, b) => {
+      const wikipediaPriority = Number(/^wikipedia$/i.test(b.source)) - Number(/^wikipedia$/i.test(a.source));
+      return wikipediaPriority || detailScore(b) - detailScore(a);
+    })[0];
+  }, [enrichment]);
   const bestVeracityRating = useMemo(() => {
     const scored = enrichment?.ratings
       ?.filter((rating) => rating.veracity_score != null)
@@ -1159,9 +1242,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   const liveProfile   = useMemo(() => normalizeSourceProfile({
     publisher_name: enrichment?.publisher.publisher_name ?? publisherName,
     rating_label:   bestVeracityRating?.rating_label ?? enrichment?.ratings[0]?.rating_label,
-    rating_type:    firstProfile?.source_type ?? bestVeracityRating?.rating_type ?? enrichment?.ratings[0]?.rating_type,
+    rating_type:    profileForDisplay?.source_type ?? bestVeracityRating?.rating_type ?? enrichment?.ratings[0]?.rating_type,
     veracity_score: bestVeracityRating?.veracity_score,
-  }), [enrichment, publisherName, firstProfile, bestVeracityRating]);
+  }), [enrichment, publisherName, profileForDisplay, bestVeracityRating]);
   const governmentOperatorName = useMemo(() => {
     if (enrichment?.sourceAlignment?.marker !== "GOV") return null;
     const storedOperator = enrichment.publisherStatus?.ultimate_publisher_or_interest_group;
@@ -1248,6 +1331,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     if (signal.error_status === "no_match") return { label: "no match", color: "#F6AD55", enabled: true };
     if (signal.error_status || parseFlags(signal.flags).some((flag) => String(flag).startsWith("provider_"))) {
       return { label: signal.error_status || "attempted", color: "#F6AD55", enabled: true };
+    }
+    if (signal.provider === "wikipedia_perennial_sources" && signal.reliability_bucket) {
+      return { label: signal.reliability_bucket, color: "#48BB78", enabled: true };
     }
     if (signal.normalized_score != null) return { label: `${signal.admiralty_effect_type} ${Math.round(Number(signal.normalized_score))}`, color: "#48BB78", enabled: true };
     return { label: signal.admiralty_effect_type || "stored", color: "#48BB78", enabled: true };
@@ -1372,11 +1458,100 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
             ) : (
               <VStack spacing={3} align="stretch">
 
+                {(enrichment?.publishingOrganization || enrichment?.publicationVenue || enrichment?.parentOrganization || enrichment?.originalPublisher || enrichment?.publicationRelationship || enrichment?.distribution || enrichment?.identifiers?.length || enrichment?.authors?.length) && (
+                  <Box px={3} py={3} borderRadius="xl"
+                    style={{ background: "rgba(72,187,120,0.035)", border: "1px solid rgba(72,187,120,0.18)" }}>
+                    <VStack align="stretch" spacing={1.5}>
+                      {[
+                        ["Venue", enrichment.publicationVenue],
+                        ["Publisher", enrichment.publishingOrganization],
+                        ["Parent organization", enrichment.parentOrganization],
+                        ["Original publisher", enrichment.originalPublisher],
+                        ["Distributed via", enrichment.distribution],
+                      ].map(([label, entity]) => entity && (
+                        <HStack key={String(label)} justify="space-between" align="start" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">
+                            {String(label)}
+                          </Text>
+                          <VStack align="end" spacing={0} flex={1}>
+                            <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700" textAlign="right">
+                              {(entity as NormalizedSourceEntity).publisher_name}
+                              {(entity as NormalizedSourceEntity).publisher_id === enrichment.primarySource?.publisher_id ? " · primary" : ""}
+                            </Text>
+                            {((entity as NormalizedSourceEntity).extraction_method || (entity as NormalizedSourceEntity).identity_confidence != null) && (
+                              <Text fontSize="2xs" color="var(--mr-text-muted)">
+                                {(entity as NormalizedSourceEntity).extraction_method || "extracted"}
+                                {(entity as NormalizedSourceEntity).identity_confidence != null
+                                  ? ` · ${Math.round(Number((entity as NormalizedSourceEntity).identity_confidence) * 100)}%`
+                                  : ""}
+                              </Text>
+                            )}
+                          </VStack>
+                        </HStack>
+                      ))}
+                      {!!enrichment.authors?.length && (
+                        <HStack justify="space-between" align="start" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">Authors</Text>
+                          <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700" textAlign="right">
+                            {enrichment.authors.map((author) => author.display_name || [author.first_name, author.middle_name, author.last_name].filter(Boolean).join(" ")).join(" · ")}
+                          </Text>
+                        </HStack>
+                      )}
+                      {enrichment.publicationRelationship && (
+                        <HStack justify="space-between" align="start" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">Relationship</Text>
+                          <VStack align="end" spacing={0} flex={1}>
+                            <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700">
+                              {enrichment.publicationRelationship.type || "republished"}
+                              {enrichment.publicationRelationship.license ? ` · ${enrichment.publicationRelationship.license}` : ""}
+                            </Text>
+                            {enrichment.publicationRelationship.originalUrl && (
+                              <Link href={enrichment.publicationRelationship.originalUrl} isExternal fontSize="2xs" color="var(--mr-blue)">
+                                Original article <ExternalLinkIcon mx="2px" />
+                              </Link>
+                            )}
+                          </VStack>
+                        </HStack>
+                      )}
+                      {enrichment.publishingContext?.article_type && (
+                        <HStack justify="space-between" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">Article type</Text>
+                          <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700">{enrichment.publishingContext.article_type}</Text>
+                        </HStack>
+                      )}
+                      {enrichment.publishingContext?.publication_date && (
+                        <HStack justify="space-between" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">Published</Text>
+                          <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700">{enrichment.publishingContext.publication_date}</Text>
+                        </HStack>
+                      )}
+                      {!!enrichment.identifiers?.length && (
+                        <HStack spacing={1.5} flexWrap="wrap" pt={1}>
+                          {enrichment.identifiers.map((item) => (
+                            <Tooltip key={`${item.identifier_type}:${item.normalized_value}`}
+                              label={`${item.identifier_scope} · ${item.extraction_method || "extracted"} · ${item.extraction_confidence || "unknown confidence"}`} hasArrow>
+                              <Badge fontSize="2xs" colorScheme="green" variant="subtle">
+                                {item.identifier_type.toUpperCase()} {item.normalized_value}
+                              </Badge>
+                            </Tooltip>
+                          ))}
+                        </HStack>
+                      )}
+                    </VStack>
+                  </Box>
+                )}
+
                 {/* ══ Publisher status + scrape ══════════════════════════ */}
                 {contentId && (() => {
                   const isLinked   = !!activePublisherId;
                   const isSocial   = sourceUrl ? /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl) : false;
                   const linkedName   = enrichment?.publisher.publisher_name ?? (isLinked ? (customName || publisherName) : null);
+                  const publicationName = enrichment?.publicationVenue?.publisher_name || enrichment?.publishingContext?.venue_name || null;
+                  const organizationName = enrichment?.publishingOrganization?.publisher_name || enrichment?.publishingContext?.publisher_name_observed || null;
+                  const hasDistinctPublication = !!publicationName && !!organizationName &&
+                    publicationName.toLowerCase() !== organizationName.toLowerCase();
+                  const isWebNews = enrichment?.publishingContext?.context_type === "web" &&
+                    /news/i.test(enrichment?.publishingContext?.article_type || "");
 
                   return (
                     <Box px={3} py={3} borderRadius="xl"
@@ -1423,6 +1598,36 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               </HStack>
                             )}
                           </HStack>
+                        )}
+
+                        {/* Publication/owner boundary — analogous to the social
+                            container banner, but for owned publication brands. */}
+                        {hasDistinctPublication && (
+                          <Box px={3} py={2.5} borderRadius="lg"
+                            style={{ background: "rgba(128,90,213,0.08)", border: "1px solid rgba(159,122,234,0.3)" }}>
+                            <HStack spacing={2} mb={1} flexWrap="wrap">
+                              <Text fontSize="2xs" color="rgba(183,148,244,0.9)" textTransform="uppercase" letterSpacing="0.08em">
+                                Publication context
+                              </Text>
+                              {isWebNews && (
+                                <Badge fontSize="2xs" px={1.5} borderRadius="sm"
+                                  style={{ background: "rgba(159,122,234,0.16)", color: "#c4a7f2", border: "1px solid rgba(159,122,234,0.35)" }}>
+                                  Web news · not peer reviewed
+                                </Badge>
+                              )}
+                            </HStack>
+                            <Text fontSize="sm" fontWeight="900" color="var(--mr-text-primary)">
+                              Published in {publicationName}
+                            </Text>
+                            <Text fontSize="2xs" color="var(--mr-text-muted)" mt="2px">
+                              Published/owned by <Text as="span" color="var(--mr-text-primary)" fontWeight="700">{organizationName}</Text>
+                            </Text>
+                            {isWebNews && (
+                              <Text fontSize="2xs" color="rgba(196,167,242,0.82)" mt={1.5} lineHeight="1.35">
+                                Journal peer-review evidence from another publication owned by this organization does not transfer to this article.
+                              </Text>
+                            )}
+                          </Box>
                         )}
 
                         {/* ── Facebook container provenance ── */}
@@ -1922,8 +2127,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               )}
                             </HStack>
                             <Text fontSize="2xs" color="var(--mr-text-muted)" noOfLines={2}>
-                              {signal ? signalSummary(signal) : rating
-                                ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}`
+                              {signal ? `${signalSummary(signal)}${signal.ratedEntity?.publisherName ? ` · rated entity: ${signal.ratedEntity.publisherName}${signal.ratedEntity.entityRole ? ` (${signal.ratedEntity.entityRole.replace(/_/g, " ")})` : ""}` : ""}` : rating
+                                ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}${rating.ratedEntity?.publisherName ? ` · rated entity: ${rating.ratedEntity.publisherName}${rating.ratedEntity.entityRole ? ` (${rating.ratedEntity.entityRole.replace(/_/g, " ")})` : ""}` : ""}`
                                 : persistedRun
                                   ? `${persistedRun.status.replace(/_/g, " ")}${persistedRun.error_message ? ` · ${persistedRun.error_message}` : ""}`
                                   : p.desc}
@@ -1936,7 +2141,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               )}
                               {signal?.retrieved_at && (
                                 <Text fontSize="2xs" color="var(--mr-text-muted)">
-                                  {new Date(signal.retrieved_at).toLocaleTimeString()}
+                                  {signal.executionProvenance?.cacheState === "provider_cache" ? "cached" : "provider result"}
+                                  {` · ${new Date(signal.retrieved_at).toLocaleTimeString()}`}
                                 </Text>
                               )}
                               {rating?.last_checked && !signal?.retrieved_at && (
@@ -2121,20 +2327,27 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                 )}
 
                 {/* Publisher profile notes */}
-                {firstProfile && (firstProfile.credibility_notes || firstProfile.ownership_notes || firstProfile.country) && (
+                {profileForDisplay && (
                   <RatingCard accent="rgba(0,162,255,0.2)" glow="rgba(0,162,255,0.04)">
-                    <Text fontSize="2xs" fontWeight="700" color="var(--mr-text-muted)"
-                      textTransform="uppercase" letterSpacing="0.1em" mb={2}>Profile</Text>
+                    <HStack justify="space-between" mb={2} align="start">
+                      <Text fontSize="2xs" fontWeight="700" color="var(--mr-text-muted)"
+                        textTransform="uppercase" letterSpacing="0.1em">{profileForDisplay.source} profile</Text>
+                      {profileForDisplay.profile_url && (
+                        <Link href={profileForDisplay.profile_url} isExternal fontSize="2xs" color="var(--mr-blue)">
+                          source <ExternalLinkIcon mx="2px" />
+                        </Link>
+                      )}
+                    </HStack>
                     <VStack spacing={2} align="stretch">
-                      {firstProfile.country && (
+                      {profileForDisplay.country && (
                         <HStack><Text fontSize="xs" color="var(--mr-text-muted)" minW="70px">Country</Text>
-                          <Text fontSize="xs" color="var(--mr-text-primary)">{firstProfile.country}</Text></HStack>
+                          <Text fontSize="xs" color="var(--mr-text-primary)">{profileForDisplay.country}</Text></HStack>
                       )}
-                      {firstProfile.credibility_notes && (
-                        <Text fontSize="xs" color="var(--mr-text-primary)" noOfLines={4} lineHeight="1.5">
-                          {firstProfile.credibility_notes}
-                        </Text>
-                      )}
+                      {profileForDisplay.description && <Text fontSize="xs" color="var(--mr-text-primary)" lineHeight="1.5">{profileForDisplay.description}</Text>}
+                      {profileForDisplay.ownership_notes && <Text fontSize="xs" color="var(--mr-text-primary)" lineHeight="1.5"><b>Ownership:</b> {profileForDisplay.ownership_notes}</Text>}
+                      {profileForDisplay.funding_notes && <Text fontSize="xs" color="var(--mr-text-primary)" lineHeight="1.5"><b>Funding:</b> {profileForDisplay.funding_notes}</Text>}
+                      {profileForDisplay.credibility_notes && <Text fontSize="xs" color="var(--mr-text-primary)" lineHeight="1.5"><b>Credibility:</b> {profileForDisplay.credibility_notes}</Text>}
+                      {profileForDisplay.political_notes && <Text fontSize="xs" color="var(--mr-text-primary)" lineHeight="1.5"><b>Context:</b> {profileForDisplay.political_notes}</Text>}
                     </VStack>
                   </RatingCard>
                 )}

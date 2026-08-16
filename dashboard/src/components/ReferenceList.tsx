@@ -19,6 +19,7 @@ import {
   Badge,
   useColorModeValue,
   Checkbox,
+  useToast,
 } from "@chakra-ui/react";
 import {
   LitReference,
@@ -104,7 +105,10 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   focusedReferenceId = null,
 }) => {
   const { hasPermission } = usePermissions();
+  const toast = useToast();
   const [selectedRefIds, setSelectedRefIds] = useState<Set<number>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const canBulkDelete = isSuperAdmin || hasPermission("delete_system_references");
 
   const toggleRefSelection = (refId: number) => {
     setSelectedRefIds((prev) => {
@@ -122,6 +126,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [newTitle, setNewTitle] = useState("");
   const [failedReferenceIds, setFailedReferenceIds] = useState<Set<number>>(
     new Set(),
+  );
+  const [provisionalStatuses, setProvisionalStatuses] = useState<Map<number, string>>(
+    new Map(),
   );
   const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
   const [retryUrl, setRetryUrl] = useState("");
@@ -200,6 +207,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
       fetchFailedReferences(taskId).then((failedRefs) => {
         const ids = new Set(failedRefs.map((ref) => ref.content_id));
         setFailedReferenceIds(ids);
+        setProvisionalStatuses(new Map(
+          failedRefs.map((ref) => [ref.content_id, ref.scrape_status || "failed"]),
+        ));
         console.log(
           `📋 Found ${failedRefs.length} failed references for task ${taskId}:`,
           failedRefs,
@@ -222,25 +232,58 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         width="100%"
         bg={bubbleStyle ? "transparent" : undefined}
       >
-        <HStack width="100%" justify="space-between">
+        <HStack width="100%" justify="space-between" align="center" flexWrap="wrap">
           <Heading size="sm">Sources</Heading>
-          {isSuperAdmin && selectedRefIds.size > 0 && (
-            <Button
-              size="xs"
-              colorScheme="red"
-              onClick={async () => {
-                if (
-                  !window.confirm(
-                    `Permanently remove ${selectedRefIds.size} source(s) from this case for EVERYONE? This cannot be undone.`,
-                  )
-                )
-                  return;
-                await onHardDeleteReferences?.([...selectedRefIds]);
-                setSelectedRefIds(new Set());
-              }}
-            >
-              🗑 Delete {selectedRefIds.size} for Everyone
-            </Button>
+          {canBulkDelete && (
+            <HStack spacing={1}>
+              <Button
+                size="xs"
+                variant="outline"
+                onClick={() => setSelectedRefIds(new Set(references.map((ref) => ref.reference_content_id)))}
+                isDisabled={references.length === 0 || bulkDeleting}
+              >
+                Select all
+              </Button>
+              {selectedRefIds.size > 0 && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => setSelectedRefIds(new Set())}
+                  isDisabled={bulkDeleting}
+                >
+                  Clear
+                </Button>
+              )}
+              <Button
+                size="xs"
+                colorScheme="red"
+                isDisabled={selectedRefIds.size === 0}
+                isLoading={bulkDeleting}
+                onClick={async () => {
+                  if (!window.confirm(
+                    `Remove ${selectedRefIds.size} selected source(s) from this case for everyone?`,
+                  )) return;
+                  setBulkDeleting(true);
+                  try {
+                    await onHardDeleteReferences?.([...selectedRefIds]);
+                    setSelectedRefIds(new Set());
+                  } catch (error) {
+                    console.error("Bulk source removal failed:", error);
+                    toast({
+                      title: "Source removal failed",
+                      description: "The selected sources were not removed.",
+                      status: "error",
+                      duration: 5000,
+                      isClosable: true,
+                    });
+                  } finally {
+                    setBulkDeleting(false);
+                  }
+                }}
+              >
+                Remove selected ({selectedRefIds.size})
+              </Button>
+            </HStack>
           )}
         </HStack>
 
@@ -425,7 +468,11 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   }),
                   ...(useBubbleEffects ? BUBBLE_KEYFRAMES : {}),
                 }}
-                onClick={(event) => onReferenceClick(ref, event)}
+                onClick={(event) => {
+                  const target = event.target;
+                  if (target instanceof Element && target.closest('[data-reference-select-control="true"]')) return;
+                  onReferenceClick(ref, event);
+                }}
                 onContextMenu={(event) => {
                   event.preventDefault();
                   if (ref.url) window.open(ref.url, "_blank");
@@ -443,19 +490,24 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     pointerEvents="none"
                   />
                 )}
-                {isSuperAdmin && (
-                  <Checkbox
-                    isChecked={selectedRefIds.has(ref.reference_content_id)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      toggleRefSelection(ref.reference_content_id);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    mr={2}
+                {canBulkDelete && (
+                  <Box
+                    data-reference-select-control="true"
                     zIndex={2}
                     position="relative"
-                    colorScheme="red"
-                  />
+                    mr={2}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <Checkbox
+                      isChecked={selectedRefIds.has(ref.reference_content_id)}
+                      onChange={(event) => {
+                        event.stopPropagation();
+                        toggleRefSelection(ref.reference_content_id);
+                      }}
+                      colorScheme="red"
+                    />
+                  </Box>
                 )}
                 {/* Crest column — fixed width, vertically centered */}
                 <Box flexShrink={0} alignSelf="center" position="relative" zIndex={1} mr={1}>
@@ -471,19 +523,15 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       admiralty_code: ref.admiralty_code ?? undefined,
                     })}
                     size="xs"
-                    alignment={ref.alignment_marker ? {
-                      marker: ref.alignment_marker,
-                      label: ref.alignment_marker === "IND"
-                        ? "Industry aligned"
-                        : ref.alignment_marker === "GOV"
-                          ? "Government source"
-                          : "Institutionally aligned",
-                      riskScore: ref.alignment_risk_score,
-                    } : /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(ref.url ?? "") ? {
+                    // The sash must come from one place: whatever the backend's
+                    // deriveSourceAlignment computed (same function
+                    // SourceDetailModal uses via /api/publishers/:id/enrichment).
+                    // Do not re-derive IND/GOV/ADV labels here.
+                    alignment={ref.alignment ?? (/facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(ref.url ?? "") ? {
                       marker: "SOC",
                       label: "Social media source — admiralty reflects entity, not platform",
                       riskScore: null,
-                    } : null}
+                    } : null)}
                     cacheStatus={ref.admiralty_source === "publisher_cached" ? "cached" : "fresh"}
                     active={!!ref.publisher_id && ref.publisher_id === glowPublisherId}
                     onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(ref); }}
@@ -508,18 +556,27 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       </Text>
                     </Tooltip>
                     {isFailedReference(ref.reference_content_id) && (
-                      <Button
-                        size="xs"
-                        colorScheme="orange"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(ref.url, "_blank");
-                          setRetryUrl(ref.url || "");
-                          setIsScrapeModalOpen(true);
-                        }}
-                      >
-                        Retry Scrape
-                      </Button>
+                      <HStack spacing={1}>
+                        <Badge colorScheme="orange" variant="subtle">
+                          {provisionalStatuses.get(ref.reference_content_id) === "abstract_only"
+                            ? "Abstract only"
+                            : provisionalStatuses.get(ref.reference_content_id) === "identity_only"
+                              ? "Study subject"
+                            : "Snippet only"}
+                        </Badge>
+                        <Button
+                          size="xs"
+                          colorScheme="orange"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(ref.url, "_blank");
+                            setRetryUrl(ref.url || "");
+                            setIsScrapeModalOpen(true);
+                          }}
+                        >
+                          Retry Scrape
+                        </Button>
+                      </HStack>
                     )}
                   </HStack>
                   {/* Byline */}

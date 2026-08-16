@@ -84,7 +84,7 @@ function getNodeStyle(displayMode: DisplayMode) {
           const nodeId = ele.id();
 
           if (type === "publisher") {
-            return getSourceCrestDataUri(data.admiralty_code ?? undefined, 80);
+            return getSourceCrestDataUri(data.admiralty_code ?? undefined, 80, data.alignment ?? null);
           }
 
           if (type === "author") {

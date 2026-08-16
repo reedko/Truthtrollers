@@ -739,9 +739,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <HStack spacing={1} fontSize={compact ? "xs" : "sm"}>
                 <SourceCrest
                   publisherName={publishers[0].publisher_name}
-                  sourceType={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name }).sourceType}
-                  reliability={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name }).reliability}
+                  sourceType={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name, source_type: publishers[0].source_type ?? undefined }).sourceType}
+                  reliability={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name, source_type: publishers[0].source_type ?? undefined }).reliability}
                   admiraltyCode={publishers[0].admiralty_code ?? undefined}
+                  alignment={publishers[0].alignment ?? null}
                   size="sm"
                   onClick={e => { e?.stopPropagation(); setSourceDetailOpen(true); }}
                 />

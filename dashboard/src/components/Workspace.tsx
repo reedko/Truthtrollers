@@ -30,9 +30,14 @@ import {
 } from "../../../shared/entities/types";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModal";
+import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
+import {
+  mapAssertionLinkForWorkspace,
+  mapDocumentDiscoveryLinkForWorkspace,
+} from "./evidenceLinkPresentation";
 import {
   fetchClaimById,
   fetchClaimsAndLinkedReferencesForTask,
@@ -53,6 +58,7 @@ import MobileWorkspaceShell from "./MobileWorkspaceShell";
 import usePermissions from "../hooks/usePermissions";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import { normalizeSourceProfile, SourceProfile } from "../utils/normalizeSourceProfile";
+import type { SourceAlignment } from "./SourceCrest";
 
 interface WorkspaceProps {
   contentId: number;
@@ -95,7 +101,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
-  const [sourceClaimPublisher, setSourceClaimPublisher] = useState<SourceProfile | null>(null);
+  const [sourceClaimPublisher, setSourceClaimPublisher] = useState<
+    (SourceProfile & { alignment?: SourceAlignment | null }) | null
+  >(null);
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [draggingClaim, setDraggingClaim] = useState<Pick<
     Claim,
@@ -105,6 +113,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [selectedReference, setSelectedReference] =
     useState<ReferenceWithClaims | null>(null);
   const [isReferenceClaimsModalOpen, setIsReferenceClaimsModalOpen] =
+    useState(false);
+  const [isReferenceRescrapeOpen, setIsReferenceRescrapeOpen] =
     useState(false);
   const [isClaimLinkModalOpen, setIsClaimLinkModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
@@ -175,34 +185,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId, scope)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
-        const formattedLinks: ClaimLink[] = data.map((row) => {
-          // Normalize relationship values
-          let normalizedRelation: "support" | "refute" | "nuance";
-          const rel = String(row.relationship); // Cast to string for comparison
-
-          if (rel === "supports" || rel === "support") {
-            normalizedRelation = "support";
-          } else if (rel === "refutes" || rel === "refute") {
-            normalizedRelation = "refute";
-          } else if (rel === "nuance") {
-            normalizedRelation = "nuance";
-          } else {
-            console.warn(
-              `⚠️ Unknown relationship: "${row.relationship}", defaulting to "nuance"`,
-            );
-            normalizedRelation = "nuance";
-          }
-
-          return {
-            id: row.id.toString(),
-            claimId: row.left_claim_id, // from content_claims.target_claim_id
-            referenceId: row.right_reference_id, // from claims_references.reference_content_id
-            sourceClaimId: row.source_claim_id,
-            relation: normalizedRelation,
-            confidence: row.confidence || 0,
-            notes: row.notes || "",
-          };
-        });
+        const formattedLinks: ClaimLink[] = data.map(mapAssertionLinkForWorkspace);
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {
@@ -291,17 +274,22 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsRelevanceScanModalOpen(true);
   };
 
-  const findPublisherForClaim = (claimId: number): SourceProfile | null => {
+  const findPublisherForClaim = (
+    claimId: number,
+  ): (SourceProfile & { alignment?: SourceAlignment | null }) | null => {
     const ref = references.find(
       (r) => Array.isArray(r.claims) && r.claims.some((c: any) => c.claim_id === claimId),
     );
     if (!ref) return null;
-    return normalizeSourceProfile({
-      publisher_name: ref.publisher_name,
-      is_primary_source: ref.is_primary_source,
-      media_source: ref.media_source,
-      admiralty_code: ref.admiralty_code ?? undefined,
-    });
+    return {
+      ...normalizeSourceProfile({
+        publisher_name: ref.publisher_name,
+        is_primary_source: ref.is_primary_source,
+        media_source: ref.media_source,
+        admiralty_code: ref.admiralty_code ?? undefined,
+      }),
+      alignment: ref.alignment ?? null,
+    };
   };
 
   const handleOpenLinkOverlayFromScan = (
@@ -371,11 +359,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
       try {
         // Check if this is an AI evidence link (from reference_claim_links)
         // AI links have id like "ai-123" and don't have actual source claim IDs
-        const isAILink = link.id?.startsWith("ai-") ?? false;
+        const isDocumentDiscovery = link.linkKind === "document-discovery";
 
         let source, target;
 
-        if (isAILink) {
+        if (isDocumentDiscovery) {
           // For AI links, find the original AI evidence link data
           const aiLink = aiEvidenceLinks.find(
             (ai) => `ai-${ai.link_id}` === link.id,
@@ -710,32 +698,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
               const allLinks = [
                 ...claimLinks, // User-created claim links
                 // Convert AI evidence links to ClaimLink format
-                ...aiEvidenceLinks.map((ai) => ({
-                  id: `ai-${ai.link_id}`,
-                  claimId: ai.task_claim_id,
-                  referenceId: ai.reference_content_id,
-                  sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
-                  relation:
-                    ai.stance === "support"
-                      ? ("support" as const)
-                      : ai.stance === "refute"
-                        ? ("refute" as const)
-                        : ai.stance === "nuance"
-                          ? ("nuance" as const)
-                          : ("nuance" as const), // fallback/context/insufficient
-                  confidence: ai.support_level, // Use support_level for line thickness/opacity
-                  notes: ai.rationale || "",
-                })),
+                ...aiEvidenceLinks.map(mapDocumentDiscoveryLinkForWorkspace),
               ];
 
               // Apply filter based on linkFilter state
               if (linkFilter === "user") {
                 return allLinks.filter(
-                  (link) => !link.id?.toString().startsWith("ai-"),
+                  (link) => link.linkKind === "human",
                 );
               } else if (linkFilter === "ai") {
                 return allLinks.filter((link) =>
-                  link.id?.toString().startsWith("ai-"),
+                  link.linkKind !== "human",
                 );
               }
               return allLinks; // 'all' - no filtering
@@ -788,6 +761,13 @@ const Workspace: React.FC<WorkspaceProps> = ({
           isOpen={isReferenceClaimsModalOpen}
           onClose={() => setIsReferenceClaimsModalOpen(false)}
           reference={selectedReference}
+          onRescrape={() => {
+            if (selectedReference?.url) {
+              window.open(selectedReference.url, "_blank", "noopener");
+            }
+            setIsReferenceClaimsModalOpen(false);
+            setIsReferenceRescrapeOpen(true);
+          }}
           setDraggingClaim={setDraggingClaim}
           draggingClaim={draggingClaim}
           onVerifyClaim={handleVerifyClaim}
@@ -868,6 +848,27 @@ const Workspace: React.FC<WorkspaceProps> = ({
           }}
         />
       )}
+
+      <ScrapeReferenceModal
+        isOpen={isReferenceRescrapeOpen}
+        onClose={() => setIsReferenceRescrapeOpen(false)}
+        taskId={String(contentId)}
+        initialUrl={selectedReference?.url}
+        onUpdateReferences={async () => {
+          sessionRefreshReferences();
+          const refreshedReferences = await fetchReferencesWithClaimsForTask(
+            contentId,
+            viewerId,
+          );
+          const refreshedReference = refreshedReferences.find(
+            (reference) =>
+              reference.reference_content_id ===
+              selectedReference?.reference_content_id,
+          );
+          if (refreshedReference) setSelectedReference(refreshedReference);
+          setIsReferenceClaimsModalOpen(true);
+        }}
+      />
 
       <ClaimLinkOverlay
         isOpen={isClaimLinkModalOpen}

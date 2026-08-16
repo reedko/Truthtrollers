@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Box, Button, Image, Input, useToast, Spinner } from "@chakra-ui/react";
 import { useAuthStore } from "../store/useAuthStore";
 import axios from "axios";
+import { buildAssetUrl } from "../utils/assetUrl";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -9,6 +10,7 @@ const API_BASE_URL =
 const UploadProfileImage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const user = useAuthStore((s) => s.user);
+  const token = useAuthStore((s) => s.token);
   const setAuth = useAuthStore((s) => s.setAuth);
   const toast = useToast();
   const [isUploading, setIsUploading] = useState(false);
@@ -39,7 +41,7 @@ const UploadProfileImage: React.FC = () => {
         ...user,
         user_profile_image: response.data.path,
       };
-      setAuth(updatedUser, user.jwt || "");
+      setAuth(updatedUser, token || "");
 
       toast({
         title: "Profile image updated",
@@ -65,7 +67,7 @@ const UploadProfileImage: React.FC = () => {
     <Box textAlign="center">
       {user?.user_profile_image && (
         <Image
-          src={`${API_BASE_URL}/${user.user_profile_image}`}
+          src={buildAssetUrl(user.user_profile_image)}
           boxSize="120px"
           borderRadius="full"
           mx="auto"

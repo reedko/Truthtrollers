@@ -1,7 +1,6 @@
 // UserConsensusBar.tsx
 import { Box, Text, VStack, HStack } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
-import "./UserConsensusBar.css";
 import { VERIMETER_LABELS } from "../utils/verimeterLabels";
 
 interface UserConsensusBarProps {

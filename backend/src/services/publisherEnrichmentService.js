@@ -915,7 +915,11 @@ async function runWikipedia(query, { publisherId, publisherName, domain }) {
   });
 
   logger.log(`[enrichment] ✅ Wikipedia profile stored for ${publisherName} (${confidence})`);
-  return { status: "found", confidence };
+  return {
+    status: "found",
+    confidence,
+    canonicalName: confidence === "high" ? extracted?.publisher_name || null : null,
+  };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -989,7 +993,11 @@ async function runWikidata(query, { publisherId, publisherName, domain, sourceUr
   });
 
   logger.log(`[enrichment] ✅ Wikidata profile stored for ${publisherName} (${result.confidence || "medium"})`);
-  return { status: "found", confidence: result.confidence || "medium" };
+  return {
+    status: "found",
+    confidence: result.confidence || "medium",
+    canonicalName: result.confidence === "high" ? normalized.publisherName || null : null,
+  };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1695,7 +1703,7 @@ export async function enrichPublisherIfNeeded({
       return { status: "skipped", reason: "publisher_not_found" };
     }
 
-    const label = publisherName || `publisher_${resolvedId}`;
+    let label = publisherName || `publisher_${resolvedId}`;
     logger.log(`[enrichment] Starting for "${label}" id=${resolvedId} domain=${domain} context=${context}`);
 
     // Skip enrichment when the SOURCE is a social platform AND the publisher is just
@@ -1779,6 +1787,18 @@ export async function enrichPublisherIfNeeded({
 
     const summary = Object.fromEntries(Object.entries(results).map(([k, v]) => [k, v.status]));
     logger.log(`[enrichment] First pass for "${label}" finished in ${Date.now() - firstPassStartedAt}ms: ${JSON.stringify(summary)}`);
+
+    // A high-confidence canonical name from Wikidata/Wikipedia always wins over
+    // whatever name the publisher row currently has (including domain fallbacks
+    // like "itu.int"). Wikidata's structured entity label is preferred over
+    // Wikipedia's LLM-extracted name when both are available.
+    const canonicalName = results.Wikidata?.canonicalName || results.Wikipedia?.canonicalName || null;
+    if (canonicalName && canonicalName.trim().toLowerCase() !== label.trim().toLowerCase()) {
+      await query(`UPDATE publishers SET publisher_name = ? WHERE publisher_id = ?`, [canonicalName, resolvedId]);
+      logger.log(`[enrichment] ✏️  Renamed publisher ${resolvedId}: "${label}" → "${canonicalName}"`);
+      results.publisherRename = { from: label, to: canonicalName };
+      label = canonicalName;
+    }
 
     const ownSiteStatusStale = force ? true : await isOwnSiteOrgStatusStale(query, resolvedId);
     if (domain && ownSiteStatusStale && !skipOwnSiteOrgStatus) {

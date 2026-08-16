@@ -65,6 +65,19 @@ export interface Publisher {
   publisher_icon?: string;
   description: string;
   admiralty_code?: string | null;
+  // SourceCrest sash — set by the backend's attachSourceAlignments() helper.
+  // Every SourceCrest consumer must render this object as-is; never
+  // re-derive IND/GOV/ADV markers from other fields client-side.
+  alignment?: {
+    marker: string;
+    type?: string;
+    label: string;
+    riskScore?: number | null;
+    degree?: string;
+    explanation?: string | null;
+    confidence?: number | null;
+    provenance?: string;
+  } | null;
 }
 
 //Publisher Rating interface
@@ -126,6 +139,19 @@ export interface ReferenceWithClaims {
   admiralty_code?: string | null; // from admiralty_evaluations join
   admiralty_source?: "content" | "publisher_cached" | null;
   author_id?: number;
+  // SourceCrest sash — set by the backend's attachSourceAlignments() helper.
+  // Every SourceCrest consumer must render this object as-is; never
+  // re-derive IND/GOV/ADV markers from other fields client-side.
+  alignment?: {
+    marker: string;
+    type?: string;
+    label: string;
+    riskScore?: number | null;
+    degree?: string;
+    explanation?: string | null;
+    confidence?: number | null;
+    provenance?: string;
+  } | null;
 }
 export type UnifiedReference = ReferenceWithClaims;
 // Claims

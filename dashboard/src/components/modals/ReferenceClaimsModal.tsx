@@ -18,6 +18,7 @@ import {
 import { Search2Icon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import SourceCrest from "../SourceCrest";
+import ReferenceAuthors from "../ReferenceAuthors";
 import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
 import { Global, css } from "@emotion/react";
 import { motion } from "framer-motion";
@@ -142,8 +143,10 @@ const ReferenceClaimsModal: React.FC<Props> = ({
                   is_primary_source: reference.is_primary_source,
                   media_source: reference.media_source,
                   veracity_score: reference.publisher_veracity ?? undefined,
+                  source_type: reference.source_type ?? undefined,
                   admiralty_code: reference.admiralty_code ?? undefined,
                 })}
+                alignment={reference.alignment ?? null}
                 size="xs"
               />
             )}
@@ -153,12 +156,10 @@ const ReferenceClaimsModal: React.FC<Props> = ({
                 {reference?.publisher_name ?? "—"}
               </Text>
             </Text>
-            <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+            <HStack spacing={0} fontSize="xs" color="rgba(0,162,255,0.7)">
               <Text as="span" opacity={0.6}>Auth: </Text>
-              <Text as="span" color={reference?.author_name?.trim() ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
-                {reference?.author_name?.trim() ?? "—"}
-              </Text>
-            </Text>
+              <ReferenceAuthors authors={reference?.authors} fallbackName={reference?.author_name} />
+            </HStack>
           </HStack>
         </ModalHeader>
 

@@ -21,7 +21,10 @@ async function getExtensionSettings() {
   const now = Date.now();
 
   // Return cached if still fresh
-  if (cachedExtensionSettings && (now - settingsLastFetched) < SETTINGS_CACHE_DURATION) {
+  if (
+    cachedExtensionSettings &&
+    now - settingsLastFetched < SETTINGS_CACHE_DURATION
+  ) {
     return cachedExtensionSettings;
   }
 
@@ -38,7 +41,7 @@ async function getExtensionSettings() {
       console.log("✅ Extension settings loaded:", cachedExtensionSettings);
       // Mirror popup_style to storage so content scripts can read it synchronously
       browser.storage.local.set({
-        popup_style: cachedExtensionSettings.popup_style || 'card',
+        popup_style: cachedExtensionSettings.popup_style || "card",
       });
       return cachedExtensionSettings;
     }
@@ -48,9 +51,9 @@ async function getExtensionSettings() {
 
   // Return defaults if fetch fails
   return {
-    verimeter_mode: 'user',
-    verimeter_ai_weight: '0.5',
-    popup_style: 'card',
+    verimeter_mode: "user",
+    verimeter_ai_weight: "0.5",
+    popup_style: "card",
   };
 }
 
@@ -450,10 +453,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log(`⏳ [Tab ${tabId}] Scraping started`);
       activeScrapes.set(tabId, {
         url: message.url || "unknown",
-        startedAt: Date.now()
+        startedAt: Date.now(),
       });
 
-      console.log(`📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`);
+      console.log(
+        `📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`,
+      );
       return;
     }
 
@@ -461,7 +466,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "scrapeStarted") {
       const tabId = sender.tab?.id;
       if (!tabId) {
-        console.warn("⚠️ scrapeStarted: No tab ID available, trying to query active tab");
+        console.warn(
+          "⚠️ scrapeStarted: No tab ID available, trying to query active tab",
+        );
         try {
           const tabs = await browser.tabs.query({
             active: true,
@@ -472,7 +479,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             console.log(`⏳ [Tab ${activeTabId}] Scraping started (via query)`);
             activeScrapes.set(activeTabId, {
               url: message.url || "unknown",
-              startedAt: Date.now()
+              startedAt: Date.now(),
             });
           }
         } catch (err) {
@@ -484,9 +491,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log(`⏳ [Tab ${tabId}] Scraping started`);
       activeScrapes.set(tabId, {
         url: message.url || "unknown",
-        startedAt: Date.now()
+        startedAt: Date.now(),
       });
-      console.log(`📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`);
+      console.log(
+        `📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`,
+      );
       return;
     }
 
@@ -506,11 +515,15 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           const scrapeInfo = activeScrapes.get(tabId);
           if (scrapeInfo) {
             const duration = Date.now() - scrapeInfo.startedAt;
-            console.log(`⏱️ [Tab ${tabId}] Scrape took ${(duration / 1000).toFixed(1)}s`);
+            console.log(
+              `⏱️ [Tab ${tabId}] Scrape took ${(duration / 1000).toFixed(1)}s`,
+            );
             activeScrapes.delete(tabId);
           }
 
-          console.log(`📊 Active scrapes remaining: ${activeScrapes.size} tab(s)`);
+          console.log(
+            `📊 Active scrapes remaining: ${activeScrapes.size} tab(s)`,
+          );
 
           // Is this the extension PDF viewer?
           const tab = await browser.tabs.get(tabId);
@@ -1010,19 +1023,20 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
         // Get extension settings to determine mode
         const settings = await getExtensionSettings();
-        const mode = settings.verimeter_mode || 'user';
-        const aiWeight = settings.verimeter_ai_weight || '0.5';
+        const mode = settings.verimeter_mode || "user";
+        const aiWeight = settings.verimeter_ai_weight || "0.5";
 
         // Build URL based on mode
         let url;
-        if (mode === 'ai') {
+        if (mode === "ai") {
           url = `${BASE_URL}/api/content/${contentId}/scores/ai`;
-        } else if (mode === 'user') {
+        } else if (mode === "user") {
           url = `${BASE_URL}/api/content/${contentId}/scores/user${userId ? `?viewerId=${userId}` : ""}`;
-        } else { // combined
+        } else {
+          // combined
           const params = new URLSearchParams();
-          if (userId) params.append('viewerId', userId);
-          params.append('aiWeight', aiWeight);
+          if (userId) params.append("viewerId", userId);
+          params.append("aiWeight", aiWeight);
           url = `${BASE_URL}/api/content/${contentId}/scores/combined?${params.toString()}`;
         }
 
@@ -1041,17 +1055,20 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         let resolvedMode = data.mode || mode;
 
         if (
-          (mode === 'user' || mode === 'combined') &&
+          (mode === "user" || mode === "combined") &&
           Number(data.rating_counts?.user_count || 0) === 0 &&
           Number(data.rating_counts?.ai_count || 0) > 0
         ) {
-          const aiResponse = await fetch(`${BASE_URL}/api/content/${contentId}/scores/ai`, {
-            method: "GET",
-            credentials: "include",
-          });
+          const aiResponse = await fetch(
+            `${BASE_URL}/api/content/${contentId}/scores/ai`,
+            {
+              method: "GET",
+              credentials: "include",
+            },
+          );
           if (aiResponse.ok) {
             data = await aiResponse.json();
-            resolvedMode = 'ai';
+            resolvedMode = "ai";
           }
         }
 
@@ -1421,19 +1438,22 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
       // Fetch verimeter score for this content using extension settings
       try {
         const settings = await getExtensionSettings();
-        const mode = settings.verimeter_mode || 'user';
-        const aiWeight = settings.verimeter_ai_weight || '0.5';
+        const mode = settings.verimeter_mode || "user";
+        const aiWeight = settings.verimeter_ai_weight || "0.5";
 
         let scoreUrl;
-        if (mode === 'ai') {
+        if (mode === "ai") {
           scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/ai`;
-        } else if (mode === 'user') {
+        } else if (mode === "user") {
           scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/user`;
         } else {
           scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/combined?aiWeight=${aiWeight}`;
         }
 
-        console.log(`📊 [checkContent] Fetching score in ${mode} mode from:`, scoreUrl);
+        console.log(
+          `📊 [checkContent] Fetching score in ${mode} mode from:`,
+          scoreUrl,
+        );
 
         const scoreResponse = await fetch(scoreUrl, {
           method: "GET",
@@ -1444,7 +1464,7 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
           let scoreData = await scoreResponse.json();
           let resolvedMode = scoreData.mode || mode;
           if (
-            (mode === 'user' || mode === 'combined') &&
+            (mode === "user" || mode === "combined") &&
             Number(scoreData.rating_counts?.user_count || 0) === 0 &&
             Number(scoreData.rating_counts?.ai_count || 0) > 0
           ) {
@@ -1457,7 +1477,7 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
             );
             if (aiScoreResponse.ok) {
               scoreData = await aiScoreResponse.json();
-              resolvedMode = 'ai';
+              resolvedMode = "ai";
             }
           }
           task.verimeter_score = Number(scoreData.verimeter_score) || 0;
@@ -1485,7 +1505,9 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
               credentials: "include",
             },
           );
-          const claimScores = claimScoresResponse.ok ? await claimScoresResponse.json() : {};
+          const claimScores = claimScoresResponse.ok
+            ? await claimScoresResponse.json()
+            : {};
           console.log(`✅ [checkContent] Fetched claim scores:`, claimScores);
 
           const topClaimsResponse = await fetch(
@@ -1497,7 +1519,9 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
           );
           if (topClaimsResponse.ok) {
             const topClaims = await topClaimsResponse.json();
-            console.log(`✅ [checkContent] Fetched ${topClaims.length} top case claims`);
+            console.log(
+              `✅ [checkContent] Fetched ${topClaims.length} top case claims`,
+            );
 
             const claimPairs = [];
             for (const caseClaim of topClaims.slice(0, 5)) {
@@ -1517,11 +1541,17 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
                   if (linkedClaims.length > 0) {
                     if (caseClaimScore < -0.1) {
                       bestSourceClaim = linkedClaims.reduce((best, current) => {
-                        return (current?.support_level ?? 0) < (best?.support_level ?? 0) ? current : best;
+                        return (current?.support_level ?? 0) <
+                          (best?.support_level ?? 0)
+                          ? current
+                          : best;
                       }, linkedClaims[0]);
                     } else if (caseClaimScore > 0.1) {
                       bestSourceClaim = linkedClaims.reduce((best, current) => {
-                        return (current?.support_level ?? 0) > (best?.support_level ?? 0) ? current : best;
+                        return (current?.support_level ?? 0) >
+                          (best?.support_level ?? 0)
+                          ? current
+                          : best;
                       }, linkedClaims[0]);
                     } else {
                       bestSourceClaim = linkedClaims[0];
@@ -1533,35 +1563,52 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
                       caseClaim: {
                         claim_id: caseClaim.claim_id,
                         claim_text: caseClaim.claim_text,
-                        publisher: caseClaim.publisher || caseClaim.media_source,
-                        url: caseClaim.url
+                        publisher:
+                          caseClaim.publisher || caseClaim.media_source,
+                        url: caseClaim.url,
                       },
                       sourceClaim: {
                         claim_id: bestSourceClaim.sourceClaimId,
-                        claim_text: bestSourceClaim.sourceClaim?.claim_text || "No source claim text",
-                        publisher: bestSourceClaim.source_publisher || "Unknown",
+                        claim_text:
+                          bestSourceClaim.sourceClaim?.claim_text ||
+                          "No source claim text",
+                        publisher:
+                          bestSourceClaim.source_publisher || "Unknown",
                         url: bestSourceClaim.source_url || "",
-                        relationship: bestSourceClaim.relation || bestSourceClaim.relationship
+                        relationship:
+                          bestSourceClaim.relation ||
+                          bestSourceClaim.relationship,
                       },
                       verimeter_score: caseClaimScore,
                       support_level: bestSourceClaim.support_level || 0,
-                      rationale: bestSourceClaim.notes || bestSourceClaim.rationale || ""
+                      rationale:
+                        bestSourceClaim.notes ||
+                        bestSourceClaim.rationale ||
+                        "",
                     });
                   }
                 }
               } catch (linkErr) {
-                console.warn(`⚠️ Failed to fetch links for claim ${caseClaim.claim_id}:`, linkErr);
+                console.warn(
+                  `⚠️ Failed to fetch links for claim ${caseClaim.claim_id}:`,
+                  linkErr,
+                );
               }
             }
 
             task.claim_pairs = {
               overall_verimeter: task.verimeter_score,
-              claim_pairs: claimPairs
+              claim_pairs: claimPairs,
             };
-            console.log(`✅ [checkContent] Assembled ${claimPairs.length} claim pairs`);
+            console.log(
+              `✅ [checkContent] Assembled ${claimPairs.length} claim pairs`,
+            );
           }
         } catch (claimPairsErr) {
-          console.warn(`⚠️ [checkContent] Failed to fetch claim pairs:`, claimPairsErr);
+          console.warn(
+            `⚠️ [checkContent] Failed to fetch claim pairs:`,
+            claimPairsErr,
+          );
         }
       } else if (isDetected) {
         // Fetch preview links for non-completed content (reference_claim_task_links + fallback reference_claim_links)
@@ -1575,11 +1622,16 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
             if (previewData.claim_pairs && previewData.claim_pairs.length > 0) {
               task.claim_pairs = previewData;
               // verimeter_score already set above via /scores/ai — don't overwrite
-              console.log(`✅ [checkContent] Fetched ${previewData.claim_pairs.length} preview links`);
+              console.log(
+                `✅ [checkContent] Fetched ${previewData.claim_pairs.length} preview links`,
+              );
             }
           }
         } catch (previewErr) {
-          console.warn(`⚠️ [checkContent] Failed to fetch preview links:`, previewErr);
+          console.warn(
+            `⚠️ [checkContent] Failed to fetch preview links:`,
+            previewErr,
+          );
         }
       }
 
@@ -1676,14 +1728,17 @@ async function showTaskCardx(tabId, isDetected, forceVisible) {
 async function showTaskCard(tabId, isDetected, forceVisible) {
   try {
     // Check if popup already exists AND has been fully rendered with React content
-    const [{ result: popupFullyRendered }] = await browser.scripting.executeScript({
-      target: { tabId },
-      func: () => {
-        const popupRoot = document.getElementById("tt-popup-root");
-        // Check if popup-root exists AND has children (React has rendered)
-        return popupRoot && popupRoot.children.length > 0;
-      }
-    });
+    const [{ result: popupFullyRendered }] =
+      await browser.scripting.executeScript({
+        target: { tabId },
+        func: () => {
+          const popupHost = document.getElementById("tt-popup-host");
+          const popupRoot =
+            popupHost?.shadowRoot?.getElementById("tt-popup-root");
+          // Check if popup-root exists AND has children (React has rendered)
+          return popupRoot && popupRoot.children.length > 0;
+        },
+      });
 
     if (popupFullyRendered) {
       // Popup fully rendered, just toggle visibility
@@ -1691,12 +1746,12 @@ async function showTaskCard(tabId, isDetected, forceVisible) {
       await browser.scripting.executeScript({
         target: { tabId },
         func: (isDetected, forceVisible) => {
-          const popupRoot = document.getElementById("tt-popup-root");
-          if (popupRoot) {
+          const popupHost = document.getElementById("tt-popup-host");
+          if (popupHost) {
             if (isDetected || forceVisible) {
-              popupRoot.style.display = "";
+              popupHost.style.display = "";
             } else {
-              popupRoot.style.display = "none";
+              popupHost.style.display = "none";
             }
           }
         },
@@ -1895,7 +1950,9 @@ function normalizeScrapeMatchUrl(rawUrl) {
     }
     return url.toString();
   } catch {
-    return String(rawUrl || "").replace(/#.*$/, "").replace(/\/+$/, "");
+    return String(rawUrl || "")
+      .replace(/#.*$/, "")
+      .replace(/\/+$/, "");
   }
 }
 
@@ -2120,18 +2177,31 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
       try {
         const allTabs = await browser.tabs.query({});
         const normalizeUrl = (u) => {
-          try { const obj = new URL(u); return obj.origin + obj.pathname; } catch { return u; }
+          try {
+            const obj = new URL(u);
+            return obj.origin + obj.pathname;
+          } catch {
+            return u;
+          }
         };
         const norm = normalizeUrl(url);
-        const existing = allTabs.find(t => t.url && (normalizeUrl(t.url) === norm || t.url === url));
+        const existing = allTabs.find(
+          (t) => t.url && (normalizeUrl(t.url) === norm || t.url === url),
+        );
         if (existing) {
           await browser.tabs.update(existing.id, { active: true });
-          try { await browser.windows.update(existing.windowId, { focused: true }); } catch {}
-          console.log(`[EXT] checkAndOpenTab: reused tab ${existing.id} for ${url}`);
+          try {
+            await browser.windows.update(existing.windowId, { focused: true });
+          } catch {}
+          console.log(
+            `[EXT] checkAndOpenTab: reused tab ${existing.id} for ${url}`,
+          );
           return { reused: true, tabId: existing.id };
         } else {
           const newTab = await browser.tabs.create({ url, active: true });
-          console.log(`[EXT] checkAndOpenTab: opened new tab ${newTab.id} for ${url}`);
+          console.log(
+            `[EXT] checkAndOpenTab: opened new tab ${newTab.id} for ${url}`,
+          );
           return { opened: true, tabId: newTab.id };
         }
       } catch (e) {
@@ -2156,7 +2226,10 @@ let lastPollAt = 0;
 function extractCompactPageForScrape() {
   const MAX_TEXT_CHARS = 120000;
   const MAX_HTML_CHARS = 30000;
-  const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  const clean = (value) =>
+    String(value || "")
+      .replace(/\s+/g, " ")
+      .trim();
   const pickMeta = (selectors) => {
     for (const selector of selectors) {
       const el = document.querySelector(selector);
@@ -2214,13 +2287,17 @@ function extractCompactPageForScrape() {
     author ? `<p data-author="${author}">${author}</p>` : "",
     `<pre>${rawText}</pre>`,
     "</article>",
-  ].join("").slice(0, MAX_HTML_CHARS);
+  ]
+    .join("")
+    .slice(0, MAX_HTML_CHARS);
 
   return {
     html: compactHtml,
     text: rawText,
     title,
-    authors: author ? [{ author_first_name: author, author_last_name: "" }] : null,
+    authors: author
+      ? [{ author_first_name: author, author_last_name: "" }]
+      : null,
     extractedFrom: best?.tagName || "BODY",
   };
 }
@@ -2233,11 +2310,13 @@ async function pollForScrapeJob() {
   try {
     const res = await fetch(`${BASE_URL}/api/scrape-jobs/pending`, {
       credentials: "include",
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     });
 
     if (!res.ok) {
-      console.error(`[EXT] ❌ Failed to fetch pending jobs: ${res.status} ${res.statusText}`);
+      console.error(
+        `[EXT] ❌ Failed to fetch pending jobs: ${res.status} ${res.statusText}`,
+      );
       return;
     }
 
@@ -2246,14 +2325,20 @@ async function pollForScrapeJob() {
 
     // Process first job (FIFO)
     const job = jobs[0];
-    console.log(`[EXT] 📋 Processing scrape job ${job.scrape_job_id}: mode=${job.scrape_mode}, url=${job.target_url || 'N/A'}, task=${job.task_content_id || 'N/A'}`);
+    console.log(
+      `[EXT] 📋 Processing scrape job ${job.scrape_job_id}: mode=${job.scrape_mode}, url=${job.target_url || "N/A"}, task=${job.task_content_id || "N/A"}`,
+    );
 
     await handleScrapeJob(job);
   } catch (err) {
-    if (err.name === 'TimeoutError') {
-      console.error("[EXT] ❌ Poll timeout - backend may be overloaded or unreachable");
-    } else if (err.name === 'NetworkError') {
-      console.error("[EXT] ❌ Network error during poll - check connection to backend");
+    if (err.name === "TimeoutError") {
+      console.error(
+        "[EXT] ❌ Poll timeout - backend may be overloaded or unreachable",
+      );
+    } else if (err.name === "NetworkError") {
+      console.error(
+        "[EXT] ❌ Network error during poll - check connection to backend",
+      );
     } else {
       console.error("[EXT] ❌ Poll error:", err.message);
       console.error("[EXT] 📍 Stack:", err.stack);
@@ -2267,17 +2352,22 @@ async function handleScrapeJob(job) {
 
   try {
     // Step 1: Claim the job
-    const claimRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ instance_id: INSTANCE_ID }),
-      signal: AbortSignal.timeout(10000) // 10 second timeout
-    });
+    const claimRes = await fetch(
+      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ instance_id: INSTANCE_ID }),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      },
+    );
 
     if (!claimRes.ok) {
-      const errorText = await claimRes.text().catch(() => 'unknown error');
-      console.log(`[EXT] ⚠️ Could not claim job ${scrape_job_id} - status ${claimRes.status} (${errorText})`);
+      const errorText = await claimRes.text().catch(() => "unknown error");
+      console.log(
+        `[EXT] ⚠️ Could not claim job ${scrape_job_id} - status ${claimRes.status} (${errorText})`,
+      );
       return; // Job was claimed by another instance, skip it
     }
 
@@ -2297,7 +2387,9 @@ async function handleScrapeJob(job) {
         currentWindow: true,
       });
       if (!activeTabs || activeTabs.length === 0) {
-        throw new Error("No active tab found for scrape_last_viewed mode - user may have closed all tabs");
+        throw new Error(
+          "No active tab found for scrape_last_viewed mode - user may have closed all tabs",
+        );
       }
       targetTab = activeTabs[0];
       url = targetTab.url;
@@ -2307,16 +2399,25 @@ async function handleScrapeJob(job) {
       // extension viewer.html?src=<original-pdf-url>, so compare against both.
       targetTab = findTabForScrapeTarget(tabs, target_url);
       if (!targetTab) {
-        console.error(`[EXT] ❌ No tab found matching target URL: ${target_url}`);
-        console.log(`[EXT] 📋 Available tabs (${tabs.length}):`, tabs.map(t => ({ id: t.id, url: t.url })));
-        throw new Error(`No tab found for URL: ${target_url} - user may have closed the tab`);
+        console.error(
+          `[EXT] ❌ No tab found matching target URL: ${target_url}`,
+        );
+        console.log(
+          `[EXT] 📋 Available tabs (${tabs.length}):`,
+          tabs.map((t) => ({ id: t.id, url: t.url })),
+        );
+        throw new Error(
+          `No tab found for URL: ${target_url} - user may have closed the tab`,
+        );
       }
       url = targetTab.url;
       console.log(`[EXT] 📍 Found tab ${targetTab.id} matching URL: ${url}`);
     }
 
     if (!targetTab?.id) {
-      throw new Error("Target tab not found - invalid scrape mode or no matching tab");
+      throw new Error(
+        "Target tab not found - invalid scrape mode or no matching tab",
+      );
     }
 
     // Step 3: Check if this is a PDF
@@ -2353,7 +2454,7 @@ async function handleScrapeJob(job) {
         // Try to fetch the PDF blob from the loaded tab
         console.log(`[EXT] 📥 Fetching PDF from: ${actualUrl}`);
         const pdfResponse = await fetch(actualUrl, {
-          signal: AbortSignal.timeout(30000) // 30 second timeout
+          signal: AbortSignal.timeout(30000), // 30 second timeout
         });
 
         if (!pdfResponse.ok) {
@@ -2371,13 +2472,15 @@ async function handleScrapeJob(job) {
         }
 
         // Send blob to backend for parsing
-        console.log(`[EXT] 📤 Sending ${pdfBlob.byteLength} bytes to backend for parsing...`);
+        console.log(
+          `[EXT] 📤 Sending ${pdfBlob.byteLength} bytes to backend for parsing...`,
+        );
         const pdfRes = await fetch(`${BASE_URL}/api/parse-pdf-blob`, {
           method: "POST",
           headers: { "Content-Type": "application/octet-stream" },
           credentials: "include",
           body: pdfBlob,
-          signal: AbortSignal.timeout(60000) // 60 second timeout for PDF parsing
+          signal: AbortSignal.timeout(60000), // 60 second timeout for PDF parsing
         });
 
         if (!pdfRes.ok) {
@@ -2402,10 +2505,13 @@ async function handleScrapeJob(job) {
         }
       } catch (err) {
         // Enhanced error logging for PDF extraction failures
-        if (err.name === 'TimeoutError') {
+        if (err.name === "TimeoutError") {
           console.error(`[EXT] ❌ PDF extraction timed out after 30 seconds`);
-        } else if (err.name === 'NetworkError') {
-          console.error(`[EXT] ❌ Network error while fetching PDF:`, err.message);
+        } else if (err.name === "NetworkError") {
+          console.error(
+            `[EXT] ❌ Network error while fetching PDF:`,
+            err.message,
+          );
         } else {
           console.error(`[EXT] ❌ PDF extraction error:`, err.message);
         }
@@ -2416,7 +2522,7 @@ async function handleScrapeJob(job) {
         const compactPage = await safeExecuteScript(
           targetTab.id,
           extractCompactPageForScrape,
-          'PDF fallback compact extraction'
+          "PDF fallback compact extraction",
         );
         raw_html = compactPage?.html || null;
         pdfText = pdfText || compactPage?.text || null;
@@ -2440,71 +2546,122 @@ async function handleScrapeJob(job) {
       const fbData = await safeExecuteScript(
         targetTab.id,
         () => {
-          const cleanText = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+          const cleanText = (v) =>
+            String(v || "")
+              .replace(/\s+/g, " ")
+              .trim();
 
           const isExternal = (href) => {
             try {
-              const h = new URL(href).hostname.replace(/^www\./, '');
-              return !h.endsWith('facebook.com') && !h.includes('fbcdn.net') &&
-                !/^(instagram|messenger|whatsapp|google|apple|amazon|youtube|twitter|tiktok|adobe|akamai)\./.test(h);
-            } catch { return false; }
+              const h = new URL(href).hostname.replace(/^www\./, "");
+              return (
+                !h.endsWith("facebook.com") &&
+                !h.includes("fbcdn.net") &&
+                !/^(instagram|messenger|whatsapp|google|apple|amazon|youtube|twitter|tiktok|adobe|akamai)\./.test(
+                  h,
+                )
+              );
+            } catch {
+              return false;
+            }
           };
 
           // First role="article" is the post itself.
-          const articles = Array.from(document.querySelectorAll('[role="article"]'));
+          const articles = Array.from(
+            document.querySelectorAll('[role="article"]'),
+          );
           // Try to find the outermost post article — the one that contains other articles
           // (link preview cards) is the full post; if no nesting, fall back to articles[0].
-          const postEl = articles.find(a => articles.some(b => b !== a && a.contains(b))) || articles[0] || document.body;
+          const postEl =
+            articles.find((a) =>
+              articles.some((b) => b !== a && a.contains(b)),
+            ) ||
+            articles[0] ||
+            document.body;
 
           // ── Linked external URL ──────────────────────────────────────────
           let linkedUrl = null;
-          const lynxEl = postEl.querySelector('[data-lynx-uri]');
+          const lynxEl = postEl.querySelector("[data-lynx-uri]");
           if (lynxEl) {
-            const uri = lynxEl.getAttribute('data-lynx-uri') || '';
-            if (uri.startsWith('http') && isExternal(uri)) linkedUrl = uri;
+            const uri = lynxEl.getAttribute("data-lynx-uri") || "";
+            if (uri.startsWith("http") && isExternal(uri)) linkedUrl = uri;
           }
           if (!linkedUrl) {
             for (const a of postEl.querySelectorAll('a[href^="http"]')) {
-              if (isExternal(a.href)) { linkedUrl = a.href; break; }
+              if (isExternal(a.href)) {
+                linkedUrl = a.href;
+                break;
+              }
             }
           }
 
           // ── Group / container metadata ───────────────────────────────────
-          const pathMatch = location.pathname.match(/^\/groups\/([^/]+)(?:\/posts\/(\d+))?/i);
+          const pathMatch = location.pathname.match(
+            /^\/groups\/([^/]+)(?:\/posts\/(\d+))?/i,
+          );
           const rawContainer = pathMatch?.[1] || null;
-          const containerId = rawContainer && /^\d+$/.test(rawContainer) ? rawContainer : null;
-          const containerSlug = rawContainer && !/^\d+$/.test(rawContainer) ? rawContainer : null;
+          const containerId =
+            rawContainer && /^\d+$/.test(rawContainer) ? rawContainer : null;
+          const containerSlug =
+            rawContainer && !/^\d+$/.test(rawContainer) ? rawContainer : null;
           const postId = pathMatch?.[2] || null;
 
           const isUsefulName = (v) => {
             const t = cleanText(v);
-            return t.length >= 2 && t.length <= 100 && !/^\d+$/.test(t) &&
-              !/^(facebook|group|groups|public group|private group|view group|join group|see more|log in|sign up)$/i.test(t);
+            return (
+              t.length >= 2 &&
+              t.length <= 100 &&
+              !/^\d+$/.test(t) &&
+              !/^(facebook|group|groups|public group|private group|view group|join group|see more|log in|sign up)$/i.test(
+                t,
+              )
+            );
           };
-          const cleanGroupName = (v) => cleanText(v)
-            .replace(/\s+(?:public|private) group(?:\s*[·|].*)?$/i, '')
-            .replace(/\s*[·|]\s*\d[\d,.]*\s+members?.*$/i, '')
-            .trim();
+          const cleanGroupName = (v) =>
+            cleanText(v)
+              .replace(/\s+(?:public|private) group(?:\s*[·|].*)?$/i, "")
+              .replace(/\s*[·|]\s*\d[\d,.]*\s+members?.*$/i, "")
+              .trim();
 
           let containerName = null;
           let groupUrl = null;
-          const _dbg = { title: document.title, ogTitle: '', p1: 'skip', p2: [], p3: 'skip', postElTag: postEl?.tagName || 'null', articleCount: articles.length, articleTexts: articles.slice(0,4).map((a,i) => `[${i}] ${cleanText(a.textContent||'').slice(0,80)}`), postElIdx: articles.indexOf(postEl) };
+          const _dbg = {
+            title: document.title,
+            ogTitle: "",
+            p1: "skip",
+            p2: [],
+            p3: "skip",
+            postElTag: postEl?.tagName || "null",
+            articleCount: articles.length,
+            articleTexts: articles
+              .slice(0, 4)
+              .map(
+                (a, i) =>
+                  `[${i}] ${cleanText(a.textContent || "").slice(0, 80)}`,
+              ),
+            postElIdx: articles.indexOf(postEl),
+          };
 
           // Priority 1: document.title — Facebook formats group post titles as
           // "(NOTIFS) GROUP_NAME | ARTICLE_TITLE | Facebook". The group name is the
           // FIRST part (with optional notification badge stripped); the article title
           // is the middle part. Requires >= 3 parts so 2-part titles (no group) are ignored.
           if (postId) {
-            const titleParts = document.title.split(/\s*\|\s*/).map(cleanGroupName).filter(Boolean);
+            const titleParts = document.title
+              .split(/\s*\|\s*/)
+              .map(cleanGroupName)
+              .filter(Boolean);
             _dbg.p1 = `parts=${titleParts.length}: ${JSON.stringify(titleParts)}`;
             if (titleParts.length >= 3) {
               const last = titleParts[titleParts.length - 1];
               if (/^facebook$/i.test(last)) {
                 // Strip leading notification badge "(20+) " from group name
-                const rawFirst = titleParts[0].replace(/^\(\d+\+?\)\s*/, '').trim();
+                const rawFirst = titleParts[0]
+                  .replace(/^\(\d+\+?\)\s*/, "")
+                  .trim();
                 if (isUsefulName(rawFirst)) {
                   containerName = rawFirst;
-                  _dbg.p1 += ' → SET';
+                  _dbg.p1 += " → SET";
                 }
               }
             }
@@ -2513,15 +2670,20 @@ async function handleScrapeJob(job) {
           // Priority 2: DOM anchor scan — look for group root link OUTSIDE all
           // role="article" elements (the group nav link is in the outer wrapper).
           if (!containerName && rawContainer) {
-            for (const anchor of document.querySelectorAll('a[href*="/groups/"]')) {
+            for (const anchor of document.querySelectorAll(
+              'a[href*="/groups/"]',
+            )) {
               try {
                 const path = new URL(anchor.href, location.href).pathname;
                 const m = path.match(/^\/groups\/([^/]+)\/?$/i);
                 if (!m) continue;
                 if (m[1] !== rawContainer) continue;
-                const inArticle = articles.some(a => a.contains(anchor));
+                const inArticle = articles.some((a) => a.contains(anchor));
                 const name = cleanGroupName(
-                  anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label') || ''
+                  anchor.innerText ||
+                    anchor.textContent ||
+                    anchor.getAttribute("aria-label") ||
+                    "",
                 );
                 _dbg.p2.push({ path, name: name.slice(0, 40), inArticle });
                 if (!inArticle && isUsefulName(name)) {
@@ -2529,19 +2691,28 @@ async function handleScrapeJob(job) {
                   groupUrl = anchor.href;
                   break;
                 }
-              } catch { continue; }
+              } catch {
+                continue;
+              }
             }
           }
 
           // Priority 3: og:title "posted in" pattern (rare variant)
           if (!containerName) {
-            const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
+            const ogTitle =
+              document.querySelector('meta[property="og:title"]')?.content ||
+              "";
             _dbg.ogTitle = ogTitle;
-            const m = ogTitle.match(/(?:posted?\s+in|in the group)\s+[""]?([^""|]{2,80})[""]?/i);
-            _dbg.p3 = m ? `matched: "${m[1]}"` : 'no match';
+            const m = ogTitle.match(
+              /(?:posted?\s+in|in the group)\s+[""]?([^""|]{2,80})[""]?/i,
+            );
+            _dbg.p3 = m ? `matched: "${m[1]}"` : "no match";
             if (m) {
               const candidate = cleanGroupName(m[1]);
-              if (isUsefulName(candidate)) { containerName = candidate; _dbg.p3 += ' → SET'; }
+              if (isUsefulName(candidate)) {
+                containerName = candidate;
+                _dbg.p3 += " → SET";
+              }
             }
           }
 
@@ -2553,15 +2724,27 @@ async function handleScrapeJob(job) {
           let directSocialPublisher = null;
           let directSocialPublisherUrl = null;
           _dbg.postLinks = [];
-          for (const anchor of document.querySelectorAll('a[href]')) {
-            let href = '', path = '';
-            try { const u = new URL(anchor.href, location.href); href = u.href; path = u.pathname; } catch { continue; }
-            const name = cleanText(anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label'));
+          for (const anchor of document.querySelectorAll("a[href]")) {
+            let href = "",
+              path = "";
+            try {
+              const u = new URL(anchor.href, location.href);
+              href = u.href;
+              path = u.pathname;
+            } catch {
+              continue;
+            }
+            const name = cleanText(
+              anchor.innerText ||
+                anchor.textContent ||
+                anchor.getAttribute("aria-label"),
+            );
             if (!isUsefulName(name) || name === containerName) continue;
             if (!/^\/groups\/[^/]+\/user\/\d+/i.test(path)) continue;
             // Skip links inside any article element (those belong to comments)
-            if (articles.some(a => a.contains(anchor))) continue;
-            if (_dbg.postLinks.length < 5) _dbg.postLinks.push({ path, name: name.slice(0, 40) });
+            if (articles.some((a) => a.contains(anchor))) continue;
+            if (_dbg.postLinks.length < 5)
+              _dbg.postLinks.push({ path, name: name.slice(0, 40) });
             directSocialPublisher = name;
             directSocialPublisherUrl = href;
             break;
@@ -2570,31 +2753,48 @@ async function handleScrapeJob(job) {
           // ── Associated entities (public figures visibly linked to post/group) ──
           // Only collect entities with explicit DOM evidence — never infer from text alone.
           const associatedEntities = [];
-          const seenEntities = new Set([containerName, directSocialPublisher].filter(Boolean));
-          for (const anchor of document.querySelectorAll('a[href]')) {
+          const seenEntities = new Set(
+            [containerName, directSocialPublisher].filter(Boolean),
+          );
+          for (const anchor of document.querySelectorAll("a[href]")) {
             try {
               const path = new URL(anchor.href, location.href).pathname;
               // Only public figure/page profile links (not group, not user-in-group)
               if (!/^\/[^/]+\/?$/.test(path)) continue;
-              if (/^\/(groups|pages|events|marketplace|watch|gaming|help|legal)\b/i.test(path)) continue;
-              const name = cleanText(anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label'));
+              if (
+                /^\/(groups|pages|events|marketplace|watch|gaming|help|legal)\b/i.test(
+                  path,
+                )
+              )
+                continue;
+              const name = cleanText(
+                anchor.innerText ||
+                  anchor.textContent ||
+                  anchor.getAttribute("aria-label"),
+              );
               if (!isUsefulName(name) || seenEntities.has(name)) continue;
               seenEntities.add(name);
               associatedEntities.push({
                 name,
-                relationship: 'associated_public_figure_or_brand',
+                relationship: "associated_public_figure_or_brand",
                 evidence: anchor.href,
-                confidence: 'visible_dom',
+                confidence: "visible_dom",
               });
               if (associatedEntities.length >= 3) break;
-            } catch { continue; }
+            } catch {
+              continue;
+            }
           }
 
           const socialProvenance = {
-            platform: 'Facebook',
-            platformDomain: 'facebook.com',
-            urlType: postId ? 'facebook_group_post' : (rawContainer ? 'facebook_group' : 'facebook_post'),
-            containerType: rawContainer ? 'facebook_group' : null,
+            platform: "Facebook",
+            platformDomain: "facebook.com",
+            urlType: postId
+              ? "facebook_group_post"
+              : rawContainer
+                ? "facebook_group"
+                : "facebook_post",
+            containerType: rawContainer ? "facebook_group" : null,
             containerName: containerName || null,
             containerId: containerId || null,
             containerSlug: containerSlug || null,
@@ -2604,23 +2804,40 @@ async function handleScrapeJob(job) {
             directSocialPublisherUrl: directSocialPublisherUrl || null,
             sharedSourceUrl: linkedUrl || null,
             associatedEntities,
-            extractionStatus: containerName ? 'partial_extension_dom' : 'extension_dom_required',
+            extractionStatus: containerName
+              ? "partial_extension_dom"
+              : "extension_dom_required",
           };
 
-          return { html: postEl.outerHTML, linkedUrl, socialProvenance, _debug: _dbg };
+          return {
+            html: postEl.outerHTML,
+            linkedUrl,
+            socialProvenance,
+            _debug: _dbg,
+          };
         },
-        'Facebook post HTML + provenance extraction'
+        "Facebook post HTML + provenance extraction",
       );
 
       raw_html = fbData?.html || null;
       const fb_linked_url = fbData?.linkedUrl || null;
       const fb_linked_publisher = fb_linked_url
-        ? (() => { try { return new URL(fb_linked_url).hostname.replace(/^www\./, ''); } catch { return null; } })()
+        ? (() => {
+            try {
+              return new URL(fb_linked_url).hostname.replace(/^www\./, "");
+            } catch {
+              return null;
+            }
+          })()
         : null;
       const fbProvenance = fbData?.socialProvenance || null;
 
-      console.log(`[EXT] Facebook post: extracted ${raw_html?.length || 0} chars, linked_url=${fb_linked_url || 'none'}`);
-      console.log(`[EXT] [facebookProvenance] containerName="${fbProvenance?.containerName || 'not visible'}" directPublisher="${fbProvenance?.directSocialPublisher || 'not visible'}" sharedSource=${fb_linked_url || 'none'}`);
+      console.log(
+        `[EXT] Facebook post: extracted ${raw_html?.length || 0} chars, linked_url=${fb_linked_url || "none"}`,
+      );
+      console.log(
+        `[EXT] [facebookProvenance] containerName="${fbProvenance?.containerName || "not visible"}" directPublisher="${fbProvenance?.directSocialPublisher || "not visible"}" sharedSource=${fb_linked_url || "none"}`,
+      );
       console.log(`[EXT] [FB-DEBUG]`, JSON.stringify(fbData?._debug || {}));
       scrapeBody = {
         url: actualUrl,
@@ -2636,7 +2853,7 @@ async function handleScrapeJob(job) {
       const compactPage = await safeExecuteScript(
         targetTab.id,
         extractCompactPageForScrape,
-        'compact HTML/text extraction'
+        "compact HTML/text extraction",
       );
       raw_html = compactPage?.html || null;
       pdfText = compactPage?.text || null;
@@ -2644,7 +2861,7 @@ async function handleScrapeJob(job) {
       pdfAuthors = compactPage?.authors || null;
 
       console.log(
-        `[EXT] Extracted compact content from tab ${targetTab.id}: html=${raw_html?.length || 0}, text=${pdfText?.length || 0}, source=${compactPage?.extractedFrom || 'unknown'}`,
+        `[EXT] Extracted compact content from tab ${targetTab.id}: html=${raw_html?.length || 0}, text=${pdfText?.length || 0}, source=${compactPage?.extractedFrom || "unknown"}`,
       );
       scrapeBody = {
         url: actualUrl,
@@ -2658,19 +2875,23 @@ async function handleScrapeJob(job) {
     }
 
     // Step 4: Send to scrape-reference endpoint
-    console.log(`[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}`);
+    console.log(
+      `[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}`,
+    );
 
     const scrapeRes = await fetch(`${BASE_URL}/api/scrape-reference`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify(scrapeBody),
-      signal: AbortSignal.timeout(120000)
+      signal: AbortSignal.timeout(120000),
     });
 
     if (!scrapeRes.ok) {
       const errorText = await scrapeRes.text();
-      console.error(`[EXT] ❌ Scrape API returned error ${scrapeRes.status}: ${errorText}`);
+      console.error(
+        `[EXT] ❌ Scrape API returned error ${scrapeRes.status}: ${errorText}`,
+      );
       throw new Error(`Scrape API failed: ${scrapeRes.status} - ${errorText}`);
     }
 
@@ -2682,68 +2903,100 @@ async function handleScrapeJob(job) {
     }
 
     const referenceContentId = scrapeResult.contentId;
-    console.log(`[EXT] ✅ Scrape successful, content_id: ${referenceContentId}`);
+    console.log(
+      `[EXT] ✅ Scrape successful, content_id: ${referenceContentId}`,
+    );
 
     // Step 5: Mark job as completed
     console.log(`[EXT] 📝 Marking job ${scrape_job_id} as completed...`);
-    const completeRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        content_id: referenceContentId,
-        instance_id: INSTANCE_ID,
-      }),
-      signal: AbortSignal.timeout(10000)
-    });
+    const completeRes = await fetch(
+      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          content_id: referenceContentId,
+          instance_id: INSTANCE_ID,
+        }),
+        signal: AbortSignal.timeout(10000),
+      },
+    );
 
     if (!completeRes.ok) {
-      const errorText = await completeRes.text().catch(() => 'unknown error');
-      console.error(`[EXT] ⚠️ Failed to mark job as completed: ${completeRes.status} - ${errorText}`);
-      console.error(`[EXT] 📋 Job ${scrape_job_id} completed successfully but status update failed - backend will see stale 'claimed' status and reset after 5 min`);
+      const errorText = await completeRes.text().catch(() => "unknown error");
+      console.error(
+        `[EXT] ⚠️ Failed to mark job as completed: ${completeRes.status} - ${errorText}`,
+      );
+      console.error(
+        `[EXT] 📋 Job ${scrape_job_id} completed successfully but status update failed - backend will see stale 'claimed' status and reset after 5 min`,
+      );
     }
 
     console.log(
       `[EXT] ✅ Scrape job ${scrape_job_id} completed successfully, reference_content_id: ${referenceContentId}`,
     );
   } catch (err) {
-    console.error(`[EXT] ❌ Scrape job ${scrape_job_id} FAILED at step:`, err.message);
+    console.error(
+      `[EXT] ❌ Scrape job ${scrape_job_id} FAILED at step:`,
+      err.message,
+    );
     console.error(`[EXT] 📍 Error stack:`, err.stack);
-    console.error(`[EXT] 📋 Job details: mode=${scrape_mode}, url=${target_url || 'N/A'}, task=${task_content_id || 'N/A'}`);
+    console.error(
+      `[EXT] 📋 Job details: mode=${scrape_mode}, url=${target_url || "N/A"}, task=${task_content_id || "N/A"}`,
+    );
 
     // Only mark as failed if we successfully claimed it
     // Otherwise the job is still pending and another instance can try
     if (jobClaimed) {
       console.log(`[EXT] 📝 Marking job ${scrape_job_id} as failed...`);
       try {
-        const failRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            error_message: err.message,
-            instance_id: INSTANCE_ID,
-          }),
-          signal: AbortSignal.timeout(10000) // 10 second timeout
-        });
+        const failRes = await fetch(
+          `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              error_message: err.message,
+              instance_id: INSTANCE_ID,
+            }),
+            signal: AbortSignal.timeout(10000), // 10 second timeout
+          },
+        );
 
         if (!failRes.ok) {
-          const errorText = await failRes.text().catch(() => 'unknown error');
-          console.error(`[EXT] ⚠️ Failed to mark job as failed: ${failRes.status} - ${errorText}`);
-          console.log(`[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`);
+          const errorText = await failRes.text().catch(() => "unknown error");
+          console.error(
+            `[EXT] ⚠️ Failed to mark job as failed: ${failRes.status} - ${errorText}`,
+          );
+          console.log(
+            `[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`,
+          );
         } else {
-          console.log(`[EXT] ✅ Job ${scrape_job_id} marked as failed successfully`);
+          console.log(
+            `[EXT] ✅ Job ${scrape_job_id} marked as failed successfully`,
+          );
         }
       } catch (failErr) {
-        if (failErr.name === 'TimeoutError') {
-          console.error("[EXT] ❌ Timeout while marking job as failed - backend may be overloaded");
+        if (failErr.name === "TimeoutError") {
+          console.error(
+            "[EXT] ❌ Timeout while marking job as failed - backend may be overloaded",
+          );
         } else {
-          console.error("[EXT] ❌ Exception while marking job as failed:", failErr.message);
+          console.error(
+            "[EXT] ❌ Exception while marking job as failed:",
+            failErr.message,
+          );
         }
-        console.log(`[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`);
+        console.log(
+          `[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`,
+        );
       }
     } else {
-      console.log(`[EXT] ⏭️ Job ${scrape_job_id} was not claimed by this instance, skipping fail marker`);
+      console.log(
+        `[EXT] ⏭️ Job ${scrape_job_id} was not claimed by this instance, skipping fail marker`,
+      );
     }
   }
 }
@@ -2752,8 +3005,8 @@ async function handleScrapeJob(job) {
 
 // Poll periodically (fallback)
 setInterval(() => {
-  pollForScrapeJob().catch(err => {
-    console.error('[EXT] 🚨 Polling interval caught error:', err);
+  pollForScrapeJob().catch((err) => {
+    console.error("[EXT] 🚨 Polling interval caught error:", err);
   });
 }, POLL_INTERVAL_MS);
 
@@ -2762,7 +3015,7 @@ browser.tabs.onActivated.addListener(async () => {
   try {
     await pollForScrapeJob();
   } catch (err) {
-    console.error('[EXT] 🚨 Tab activation polling caught error:', err);
+    console.error("[EXT] 🚨 Tab activation polling caught error:", err);
   }
 });
 
@@ -2775,12 +3028,12 @@ browser.tabs.onUpdated.addListener((_, changeInfo, tab) => {
       (tab.url.includes("localhost:5173") ||
         tab.url.includes("truthtrollers.com"))
     ) {
-      pollForScrapeJob().catch(err => {
-        console.error('[EXT] 🚨 Tab update polling caught error:', err);
+      pollForScrapeJob().catch((err) => {
+        console.error("[EXT] 🚨 Tab update polling caught error:", err);
       });
     }
   } catch (err) {
-    console.error('[EXT] 🚨 Tab update listener caught error:', err);
+    console.error("[EXT] 🚨 Tab update listener caught error:", err);
   }
 });
 
@@ -2790,38 +3043,42 @@ browser.tabs.onUpdated.addListener((_, changeInfo, tab) => {
 // ============================================================
 
 // Global error handler - catches uncaught errors
-self.addEventListener('error', (event) => {
-  console.error('[EXT] 🚨 UNCAUGHT ERROR:', event.error);
-  console.error('[EXT] 📍 Error message:', event.message);
-  console.error('[EXT] 📍 Error filename:', event.filename);
-  console.error('[EXT] 📍 Error line:', event.lineno);
-  console.error('[EXT] 📍 Stack:', event.error?.stack);
+self.addEventListener("error", (event) => {
+  console.error("[EXT] 🚨 UNCAUGHT ERROR:", event.error);
+  console.error("[EXT] 📍 Error message:", event.message);
+  console.error("[EXT] 📍 Error filename:", event.filename);
+  console.error("[EXT] 📍 Error line:", event.lineno);
+  console.error("[EXT] 📍 Stack:", event.error?.stack);
 
   // Log crash to storage for detection
-  browser.storage.local.set({
-    lastCrash: {
-      timestamp: Date.now(),
-      error: event.message,
-      stack: event.error?.stack,
-      instanceId: INSTANCE_ID
-    }
-  }).catch(err => console.error('[EXT] Failed to log crash:', err));
+  browser.storage.local
+    .set({
+      lastCrash: {
+        timestamp: Date.now(),
+        error: event.message,
+        stack: event.error?.stack,
+        instanceId: INSTANCE_ID,
+      },
+    })
+    .catch((err) => console.error("[EXT] Failed to log crash:", err));
 });
 
 // Global unhandled promise rejection handler
-self.addEventListener('unhandledrejection', (event) => {
-  console.error('[EXT] 🚨 UNHANDLED PROMISE REJECTION:', event.reason);
-  console.error('[EXT] 📍 Promise:', event.promise);
+self.addEventListener("unhandledrejection", (event) => {
+  console.error("[EXT] 🚨 UNHANDLED PROMISE REJECTION:", event.reason);
+  console.error("[EXT] 📍 Promise:", event.promise);
 
   // Log crash to storage for detection
-  browser.storage.local.set({
-    lastCrash: {
-      timestamp: Date.now(),
-      error: `Unhandled promise rejection: ${event.reason}`,
-      stack: event.reason?.stack,
-      instanceId: INSTANCE_ID
-    }
-  }).catch(err => console.error('[EXT] Failed to log crash:', err));
+  browser.storage.local
+    .set({
+      lastCrash: {
+        timestamp: Date.now(),
+        error: `Unhandled promise rejection: ${event.reason}`,
+        stack: event.reason?.stack,
+        instanceId: INSTANCE_ID,
+      },
+    })
+    .catch((err) => console.error("[EXT] Failed to log crash:", err));
 
   // Prevent default to avoid console spam
   event.preventDefault();
@@ -2833,56 +3090,80 @@ let lastHeartbeat = Date.now();
 
 setInterval(() => {
   lastHeartbeat = Date.now();
-  browser.storage.local.set({
-    extensionHeartbeat: {
-      timestamp: lastHeartbeat,
-      instanceId: INSTANCE_ID,
-      activeJobs: 0 // Could track active jobs here if needed
-    }
-  }).catch(err => console.error('[EXT] Failed to update heartbeat:', err));
+  browser.storage.local
+    .set({
+      extensionHeartbeat: {
+        timestamp: lastHeartbeat,
+        instanceId: INSTANCE_ID,
+        activeJobs: 0, // Could track active jobs here if needed
+      },
+    })
+    .catch((err) => console.error("[EXT] Failed to update heartbeat:", err));
 }, HEARTBEAT_INTERVAL_MS);
 
 // On startup, check if we crashed previously
-browser.storage.local.get(['lastCrash', 'extensionHeartbeat']).then(result => {
-  if (result.lastCrash) {
-    const crashTime = result.lastCrash.timestamp;
-    const timeSinceCrash = Date.now() - crashTime;
+browser.storage.local
+  .get(["lastCrash", "extensionHeartbeat"])
+  .then((result) => {
+    if (result.lastCrash) {
+      const crashTime = result.lastCrash.timestamp;
+      const timeSinceCrash = Date.now() - crashTime;
 
-    // If crash was recent (< 5 minutes), log it
-    if (timeSinceCrash < 5 * 60 * 1000) {
-      console.error('[EXT] 🚨 EXTENSION RECOVERED FROM RECENT CRASH');
-      console.error('[EXT] 📍 Crash time:', new Date(crashTime).toISOString());
-      console.error('[EXT] 📍 Time since crash:', Math.round(timeSinceCrash / 1000), 'seconds');
-      console.error('[EXT] 📍 Crash error:', result.lastCrash.error);
-      console.error('[EXT] 📍 Previous instance:', result.lastCrash.instanceId);
-      console.error('[EXT] 📍 Current instance:', INSTANCE_ID);
-      console.log('[EXT] 🔄 Any jobs claimed by crashed instance will be auto-reset by backend after 5 minutes');
+      // If crash was recent (< 5 minutes), log it
+      if (timeSinceCrash < 5 * 60 * 1000) {
+        console.error("[EXT] 🚨 EXTENSION RECOVERED FROM RECENT CRASH");
+        console.error(
+          "[EXT] 📍 Crash time:",
+          new Date(crashTime).toISOString(),
+        );
+        console.error(
+          "[EXT] 📍 Time since crash:",
+          Math.round(timeSinceCrash / 1000),
+          "seconds",
+        );
+        console.error("[EXT] 📍 Crash error:", result.lastCrash.error);
+        console.error(
+          "[EXT] 📍 Previous instance:",
+          result.lastCrash.instanceId,
+        );
+        console.error("[EXT] 📍 Current instance:", INSTANCE_ID);
+        console.log(
+          "[EXT] 🔄 Any jobs claimed by crashed instance will be auto-reset by backend after 5 minutes",
+        );
+      }
+
+      // Clear the crash record after logging
+      browser.storage.local.remove("lastCrash");
     }
 
-    // Clear the crash record after logging
-    browser.storage.local.remove('lastCrash');
-  }
+    if (result.extensionHeartbeat) {
+      const lastBeat = result.extensionHeartbeat.timestamp;
+      const timeSinceLastBeat = Date.now() - lastBeat;
 
-  if (result.extensionHeartbeat) {
-    const lastBeat = result.extensionHeartbeat.timestamp;
-    const timeSinceLastBeat = Date.now() - lastBeat;
-
-    // If last heartbeat was > 2 minutes ago, extension was likely restarted
-    if (timeSinceLastBeat > 2 * 60 * 1000) {
-      console.warn('[EXT] ⚠️ Extension was inactive for', Math.round(timeSinceLastBeat / 1000), 'seconds');
-      console.log('[EXT] 📋 Previous instance:', result.extensionHeartbeat.instanceId);
-      console.log('[EXT] 📋 Current instance:', INSTANCE_ID);
+      // If last heartbeat was > 2 minutes ago, extension was likely restarted
+      if (timeSinceLastBeat > 2 * 60 * 1000) {
+        console.warn(
+          "[EXT] ⚠️ Extension was inactive for",
+          Math.round(timeSinceLastBeat / 1000),
+          "seconds",
+        );
+        console.log(
+          "[EXT] 📋 Previous instance:",
+          result.extensionHeartbeat.instanceId,
+        );
+        console.log("[EXT] 📋 Current instance:", INSTANCE_ID);
+      }
     }
-  }
 
-  console.log('[EXT] ✅ Crash detection and prevention initialized');
-  console.log('[EXT] 📋 Instance ID:', INSTANCE_ID);
-}).catch(err => {
-  console.error('[EXT] Failed to check crash status:', err);
-});
+    console.log("[EXT] ✅ Crash detection and prevention initialized");
+    console.log("[EXT] 📋 Instance ID:", INSTANCE_ID);
+  })
+  .catch((err) => {
+    console.error("[EXT] Failed to check crash status:", err);
+  });
 
 // Enhanced error wrapper for critical async operations
-async function safeAsync(fn, context = 'unknown operation') {
+async function safeAsync(fn, context = "unknown operation") {
   try {
     return await fn();
   } catch (err) {
@@ -2897,23 +3178,26 @@ async function safeTabQuery(queryInfo) {
   try {
     return await browser.tabs.query(queryInfo);
   } catch (err) {
-    console.error('[EXT] ❌ Tab query failed:', err.message);
-    console.error('[EXT] 📍 Query:', JSON.stringify(queryInfo));
+    console.error("[EXT] ❌ Tab query failed:", err.message);
+    console.error("[EXT] 📍 Query:", JSON.stringify(queryInfo));
     return [];
   }
 }
 
 // Wrap script execution to handle failures
-async function safeExecuteScript(tabId, func, context = 'script execution') {
+async function safeExecuteScript(tabId, func, context = "script execution") {
   try {
     const results = await browser.scripting.executeScript({
       target: { tabId },
-      func
+      func,
     });
     return results[0]?.result;
   } catch (err) {
-    console.error(`[EXT] ❌ Script execution failed in ${context}:`, err.message);
-    console.error('[EXT] 📍 Tab ID:', tabId);
+    console.error(
+      `[EXT] ❌ Script execution failed in ${context}:`,
+      err.message,
+    );
+    console.error("[EXT] 📍 Tab ID:", tabId);
     throw new Error(`Failed to execute script: ${err.message}`);
   }
 }
@@ -2924,7 +3208,9 @@ async function safeExecuteScript(tabId, func, context = 'script execution') {
 browser.tabs.onRemoved.addListener((tabId) => {
   if (activeScrapes.has(tabId)) {
     const scrapeInfo = activeScrapes.get(tabId);
-    console.warn(`⚠️ [Tab ${tabId}] Tab closed during scrape of ${scrapeInfo.url}`);
+    console.warn(
+      `⚠️ [Tab ${tabId}] Tab closed during scrape of ${scrapeInfo.url}`,
+    );
     activeScrapes.delete(tabId);
     console.log(`📊 Active scrapes remaining: ${activeScrapes.size} tab(s)`);
   }

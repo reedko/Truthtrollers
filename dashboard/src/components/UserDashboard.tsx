@@ -453,6 +453,7 @@ const UserDashboard: React.FC = () => {
                                 const profile = normalizeSourceProfile({
                                   publisher_name: pub?.publisher_name ?? task.media_source ?? undefined,
                                   media_source: task.media_source ?? undefined,
+                                  source_type: pub?.source_type ?? undefined,
                                 });
                                 return (
                                   <HStack justify="center" spacing={2} mb={2} flexWrap="wrap">
@@ -461,6 +462,7 @@ const UserDashboard: React.FC = () => {
                                       sourceType={profile.sourceType}
                                       reliability={profile.reliability}
                                       admiraltyCode={pub?.admiralty_code ?? undefined}
+                                      alignment={pub?.alignment ?? null}
                                       size="sm"
                                       onClick={(e) => { e?.stopPropagation(); if (pub) setSourceDetailPublisher(pub); }}
                                     />

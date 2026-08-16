@@ -369,6 +369,9 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         publisher_id: firstPub?.publisher_id ?? null,
         admiralty_code:
           firstPub?.admiralty_code ?? (parent as any)?.admiralty_code ?? null,
+        // Sash must come from the same attachSourceAlignments() object every
+        // other SourceCrest consumer uses — never reconstruct from partial fields.
+        alignment: firstPub?.alignment ?? (parent as any)?.alignment ?? null,
         rating: firstPub?.rating ?? null,
         url: firstPub?.url ?? (parent as any)?.url ?? null,
         content_id: firstPub?.content_id ?? (parent as any)?.content_id ?? null,
@@ -439,6 +442,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           // publisher identity (undefined for authorGroup nodes)
           publisher_id: node.publisher_id ?? null,
           admiralty_code: node.admiralty_code ?? null,
+          alignment: node.alignment ?? null,
           rating: node.rating ?? null,
           badgeLabel:
             node.badgeLabel ?? (node.type === "authorGroup" ? "Au" : "Pub"),
@@ -973,6 +977,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
               return getSourceCrestDataUri(
                 ele.data("admiralty_code") ?? undefined,
                 96,
+                ele.data("alignment") ?? null,
               );
             },
             "background-fit": "contain",

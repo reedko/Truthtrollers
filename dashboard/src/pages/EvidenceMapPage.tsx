@@ -456,6 +456,7 @@ function EvidenceFlowNode({ id, data }: { id: string; data: EvidenceNodeData }) 
               rating_type: data.reference.rating_type ?? undefined,
               admiralty_code: data.reference.admiralty_code ?? undefined,
             })}
+            alignment={data.reference.alignment ?? null}
             size="xs"
           />
         ) : data.kind === "content" && data.taskAdmiraltyCode ? (
@@ -1699,6 +1700,7 @@ function EvidenceMapFlow({
                     rating_type: selectedNodeData.reference.rating_type ?? undefined,
                     admiralty_code: selectedNodeData.reference.admiralty_code ?? undefined,
                   })}
+                  alignment={selectedNodeData.reference.alignment ?? null}
                   size="sm"
                   onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(selectedNodeData.reference!); }}
                 />

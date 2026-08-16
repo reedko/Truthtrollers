@@ -427,6 +427,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
                   rating_type: enrichmentRatings[0]?.rating_type,
                   admiralty_code: activePublisher?.admiralty_code ?? undefined,
                 })}
+                alignment={activePublisher?.alignment ?? null}
                 size={compact ? "xs" : "sm"}
                 onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
               />

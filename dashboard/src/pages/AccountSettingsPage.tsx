@@ -18,6 +18,7 @@ import { useNavigate, Link as RouterLink } from "react-router-dom";
 import ChangePasswordForm from "../components/ChangePasswordForm";
 import UploadProfileImage from "../components/UploadProfileImage";
 import ChangeEmailForm from "../components/ChangeEmailForm";
+import { buildAssetUrl } from "../utils/assetUrl";
 
 const AccountSettingsPage: React.FC = () => {
   const user = useAuthStore((s) => s.user);
@@ -59,13 +60,7 @@ const AccountSettingsPage: React.FC = () => {
       <VStack spacing={3} mb={4}>
         <Avatar
           name={user.username}
-          src={
-            user.user_profile_image
-              ? `${import.meta.env.VITE_API_BASE_URL}/${
-                  user.user_profile_image
-                }`
-              : undefined
-          }
+          src={buildAssetUrl(user.user_profile_image)}
           size="xl"
         />
         <Heading size="lg" textAlign="center">
