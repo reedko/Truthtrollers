@@ -50,3 +50,28 @@ node_modules/
 backend/node_modules/
 AIS_1_5.mp4
 .DS_Store
+
+
+#backend assets
+# Runtime/generated backend assets
+backend/assets/data/
+backend/assets/documents/
+backend/assets/pdf-thumbnails/
+backend/assets/videos/
+
+backend/assets/images/content/*
+backend/assets/images/users/*
+backend/assets/images/authors/*
+backend/assets/images/publishers/*
+backend/assets/images/tutorials/*
+
+# Keep default placeholders tracked
+!backend/assets/images/content/content_id_default.png
+!backend/assets/images/authors/author_id_default.png
+!backend/assets/images/publishers/publisher_id_default.png
+
+# Runtime temp/log output
+backend/temp/
+backend/temp-out/
+backend/logs/
+*.log
