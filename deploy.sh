@@ -40,8 +40,9 @@ if [[ "$SKIP_BACKUP" == "--no-backup" ]]; then
   echo "⏭️  Skipping backup (--no-backup flag set)"
 else
   echo "💾 Creating incremental backup on production server..."
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SERVER" bash << EOF
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+  ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SERVER" bash << EOF
 set -e
 
 # Create backup directory if it doesn't exist
@@ -108,32 +109,48 @@ if [[ ! -f "$ENV_PROD" ]]; then
   echo "❌ Missing $ENV_PROD"
   exit 1
 fi
+
 cp "$ENV_PROD" "$ENV_FILE"
 
 cleanup() {
   echo "🧼 Restoring local backend/.env..."
+
   if [[ $HAD_ENV -eq 1 ]]; then
     mv -f "$ENV_FILE.bak" "$ENV_FILE"
   else
     rm -f "$ENV_FILE" "$ENV_FILE.bak"
+
     if [[ -f "$ENV_DEV" ]]; then
       cp "$ENV_DEV" "$ENV_FILE"
     fi
   fi
 }
+
 trap cleanup EXIT
 
 echo "📦 Installing extension dependencies..."
-(cd extension && npm install --legacy-peer-deps --no-audit --no-fund)
+(
+  cd extension
+  npm install --legacy-peer-deps --no-audit --no-fund
+)
 
 echo "🧩 Build extension..."
-(cd extension && npm run build)
+(
+  cd extension
+  npm run build
+)
 
 echo "📦 Installing dashboard dependencies..."
-(cd dashboard && npm install --legacy-peer-deps --no-audit --no-fund)
+(
+  cd dashboard
+  npm install --legacy-peer-deps --no-audit --no-fund
+)
 
 echo "🔧 Build dashboard..."
-(cd dashboard && npm run build)
+(
+  cd dashboard
+  npm run build
+)
 
 echo "📤 Sync dashboard dist → server..."
 rsync -azP --delete --partial --inplace \
@@ -160,13 +177,15 @@ rsync -azP --partial --inplace \
   --exclude '*.log' \
   backend/ "$SERVER:$BACKEND_PATH/"
 
-echo "🖥 Remote steps: Redis check, perms, logs, restart..."
+echo "🖥 Remote steps: Redis check, perms, logs, migration, restart..."
+
 ssh -o ConnectTimeout=60 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 "$SERVER" bash << EOF
 set -e
 
 # Check if Redis is installed, if not install it
 if ! command -v redis-server &> /dev/null && ! command -v redis-cli &> /dev/null; then
   echo "📦 Redis not found, installing..."
+
   # Detect package manager and install
   if command -v dnf &> /dev/null; then
     dnf install -y redis
@@ -179,11 +198,14 @@ if ! command -v redis-server &> /dev/null && ! command -v redis-cli &> /dev/null
     echo "❌ Could not detect package manager (dnf/yum/apt-get)"
     exit 1
   fi
+
   systemctl enable redis
   systemctl start redis
+
   echo "✅ Redis installed and started"
 else
   echo "✅ Redis already installed"
+
   # Ensure it's running (works for both redis and redis-server service names)
   if ! systemctl is-active --quiet redis 2>/dev/null && ! systemctl is-active --quiet redis-server 2>/dev/null; then
     echo "🔄 Starting Redis..."
@@ -214,13 +236,78 @@ chmod -R 755 $BACKEND_PATH/temp/
 chmod -R 755 $BACKEND_PATH/temp-out/
 
 echo "📦 Installing backend dependencies..."
-cd $BACKEND_PATH && npm install --omit=dev --no-audit --no-fund
+cd $BACKEND_PATH
+npm install --omit=dev --no-audit --no-fund
+
+# ═══════════════════════════════════════════════════════════
+# 🗄️ APPLY REQUIRED DATABASE MIGRATION
+# ═══════════════════════════════════════════════════════════
+
+echo "🗄️  Applying InsertOrGetPublisher safety migration..."
+
+MIGRATION_FILE="$BACKEND_PATH/migrations/2026-08-17-fix-insert-or-get-publisher.sql"
+
+if [ ! -f "\$MIGRATION_FILE" ]; then
+  echo "❌ Missing migration: \$MIGRATION_FILE"
+  exit 1
+fi
+
+if [ ! -f "$BACKEND_PATH/.env" ]; then
+  echo "❌ Missing production environment file: $BACKEND_PATH/.env"
+  exit 1
+fi
+
+set -a
+source "$BACKEND_PATH/.env"
+set +a
+
+if [ -z "\${DB_HOST:-}" ] || \
+   [ -z "\${DB_USER:-}" ] || \
+   [ -z "\${DB_DATABASE:-}" ]; then
+  echo "❌ Missing required DB_HOST, DB_USER, or DB_DATABASE in production .env"
+  exit 1
+fi
+
+MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
+  -h "\$DB_HOST" \
+  -u "\$DB_USER" \
+  "\$DB_DATABASE" \
+  < "\$MIGRATION_FILE"
+
+echo "✅ InsertOrGetPublisher migration applied"
+
+# Verify live procedure actually contains the deterministic single-row lookup
+echo "🔎 Verifying InsertOrGetPublisher..."
+
+PROC_DEF=\$(
+  MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
+    -N -B \
+    -h "\$DB_HOST" \
+    -u "\$DB_USER" \
+    "\$DB_DATABASE" \
+    -e "
+      SELECT ROUTINE_DEFINITION
+      FROM information_schema.ROUTINES
+      WHERE ROUTINE_SCHEMA = '\$DB_DATABASE'
+        AND ROUTINE_NAME = 'InsertOrGetPublisher'
+        AND ROUTINE_TYPE = 'PROCEDURE';
+    "
+)
+
+if [[ "\$PROC_DEF" != *"ORDER BY publisher_id ASC"* ]] || \
+   [[ "\$PROC_DEF" != *"LIMIT 1"* ]]; then
+  echo "❌ InsertOrGetPublisher verification failed"
+  exit 1
+fi
+
+echo "✅ InsertOrGetPublisher verified"
 
 pm2 flush
 pm2 restart truthtrollers --update-env
 
-# Show last logs without streaming forever (works on many pm2 versions)
-pm2 logs truthtrollers --lines 60 --nostream 2>/dev/null || pm2 logs truthtrollers --lines 60
+# Show last logs without streaming forever
+pm2 logs truthtrollers --lines 60 --nostream 2>/dev/null || \
+  pm2 logs truthtrollers --lines 60
 
 EOF
 

@@ -26,20 +26,24 @@ export class ClaimExtractor {
     includeTopicsAndTestimonials,
     minClaims,
     maxClaims,
-    contentRole = 'case'
+    contentRole = "case",
   ) {
     if (!this.promptManager) {
-      throw new Error('[ClaimExtractor] PromptManager is required - all prompts must be loaded from database');
+      throw new Error(
+        "[ClaimExtractor] PromptManager is required - all prompts must be loaded from database",
+      );
     }
 
-    const mode = ['edge', 'ranked', 'comprehensive'].includes(extractionMode)
+    const mode = ["edge", "ranked", "comprehensive"].includes(extractionMode)
       ? extractionMode
-      : 'ranked';
-    const role = contentRole === 'source' ? 'source' : 'case';
-    const topicSuffix = includeTopicsAndTestimonials ? '_with_topics' : '_no_topics';
+      : "ranked";
+    const role = contentRole === "source" ? "source" : "case";
+    const topicSuffix = includeTopicsAndTestimonials
+      ? "_with_topics"
+      : "_no_topics";
 
     const replaceTokens = (text) =>
-      String(text || '')
+      String(text || "")
         .replace(/\{\{minClaims\}\}/g, minClaims)
         .replace(/\{\{maxClaims\}\}/g, maxClaims)
         .replace(/\{\{extractionMode\}\}/g, mode)
@@ -56,59 +60,53 @@ export class ClaimExtractor {
         }
       }
       throw new Error(
-        `[ClaimExtractor] Could not load ${label} prompt. Tried: ${candidateNames.join(', ')}. Last error: ${lastErr?.message || 'unknown'}`
+        `[ClaimExtractor] Could not load ${label} prompt. Tried: ${candidateNames.join(", ")}. Last error: ${lastErr?.message || "unknown"}`,
       );
     };
 
-    const preferredSystemNames = [
-      'claim_extraction_stack_system',
-    ];
+    const preferredSystemNames = ["claim_extraction_stack_system"];
 
-    const preferredUserNames = [
-      `claim_extraction_stack${topicSuffix}`,
-    ];
+    const preferredUserNames = [`claim_extraction_stack${topicSuffix}`];
 
     const legacySystemNames = [
-      role === 'source' && mode === 'edge'
-        ? 'claim_extraction_edge_for_source_system'
+      role === "source" && mode === "edge"
+        ? "claim_extraction_edge_for_source_system"
         : null,
-      mode === 'edge'
-        ? 'claim_extraction_edge_system'
-        : 'claim_extraction_ranked_system',
+      mode === "edge"
+        ? "claim_extraction_edge_system"
+        : "claim_extraction_ranked_system",
     ].filter(Boolean);
 
     const legacyUserNames = [
-      role === 'source' && mode === 'edge'
+      role === "source" && mode === "edge"
         ? `claim_extraction_edge_for_source${topicSuffix}`
         : null,
-      role === 'source' && mode !== 'edge'
+      role === "source" && mode !== "edge"
         ? `claim_extraction_${mode}_for_source${topicSuffix}`
         : null,
-      mode === 'edge'
+      mode === "edge"
         ? `claim_extraction_edge${topicSuffix}`
         : `claim_extraction_${mode}${topicSuffix}`,
-      mode === 'comprehensive'
+      mode === "comprehensive"
         ? `claim_extraction_comprehensive${topicSuffix}`
         : null,
     ].filter(Boolean);
 
     try {
-      const systemPrompt =
-        await loadFirstAvailable(
-          preferredSystemNames.concat(legacySystemNames),
-          `${role} system`
-        );
-      const userPrompt =
-        await loadFirstAvailable(
-          preferredUserNames.concat(legacyUserNames),
-          `${role} user`
-        );
+      const systemPrompt = await loadFirstAvailable(
+        preferredSystemNames.concat(legacySystemNames),
+        `${role} system`,
+      );
+      const userPrompt = await loadFirstAvailable(
+        preferredUserNames.concat(legacyUserNames),
+        `${role} user`,
+      );
 
       const systemText = replaceTokens(systemPrompt.prompt.system);
       const userText = replaceTokens(userPrompt.prompt.user);
 
       console.log(
-        `✅ [ClaimExtractor] Loaded ${mode} ${role} prompts: ${systemPrompt.name} + ${userPrompt.name}`
+        `✅ [ClaimExtractor] Loaded ${mode} ${role} prompts: ${systemPrompt.name} + ${userPrompt.name}`,
       );
 
       return {
@@ -126,7 +124,10 @@ export class ClaimExtractor {
         },
       };
     } catch (err) {
-      console.error(`❌ [ClaimExtractor] Error loading prompts from database:`, err.message);
+      console.error(
+        `❌ [ClaimExtractor] Error loading prompts from database:`,
+        err.message,
+      );
       throw err;
     }
   }
@@ -139,14 +140,17 @@ export class ClaimExtractor {
     if (!claims || claims.length === 0) return [];
     if (claims.length <= maxClaims) return claims; // No need to filter
 
-    console.log(`[ClaimFilter] Scoring ${claims.length} claims to find top ${maxClaims}...`);
+    console.log(
+      `[ClaimFilter] Scoring ${claims.length} claims to find top ${maxClaims}...`,
+    );
 
     const scoredClaims = [];
 
     // Score claims in batches to avoid rate limits
     for (const claim of claims) {
       try {
-        const system = "You are a claim quality evaluator. Return only valid JSON.";
+        const system =
+          "You are a claim quality evaluator. Return only valid JSON.";
 
         const user = `
 Evaluate this claim for verification worthiness:
@@ -173,7 +177,8 @@ Rate 0.0-1.0 on each dimension:
 Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning": "brief explanation"}
 `.trim();
 
-        const schemaHint = '{"specificity":0.0,"controversy":0.0,"materiality":0.0,"reasoning":""}';
+        const schemaHint =
+          '{"specificity":0.0,"controversy":0.0,"materiality":0.0,"reasoning":""}';
 
         const scores = await this.llm.generate({
           system,
@@ -182,11 +187,11 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
           temperature: 0.1,
         });
 
-        const avgScore = (
-          (scores.specificity || 0) +
-          (scores.controversy || 0) +
-          (scores.materiality || 0)
-        ) / 3;
+        const avgScore =
+          ((scores.specificity || 0) +
+            (scores.controversy || 0) +
+            (scores.materiality || 0)) /
+          3;
 
         scoredClaims.push({
           claim,
@@ -199,13 +204,20 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
           reasoning: scores.reasoning || "",
         });
 
-        console.log(`[ClaimFilter] "${claim.substring(0, 60)}..." → ${avgScore.toFixed(2)}`);
+        console.log(
+          `[ClaimFilter] "${claim.substring(0, 60)}..." → ${avgScore.toFixed(2)}`,
+        );
       } catch (err) {
         console.warn(`[ClaimFilter] Failed to score claim: ${err.message}`);
         // If scoring fails, give it a neutral score
         scoredClaims.push({
           claim,
-          scores: { specificity: 0.5, controversy: 0.5, materiality: 0.5, average: 0.5 },
+          scores: {
+            specificity: 0.5,
+            controversy: 0.5,
+            materiality: 0.5,
+            average: 0.5,
+          },
           reasoning: "Scoring failed",
         });
       }
@@ -216,15 +228,19 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
 
     // Filter by threshold and cap at maxClaims
     const filtered = scoredClaims
-      .filter(sc => sc.scores.average >= threshold)
+      .filter((sc) => sc.scores.average >= threshold)
       .slice(0, maxClaims);
 
-    console.log(`[ClaimFilter] Kept ${filtered.length} high-value claims (threshold: ${threshold})`);
+    console.log(
+      `[ClaimFilter] Kept ${filtered.length} high-value claims (threshold: ${threshold})`,
+    );
     filtered.forEach((sc, i) => {
-      console.log(`  ${i + 1}. [${sc.scores.average.toFixed(2)}] ${sc.claim.substring(0, 80)}...`);
+      console.log(
+        `  ${i + 1}. [${sc.scores.average.toFixed(2)}] ${sc.claim.substring(0, 80)}...`,
+      );
     });
 
-    return filtered.map(sc => sc.claim);
+    return filtered.map((sc) => sc.claim);
   }
 
   async analyzeChunk({
@@ -232,9 +248,9 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
     tokenLength,
     includeTopicsAndTestimonials = false,
     incomingTestimonials,
-    extractionMode = 'ranked', // 'ranked' = top quality only, 'comprehensive' = extract all for user ranking
-    taskClaimsContext = null,   // array of task claim strings for context-aware reference extraction
-    contentRole = 'case',
+    extractionMode = "ranked", // 'ranked' = top quality only, 'comprehensive' = extract all for user ranking
+    taskClaimsContext = null, // array of task claim strings for context-aware reference extraction
+    contentRole = "case",
   }) {
     // Load prompts first to get max_claims from database
     const promptPreview = await this.loadClaimExtractionPrompts(
@@ -242,7 +258,7 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
       includeTopicsAndTestimonials,
       5, // temporary minClaims for loading
       12, // temporary maxClaims for loading
-      contentRole
+      contentRole,
     );
 
     // Get max_claims from database (default to 12 if not set)
@@ -269,7 +285,7 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
       incomingTestimonials &&
       incomingTestimonials.length > 0
         ? `Below is a list of testimonials detected elsewhere. Deduplicate or improve them if they also appear in this text.\n\nExtracted testimonials:\n${JSON.stringify(
-            incomingTestimonials
+            incomingTestimonials,
           )}\n`
         : "";
 
@@ -281,7 +297,7 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
       includeTopicsAndTestimonials,
       minClaims,
       maxClaims,
-      contentRole
+      contentRole,
     );
 
     const system = prompts.system;
@@ -290,7 +306,7 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
     // When extracting from a reference, use task claims as GUIDANCE for prioritization,
     // not as a filter. Still extract ALL worthy factual claims from the reference.
     const buildTaskClaimsText = () =>
-      taskClaimsContext.map((c, i) => `  ${i + 1}. "${c}"`).join('\n');
+      taskClaimsContext.map((c, i) => `  ${i + 1}. "${c}"`).join("\n");
 
     const fallbackTaskClaimsInstruction = `
 ⚠️ CONTEXT - The SOURCE article being fact-checked contains these claims:
@@ -324,23 +340,35 @@ EXTRACTION INSTRUCTIONS:
       let template = fallbackTaskClaimsInstruction;
       try {
         const contextPrompt = await this.promptManager.getPrompt(
-          'claim_extraction_source_context_instruction',
-          { system: '', user: fallbackTaskClaimsInstruction, parameters: {} }
+          "claim_extraction_source_context_instruction",
+          { system: "", user: fallbackTaskClaimsInstruction, parameters: {} },
         );
-        template = contextPrompt.user || contextPrompt.system || fallbackTaskClaimsInstruction;
+        template =
+          contextPrompt.user ||
+          contextPrompt.system ||
+          fallbackTaskClaimsInstruction;
       } catch {
         template = fallbackTaskClaimsInstruction;
       }
-      taskClaimsInstruction = template.replace(/\{\{taskClaims\}\}/g, buildTaskClaimsText());
+      taskClaimsInstruction = template.replace(
+        /\{\{taskClaims\}\}/g,
+        buildTaskClaimsText(),
+      );
     }
 
     if (taskClaimsInstruction) {
-      console.log(`🎯 [ClaimExtractor] Context-aware instruction built (${taskClaimsContext.length} claims):`);
+      console.log(
+        `🎯 [ClaimExtractor] Context-aware instruction built (${taskClaimsContext.length} claims):`,
+      );
       console.log(taskClaimsInstruction);
-      console.log(`📄 [ClaimExtractor] Processing ${chunk.length} chars of text with context-aware extraction`);
+      console.log(
+        `📄 [ClaimExtractor] Processing ${chunk.length} chars of text with context-aware extraction`,
+      );
       // Show a snippet to confirm the paragraph is in there
-      if (chunk.includes('Ablin') || chunk.includes('nihilistic musings')) {
-        console.log(`✅ [ClaimExtractor] Text contains "Ablin" or "nihilistic musings" - target paragraph is present`);
+      if (chunk.includes("Ablin") || chunk.includes("nihilistic musings")) {
+        console.log(
+          `✅ [ClaimExtractor] Text contains "Ablin" or "nihilistic musings" - target paragraph is present`,
+        );
       }
     }
 
@@ -368,8 +396,12 @@ ${chunk}
     const reasoningStack = out.reasoningStack || {
       thesis: out.thesis || "",
       pillars: Array.isArray(out.pillars) ? out.pillars : [],
-      evidenceClaims: Array.isArray(out.evidenceClaims) ? out.evidenceClaims : [],
-      backgroundClaims: Array.isArray(out.backgroundClaims) ? out.backgroundClaims : [],
+      evidenceClaims: Array.isArray(out.evidenceClaims)
+        ? out.evidenceClaims
+        : [],
+      backgroundClaims: Array.isArray(out.backgroundClaims)
+        ? out.backgroundClaims
+        : [],
     };
 
     const flattenClaimEntries = (entries, fallbackRole = null) => {
@@ -378,7 +410,7 @@ ${chunk}
 
       for (const entry of entries) {
         if (!entry) continue;
-        if (typeof entry === 'string') {
+        if (typeof entry === "string") {
           flattened.push({ text: entry, role: fallbackRole });
           continue;
         }
@@ -404,29 +436,63 @@ ${chunk}
     const structuredClaims = [];
     const claimsFromOut = flattenClaimEntries(out.claims, null);
     const thesisClaims = reasoningStack.thesis
-      ? [{ id: 'thesis', text: reasoningStack.thesis, role: 'thesis', parentId: null, centrality: null, verifiability: null }]
+      ? [
+          {
+            id: "thesis",
+            text: reasoningStack.thesis,
+            role: "thesis",
+            parentId: null,
+            centrality: null,
+            verifiability: null,
+          },
+        ]
       : [];
     const pillarClaims = flattenClaimEntries(
       reasoningStack.pillars.flatMap((pillar, index) => {
         const pillarId = pillar?.id || `P${index + 1}`;
-        const pillarSummary = pillar?.summary || pillar?.label || pillar?.text || "";
+        const pillarSummary =
+          pillar?.summary || pillar?.label || pillar?.text || "";
         const pillarHeader = pillarSummary
-          ? [{ id: pillarId, text: pillarSummary, role: 'pillar', parentId: 'thesis', centrality: pillar?.centrality ?? null, verifiability: pillar?.verifiability ?? null }]
+          ? [
+              {
+                id: pillarId,
+                text: pillarSummary,
+                role: "pillar",
+                parentId: "thesis",
+                centrality: pillar?.centrality ?? null,
+                verifiability: pillar?.verifiability ?? null,
+              },
+            ]
           : [];
-        const nestedClaims = flattenClaimEntries(pillar?.claims || [], 'pillar_support').map((entry) => ({
+        const nestedClaims = flattenClaimEntries(
+          pillar?.claims || [],
+          "pillar_support",
+        ).map((entry) => ({
           ...entry,
           parentId: entry.parentId || pillarId,
         }));
         return [...pillarHeader, ...nestedClaims];
-      })
+      }),
     );
-    const evidenceClaims = flattenClaimEntries(reasoningStack.evidenceClaims, 'evidence');
-    const backgroundClaims = flattenClaimEntries(reasoningStack.backgroundClaims, 'background');
-    const allowedRoles = new Set(['thesis', 'pillar', 'pillar_support', 'evidence', 'background']);
+    const evidenceClaims = flattenClaimEntries(
+      reasoningStack.evidenceClaims,
+      "evidence",
+    );
+    const backgroundClaims = flattenClaimEntries(
+      reasoningStack.backgroundClaims,
+      "background",
+    );
+    const allowedRoles = new Set([
+      "thesis",
+      "pillar",
+      "pillar_support",
+      "evidence",
+      "background",
+    ]);
     const normalizeRole = (claim) => {
-      if (!claim || typeof claim !== 'object') return claim;
+      if (!claim || typeof claim !== "object") return claim;
       if (!claim.role || allowedRoles.has(claim.role)) return claim;
-      return { ...claim, role: 'evidence' };
+      return { ...claim, role: "evidence" };
     };
 
     structuredClaims.push(
@@ -434,17 +500,21 @@ ${chunk}
       ...pillarClaims,
       ...evidenceClaims,
       ...backgroundClaims,
-      ...claimsFromOut
+      ...claimsFromOut,
     );
 
     // Post-process: dedupe & clamp
     const rawClaims = structuredClaims;
 
     if (taskClaimsContext && taskClaimsContext.length > 0) {
-      console.log(`🔍 [ClaimExtractor] LLM extracted ${rawClaims.length} claims (context-aware mode):`);
+      console.log(
+        `🔍 [ClaimExtractor] LLM extracted ${rawClaims.length} claims (context-aware mode):`,
+      );
       rawClaims.forEach((claim, i) => {
         const preview = String(claim.text || "").substring(0, 100);
-        console.log(`   ${i + 1}. [${claim.role || 'claim'}] "${preview}${preview.length > 100 ? '...' : ''}"`);
+        console.log(
+          `   ${i + 1}. [${claim.role || "claim"}] "${preview}${preview.length > 100 ? "..." : ""}"`,
+        );
       });
     }
     const seen = new Set();
@@ -484,9 +554,9 @@ ${chunk}
     chunks,
     existingTestimonials = [],
     maxConcurrency = 3,
-    extractionMode = 'ranked', // 'ranked' or 'comprehensive'
-    taskClaimsContext = null,   // array of task claim strings — when set, also extract responsive/argumentative statements
-    contentRole = 'case',
+    extractionMode = "ranked", // 'ranked' or 'comprehensive'
+    taskClaimsContext = null, // array of task claim strings — when set, also extract responsive/argumentative statements
+    contentRole = "case",
   }) {
     if (!chunks || chunks.length === 0) {
       return {

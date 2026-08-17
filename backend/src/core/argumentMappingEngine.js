@@ -86,28 +86,61 @@ function normalizeBool(value) {
 }
 
 function fillTemplate(template, vars) {
-  return String(template || "").replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
+  return String(template || "").replace(
+    /\{\{(\w+)\}\}/g,
+    (_, key) => vars[key] ?? "",
+  );
 }
 
 function deriveTransform(argumentFunction, stance, existingTransform) {
   if (ALLOWED_TRANSFORMS.has(existingTransform)) return existingTransform;
-  if (argumentFunction === "opposing_claim_to_refute" || stance === "rejects") return "invert";
-  if (argumentFunction === "background" || argumentFunction === "reported_neutral" || stance === "neutral") return "none";
+  if (argumentFunction === "opposing_claim_to_refute" || stance === "rejects")
+    return "invert";
+  if (
+    argumentFunction === "background" ||
+    argumentFunction === "reported_neutral" ||
+    stance === "neutral"
+  )
+    return "none";
   if (argumentFunction === "unclear" || stance === "unclear") return "review";
   return "normal";
 }
 
 function normalizeMappingItem(raw, inputClaim) {
   const attribution = classifyAttributionClaim(inputClaim.text);
-  const rawFunction = String(raw?.argumentFunction || raw?.argument_function || "").trim();
-  const rawStance = String(raw?.articleStanceTowardObjectClaim || raw?.article_stance || "").trim();
-  const rawTransform = String(raw?.scoreTransform || raw?.score_transform || "").trim();
+  const rawFunction = String(
+    raw?.argumentFunction || raw?.argument_function || "",
+  ).trim();
+  const rawStance = String(
+    raw?.articleStance ||
+      raw?.articleStanceTowardObjectClaim ||
+      raw?.article_stance ||
+      "",
+  ).trim();
+  const rawTransform = String(
+    raw?.scoreTransform || raw?.score_transform || "",
+  ).trim();
 
-  const argumentFunction = ALLOWED_FUNCTIONS.has(rawFunction) ? rawFunction : "unclear";
+  const argumentFunction = ALLOWED_FUNCTIONS.has(rawFunction)
+    ? rawFunction
+    : "unclear";
   const articleStance = ALLOWED_STANCES.has(rawStance) ? rawStance : "unclear";
-  const scoreTransform = deriveTransform(argumentFunction, articleStance, rawTransform);
-  const isAttribution = normalizeBool(raw?.isAttribution ?? raw?.is_attribution) ?? attribution.isAttribution;
-  const objectClaim = String(raw?.objectClaim || raw?.object_claim_text || attribution.objectText || inputClaim.objectText || inputClaim.text || "")
+  const scoreTransform = deriveTransform(
+    argumentFunction,
+    articleStance,
+    rawTransform,
+  );
+  const isAttribution =
+    normalizeBool(raw?.isAttribution ?? raw?.is_attribution) ??
+    attribution.isAttribution;
+  const objectClaim = String(
+    raw?.objectClaim ||
+      raw?.object_claim_text ||
+      attribution.objectText ||
+      inputClaim.objectText ||
+      inputClaim.text ||
+      "",
+  )
     .trim()
     .replace(/\s+/g, " ");
 
@@ -115,13 +148,24 @@ function normalizeMappingItem(raw, inputClaim) {
     claimId: Number(raw?.claimId || raw?.claim_id || inputClaim.id),
     objectClaim,
     isAttribution,
-    speakerEntity: String(raw?.speakerEntity || raw?.speaker_entity || attribution.speakerEntity || inputClaim.speakerEntity || "").trim(),
+    speakerEntity: String(
+      raw?.speakerEntity ||
+        raw?.speaker_entity ||
+        attribution.speakerEntity ||
+        inputClaim.speakerEntity ||
+        "",
+    ).trim(),
     articleStance,
     argumentFunction,
     scoreTransform,
-    accountabilityEligible: normalizeBool(raw?.accountabilityEligible ?? raw?.accountability_eligible) ?? Boolean(attribution.accountabilityEligible),
+    accountabilityEligible:
+      normalizeBool(
+        raw?.accountabilityEligible ?? raw?.accountability_eligible,
+      ) ?? Boolean(attribution.accountabilityEligible),
     confidence: clamp01(raw?.confidence ?? raw?.argument_mapping_confidence, 0),
-    rationale: String(raw?.rationale || "").trim().slice(0, 1000),
+    rationale: String(raw?.rationale || "")
+      .trim()
+      .slice(0, 1000),
   };
 }
 
@@ -132,15 +176,19 @@ export async function mapArgumentFunctions({
   claims = [],
 }) {
   if (!query) throw new Error("mapArgumentFunctions: missing query");
-  if (!taskContentId) throw new Error("mapArgumentFunctions: missing taskContentId");
+  if (!taskContentId)
+    throw new Error("mapArgumentFunctions: missing taskContentId");
   if (!Array.isArray(claims) || claims.length === 0) return [];
 
   const promptManager = new PromptManager(query);
-  const systemPrompt = await promptManager.getPrompt("argument_mapping_system", {
-    system: FALLBACK_SYSTEM,
-    user: "",
-    parameters: {},
-  });
+  const systemPrompt = await promptManager.getPrompt(
+    "argument_mapping_system",
+    {
+      system: FALLBACK_SYSTEM,
+      user: "",
+      parameters: {},
+    },
+  );
   const userPrompt = await promptManager.getPrompt("argument_mapping_user", {
     system: "",
     user: FALLBACK_USER,
@@ -148,7 +196,8 @@ export async function mapArgumentFunctions({
   });
 
   const articleThesis =
-    claims.find((claim) => String(claim.role || "").toLowerCase() === "thesis")?.text ||
+    claims.find((claim) => String(claim.role || "").toLowerCase() === "thesis")
+      ?.text ||
     claims[0]?.text ||
     "";
   const compactClaims = claims.map((claim) => ({
@@ -172,16 +221,33 @@ export async function mapArgumentFunctions({
       schemaHint: "",
       temperature: 0,
       maxRetries: 2,
-      timeout: 45000,
+      timeout: 90000,
     });
+    logger.log(
+      `[argumentMapping] RAW RESPONSE: ${JSON.stringify(response, null, 2)}`,
+    );
   } catch (err) {
-    logger.warn("[argumentMapping] LLM mapping failed; using deterministic fallback:", err.message);
+    logger.warn(
+      "[argumentMapping] LLM mapping failed; using deterministic fallback:",
+      err.message,
+    );
     response = { claims: [] };
   }
 
   const byInputId = new Map(claims.map((claim) => [Number(claim.id), claim]));
-  const rawItems = Array.isArray(response?.claims) ? response.claims : [];
-  const rawById = new Map(rawItems.map((item) => [Number(item?.claimId || item?.claim_id), item]));
+  const rawItems = Array.isArray(response?.items)
+    ? response.items
+    : Array.isArray(response?.claims)
+      ? response.claims
+      : [];
+  logger.log(
+    `[argumentMapping] Parsed response: type=${typeof response}, ` +
+      `claimsArray=${Array.isArray(response?.claims)}, rawItems=${rawItems.length}`,
+  );
+
+  const rawById = new Map(
+    rawItems.map((item) => [Number(item?.claimId || item?.claim_id), item]),
+  );
 
   const mapped = claims.map((claim) => {
     const raw = rawById.get(Number(claim.id)) || {};
@@ -213,10 +279,12 @@ export async function mapArgumentFunctions({
         item.rationale || "",
         taskContentId,
         item.claimId,
-      ]
+      ],
     );
   }
 
-  logger.log(`🧭 [argumentMapping] Mapped ${mapped.length} claims for content ${taskContentId}`);
+  logger.log(
+    `🧭 [argumentMapping] Mapped ${mapped.length} claims for content ${taskContentId}`,
+  );
   return mapped;
 }

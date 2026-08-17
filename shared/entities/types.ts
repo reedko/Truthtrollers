@@ -78,6 +78,7 @@ export interface Publisher {
     confidence?: number | null;
     provenance?: string;
   } | null;
+  source_type?: string | null;
 }
 
 //Publisher Rating interface
@@ -171,8 +172,23 @@ export interface Claim {
   object_claim_text?: string | null;
   is_attribution?: boolean | number | null;
   speaker_entity?: string | null;
-  article_stance?: "endorses" | "rejects" | "neutral" | "unclear" | string | null;
-  argument_function?: "thesis" | "supporting_premise" | "evidence" | "opposing_claim_to_refute" | "background" | "reported_neutral" | "unclear" | string | null;
+  article_stance?:
+    | "endorses"
+    | "rejects"
+    | "neutral"
+    | "unclear"
+    | string
+    | null;
+  argument_function?:
+    | "thesis"
+    | "supporting_premise"
+    | "evidence"
+    | "opposing_claim_to_refute"
+    | "background"
+    | "reported_neutral"
+    | "unclear"
+    | string
+    | null;
   score_transform?: "normal" | "invert" | "none" | "review" | string | null;
   accountability_eligible?: boolean | number | null;
   argument_mapping_confidence?: number | null;
@@ -369,9 +385,6 @@ export interface AuthReference {
   auth_id: number;
   reference_content_id: number;
 }
-
-// D3 Graph Node Interface (Extending Task for Visualization Needs)
-import * as d3 from "d3";
 
 export class GraphNode implements d3.SimulationNodeDatum {
   id: string;

@@ -50,33 +50,34 @@ async function ensureContentRelation(query, taskContentId, referenceContentId) {
     // Check if relation already exists
     const existing = await query(
       `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
-      [taskContentId, referenceContentId]
+      [taskContentId, referenceContentId],
     );
 
     if (existing.length === 0) {
       // Insert the relation with is_system=1 (AI-created)
       await query(
         `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, NULL, 1)`,
-        [taskContentId, referenceContentId]
+        [taskContentId, referenceContentId],
       );
       logger.log(
-        `🔗 [Evidence] Linked reference ${referenceContentId} to task ${taskContentId}`
+        `🔗 [Evidence] Linked reference ${referenceContentId} to task ${taskContentId}`,
       );
     } else {
       logger.log(
-        `✓ [Evidence] Relation already exists: task ${taskContentId} → reference ${referenceContentId}`
+        `✓ [Evidence] Relation already exists: task ${taskContentId} → reference ${referenceContentId}`,
       );
     }
   } catch (err) {
     logger.error(
       `❌ [Evidence] Failed to create content_relation for task ${taskContentId} → reference ${referenceContentId}:`,
-      err
+      err,
     );
     // Don't throw - we want to continue processing other references
   }
 }
 
-const JUNK_PUBLISHER_RE = /^(unknown( publisher)?|web|website|home|index|default|page|site|blog|news|online|internet|portal|network|media|publications?|facebook|youtube|twitter|instagram|tiktok|reddit|linkedin|pinterest|snapchat|telegram|x\.com|recaptcha|just a moment|cloudflare|attention required|one more step|checking your browser|access denied|bot protected)$/i;
+const JUNK_PUBLISHER_RE =
+  /^(unknown( publisher)?|web|website|home|index|default|page|site|blog|news|online|internet|portal|network|media|publications?|facebook|youtube|twitter|instagram|tiktok|reddit|linkedin|pinterest|snapchat|telegram|x\.com|recaptcha|just a moment|cloudflare|attention required|one more step|checking your browser|access denied|bot protected)$/i;
 
 function domainFromUrl(url) {
   try {
@@ -94,7 +95,9 @@ function usablePublisherName(name) {
 }
 
 function isLegitSourceCrestCode(code) {
-  const normalized = String(code || "").trim().toUpperCase();
+  const normalized = String(code || "")
+    .trim()
+    .toUpperCase();
   if (!/^[A-EØ][1-5Ø]$/.test(normalized)) return false;
   return !normalized.startsWith("Ø");
 }
@@ -112,13 +115,15 @@ async function getCachedPublisherCrest(publisherId) {
                  updated_at DESC,
                  created_at DESC
         LIMIT 1`,
-      [publisherId]
+      [publisherId],
     );
     const row = rows[0] || null;
     if (!row || !isLegitSourceCrestCode(row.admiralty_code)) return null;
     return row;
   } catch (err) {
-    logger.warn(`⚠️  [Evidence] Publisher SourceCrest cache lookup failed for ${publisherId}: ${err.message}`);
+    logger.warn(
+      `⚠️  [Evidence] Publisher SourceCrest cache lookup failed for ${publisherId}: ${err.message}`,
+    );
     return null;
   }
 }
@@ -142,17 +147,23 @@ async function ensureReferencePublisherLink({
       author,
     });
   } catch (err) {
-    logger.warn(`⚠️  [Evidence] Source identity resolution failed for ${url}: ${err.message}`);
+    logger.warn(
+      `⚠️  [Evidence] Source identity resolution failed for ${url}: ${err.message}`,
+    );
   }
 
   const publisherName =
-    (publisher?.role === "journal" || publisher?.confidence === "proxy" ? hintName : null) ||
+    (publisher?.role === "journal" || publisher?.confidence === "proxy"
+      ? hintName
+      : null) ||
     usablePublisherName(identity?.publisherName) ||
     hintName ||
     usablePublisherName(domainFromUrl(url));
 
   if (!publisherName) {
-    logger.warn(`⚠️  [Evidence] No usable publisher resolved for reference ${referenceContentId}: ${url}`);
+    logger.warn(
+      `⚠️  [Evidence] No usable publisher resolved for reference ${referenceContentId}: ${url}`,
+    );
     return null;
   }
 
@@ -160,23 +171,25 @@ async function ensureReferencePublisherLink({
   if (!publisherId) {
     const rows = await query(
       `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`,
-      [publisherName]
+      [publisherName],
     );
     publisherId = rows[0]?.[0]?.publisherId || null;
   }
 
   if (!publisherId) {
-    logger.warn(`⚠️  [Evidence] InsertOrGetPublisher returned no ID for "${publisherName}"`);
+    logger.warn(
+      `⚠️  [Evidence] InsertOrGetPublisher returned no ID for "${publisherName}"`,
+    );
     return null;
   }
 
   await query(
     `INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`,
-    [referenceContentId, publisherId]
+    [referenceContentId, publisherId],
   );
 
   logger.log(
-    `🛡 [Evidence] Linked publisher "${publisherName}" (id=${publisherId}) to reference ${referenceContentId}`
+    `🛡 [Evidence] Linked publisher "${publisherName}" (id=${publisherId}) to reference ${referenceContentId}`,
   );
 
   const cachedCrest = await getCachedPublisherCrest(publisherId);
@@ -190,19 +203,25 @@ async function ensureReferencePublisherLink({
   };
 }
 
-function enrichReferencePublisherAsync({ referenceContentId, url, publisherLink }) {
+function enrichReferencePublisherAsync({
+  referenceContentId,
+  url,
+  publisherLink,
+}) {
   if (!publisherLink?.publisherId) return;
   if (publisherLink.cachedCrest) {
     logger.log(
-      `🛡 [Evidence] Using cached publisher SourceCrest ${publisherLink.cachedCrest.admiralty_code} for reference ${referenceContentId}; skipping scrape-time enrichment`
+      `🛡 [Evidence] Using cached publisher SourceCrest ${publisherLink.cachedCrest.admiralty_code} for reference ${referenceContentId}; skipping scrape-time enrichment`,
     );
     return;
   }
 
   (async () => {
     try {
-      const { enrichPublisherIfNeeded } = await import("../services/publisherEnrichmentService.js");
-      const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
+      const { enrichPublisherIfNeeded } =
+        await import("../services/publisherEnrichmentService.js");
+      const { evaluateAdmiraltyCode, storeEvaluation } =
+        await import("../../services/admiraltyEvaluator.js");
 
       const enrichResult = await enrichPublisherIfNeeded({
         query,
@@ -216,12 +235,12 @@ function enrichReferencePublisherAsync({ referenceContentId, url, publisherLink 
       const [profileRows, ratingRows] = await Promise.all([
         query(
           `SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
-          [publisherLink.publisherId]
+          [publisherLink.publisherId],
         ),
         query(
           `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence
              FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`,
-          [publisherLink.publisherId]
+          [publisherLink.publisherId],
         ),
       ]);
 
@@ -244,11 +263,11 @@ function enrichReferencePublisherAsync({ referenceContentId, url, publisherLink 
       });
 
       logger.log(
-        `🛡 [Evidence] SourceCrest enriched for reference ${referenceContentId}: "${publisherLink.publisherName}" code=${evaluation.admiraltyCode} status=${enrichResult?.status ?? "done"}`
+        `🛡 [Evidence] SourceCrest enriched for reference ${referenceContentId}: "${publisherLink.publisherName}" code=${evaluation.admiraltyCode} status=${enrichResult?.status ?? "done"}`,
       );
     } catch (err) {
       logger.warn(
-        `⚠️  [Evidence] SourceCrest enrichment skipped for reference ${referenceContentId}: ${err.message}`
+        `⚠️  [Evidence] SourceCrest enrichment skipped for reference ${referenceContentId}: ${err.message}`,
       );
     }
   })();
@@ -261,54 +280,35 @@ function clampScore(value, fallback = 0) {
 }
 
 export function buildSearchTargets(claim) {
-  const text = String(claim?.searchText || claim?.promptText || claim?.text || "").trim();
+  const text = String(
+    claim?.searchText || claim?.promptText || claim?.text || "",
+  ).trim();
   const originalText = String(claim?.originalText || claim?.text || "").trim();
   const source = text || originalText;
   if (!source) return [];
 
   const targets = [];
   const add = (query, matchedPart, intent = "both") => {
-    const cleaned = String(query || "").replace(/\s+/g, " ").trim();
+    const cleaned = String(query || "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!cleaned) return;
-    if (targets.some((t) => t.query.toLowerCase() === cleaned.toLowerCase())) return;
+    if (targets.some((t) => t.query.toLowerCase() === cleaned.toLowerCase()))
+      return;
     targets.push({ query: cleaned, matchedPart, intent });
   };
 
-  const attributionPattern = /\b(said|says|claimed|claims|alleged|alleges|reported|reports|according to|revealed|stated|wrote|testified)\b/i;
-  const hasAttribution = attributionPattern.test(originalText) || attributionPattern.test(source);
+  const attributionPattern =
+    /\b(said|says|claimed|claims|alleged|alleges|reported|reports|according to|revealed|stated|wrote|testified)\b/i;
+  const hasAttribution =
+    attributionPattern.test(originalText) || attributionPattern.test(source);
   const combinedText = `${source} ${originalText}`.toLowerCase();
-  const isCdcMmrAutismClaim =
-    /\bcdc\b|centers for disease control/.test(combinedText) &&
-    /\bmmr\b|measles/.test(combinedText) &&
-    /autism/.test(combinedText);
-  const allegesManipulatedData =
-    /manipulat|omit|omitted|exclude|excluded|data/.test(combinedText);
-  const allegesDestroyedData =
-    /destroy|destroyed|shred|shredded|discard|discarded/.test(combinedText);
-
-  if (isCdcMmrAutismClaim && allegesManipulatedData) {
-    add(
-      "CDC MMR autism DeStefano 2004 data manipulation omitted data",
-      "object_claim",
-      "refute",
-    );
-    add(
-      "DeStefano 2004 MMR autism study data available Thompson Hooker",
-      "study_or_event_identity",
-      "refute",
-    );
-  }
-
-  if (isCdcMmrAutismClaim && allegesDestroyedData) {
-    add(
-      "CDC MMR autism study raw data destroyed available DeStefano Thompson",
-      "object_claim",
-      "refute",
-    );
-  }
 
   if (hasAttribution) {
-    const parts = source.split(attributionPattern).map((part) => part.trim()).filter(Boolean);
+    const parts = source
+      .split(attributionPattern)
+      .map((part) => part.trim())
+      .filter(Boolean);
     const beforeVerb = parts[0] || "";
     const afterVerb = parts.slice(2).join(" ") || parts[1] || "";
 
@@ -318,10 +318,15 @@ export function buildSearchTargets(claim) {
     add(source, "object_claim");
   }
 
-  const identityTerms = source
-    .match(/\b(?:[A-Z][A-Za-z0-9'’.-]+(?:\s+[A-Z][A-Za-z0-9'’.-]+){0,4}|\d{4}|[A-Z]{2,})\b/g);
+  const identityTerms = source.match(
+    /\b(?:[A-Z][A-Za-z0-9'’.-]+(?:\s+[A-Z][A-Za-z0-9'’.-]+){0,4}|\d{4}|[A-Z]{2,})\b/g,
+  );
   if (identityTerms?.length) {
-    add(identityTerms.slice(0, 8).join(" "), "study_or_event_identity", "context");
+    add(
+      identityTerms.slice(0, 8).join(" "),
+      "study_or_event_identity",
+      "context",
+    );
   }
 
   add(source, "context", "context");
@@ -341,10 +346,9 @@ export async function runEvidenceEngine({
     throw new Error("No claims passed to EvidenceEngine");
 
   // Fetch task URL to exclude it from being used as its own reference
-  const taskRows = await query(
-    `SELECT url FROM content WHERE content_id = ?`,
-    [taskContentId]
-  );
+  const taskRows = await query(`SELECT url FROM content WHERE content_id = ?`, [
+    taskContentId,
+  ]);
   const taskUrl = taskRows?.[0]?.url || null;
   if (taskUrl) {
     logger.log(`🚫 [Evidence] Will skip task URL as reference: ${taskUrl}`);
@@ -353,13 +357,13 @@ export async function runEvidenceEngine({
   // Fetch claim text from DB
   const rows = await query(
     `SELECT claim_id, claim_text FROM claims WHERE claim_id IN (?)`,
-    [claimIds]
+    [claimIds],
   );
 
   const metadataById = new Map(
     Array.isArray(claimMetadata)
       ? claimMetadata.map((claim) => [Number(claim.id), claim])
-      : []
+      : [],
   );
   const rowById = new Map(rows.map((row) => [Number(row.claim_id), row]));
 
@@ -368,12 +372,16 @@ export async function runEvidenceEngine({
     .filter(Boolean)
     .map((row) => {
       const meta = metadataById.get(Number(row.claim_id)) || {};
-      const mappedObjectClaim = String(meta.objectClaim || meta.object_claim_text || meta.objectText || "").trim();
-      const searchText = String(mappedObjectClaim || meta.searchText || meta.search_text || "").trim();
+      const mappedObjectClaim = String(
+        meta.objectClaim || meta.object_claim_text || meta.objectText || "",
+      ).trim();
+      const searchText = String(
+        mappedObjectClaim || meta.searchText || meta.search_text || "",
+      ).trim();
       const context = buildEvidenceClaimContext(searchText || row.claim_text);
       if (context.changed) {
         logger.log(
-          `🎯 [Evidence] Atomic claim normalization for ${row.claim_id}: "${context.coreText}"`
+          `🎯 [Evidence] Atomic claim normalization for ${row.claim_id}: "${context.coreText}"`,
         );
       }
       const claim = {
@@ -393,12 +401,14 @@ export async function runEvidenceEngine({
         argumentFunction: meta.argumentFunction || meta.argument_function || "",
         scoreTransform: meta.scoreTransform || meta.score_transform || "",
       };
-      claim.searchTargets = buildSearchTargets(claim);
+
       return claim;
-    }).sort((a, b) =>
-      (b.priority - a.priority) ||
-      (b.verifiability - a.verifiability) ||
-      (b.centrality - a.centrality)
+    })
+    .sort(
+      (a, b) =>
+        b.priority - a.priority ||
+        b.verifiability - a.verifiability ||
+        b.centrality - a.centrality,
     );
 
   claimIds.splice(0, claimIds.length, ...claims.map((claim) => claim.id));
@@ -416,19 +426,19 @@ export async function runEvidenceEngine({
   // LOAD EVIDENCE SEARCH MODE FROM DATABASE
   // (Load BEFORE creating engine so we can pass config to constructor)
   // ═══════════════════════════════════════════════════════════════════
-  let searchMode = 'fringe_on_support'; // Default
+  let searchMode = "fringe_on_support"; // Default
   let modeConfig = {};
 
   try {
     const configRows = await query(
-      `SELECT config_value FROM evidence_search_config WHERE config_key = 'search_mode'`
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'search_mode'`,
     );
     if (configRows && configRows.length > 0) {
       searchMode = configRows[0].config_value;
     }
 
     const modeConfigRows = await query(
-      `SELECT config_value FROM evidence_search_config WHERE config_key = 'mode_config'`
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'mode_config'`,
     );
     if (modeConfigRows && modeConfigRows.length > 0) {
       const allConfigs = JSON.parse(modeConfigRows[0].config_value);
@@ -438,7 +448,10 @@ export async function runEvidenceEngine({
     logger.log(`🔧 [Evidence] Search mode: ${searchMode}`);
     logger.log(`🔧 [Evidence] Mode config:`, modeConfig);
   } catch (err) {
-    logger.warn(`⚠️ [Evidence] Failed to load search config, using defaults:`, err.message);
+    logger.warn(
+      `⚠️ [Evidence] Failed to load search config, using defaults:`,
+      err.message,
+    );
   }
 
   const engine = new EvidenceEngine(
@@ -453,7 +466,7 @@ export async function runEvidenceEngine({
             const results = await tavilySearch.web(opts);
             const duration = Date.now() - start;
             logger.log(
-              `⏱️  [BENCHMARK] Tavily search took ${duration}ms for query: "${opts.query}"`
+              `⏱️  [BENCHMARK] Tavily search took ${duration}ms for query: "${opts.query}"`,
             );
             return results;
           }
@@ -462,7 +475,7 @@ export async function runEvidenceEngine({
             const results = await bingSearch(opts);
             const duration = Date.now() - start;
             logger.log(
-              `⏱️  [BENCHMARK] Bing search took ${duration}ms for query: "${opts.query}"`
+              `⏱️  [BENCHMARK] Bing search took ${duration}ms for query: "${opts.query}"`,
             );
             return results;
           }
@@ -474,14 +487,14 @@ export async function runEvidenceEngine({
             tavilySearch.web(opts).then((r) => {
               const duration = Date.now() - startTav;
               logger.log(
-                `⏱️  [BENCHMARK] Tavily (hybrid) took ${duration}ms for query: "${opts.query}"`
+                `⏱️  [BENCHMARK] Tavily (hybrid) took ${duration}ms for query: "${opts.query}"`,
               );
               return r;
             }),
             bingSearch(opts).then((r) => {
               const duration = Date.now() - startBing;
               logger.log(
-                `⏱️  [BENCHMARK] Bing (hybrid) took ${duration}ms for query: "${opts.query}"`
+                `⏱️  [BENCHMARK] Bing (hybrid) took ${duration}ms for query: "${opts.query}"`,
               );
               return r;
             }),
@@ -494,7 +507,7 @@ export async function runEvidenceEngine({
           const results = await duckDuckGoSearch.web(opts);
           const duration = Date.now() - start;
           logger.log(
-            `⏱️  [BENCHMARK] DuckDuckGo (fringe) took ${duration}ms for query: "${opts.query}"`
+            `⏱️  [BENCHMARK] DuckDuckGo (fringe) took ${duration}ms for query: "${opts.query}"`,
           );
           return results;
         },
@@ -541,8 +554,10 @@ export async function runEvidenceEngine({
             const resp = await fetch(cand.url, { signal: controller.signal });
             clearTimeout(timeout);
 
-            const contentType = resp.headers.get('content-type') || '';
-            const isPdf = contentType.includes('application/pdf') || cand.url.toLowerCase().match(/\.pdf($|\?)/);
+            const contentType = resp.headers.get("content-type") || "";
+            const isPdf =
+              contentType.includes("application/pdf") ||
+              cand.url.toLowerCase().match(/\.pdf($|\?)/);
 
             let html = null;
             let pdfExtractedText = null;
@@ -550,10 +565,12 @@ export async function runEvidenceEngine({
             let pdfAuthors = null;
 
             if (isPdf) {
-              logger.log(`📄 [Evidence] Detected PDF (Content-Type: ${contentType}), extracting text...`);
+              logger.log(
+                `📄 [Evidence] Detected PDF (Content-Type: ${contentType}), extracting text...`,
+              );
               try {
                 // Import pdf-parse dynamically
-                const pdfParse = (await import('pdf-parse')).default;
+                const pdfParse = (await import("pdf-parse")).default;
 
                 const buffer = await resp.arrayBuffer();
                 const parsed = await pdfParse(Buffer.from(buffer));
@@ -561,18 +578,31 @@ export async function runEvidenceEngine({
                 let fullText = (parsed.text || "").replace(/\r/g, "");
 
                 // Strip XMP metadata
-                fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
-                fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
-                fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
-                fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
+                fullText = fullText.replace(
+                  /<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi,
+                  "",
+                );
+                fullText = fullText.replace(
+                  /<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi,
+                  "",
+                );
+                fullText = fullText.replace(
+                  /<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi,
+                  "",
+                );
+                fullText = fullText.replace(/\n{3,}/g, "\n\n").trim();
 
                 pdfExtractedText = fullText;
                 pdfTitle = parsed.info?.Title?.trim() || null;
                 pdfAuthors = parsed.info?.Author?.trim() || null;
 
-                logger.log(`📄 [Evidence] PDF extracted: ${pdfExtractedText.length} chars, ${parsed.numpages} pages`);
+                logger.log(
+                  `📄 [Evidence] PDF extracted: ${pdfExtractedText.length} chars, ${parsed.numpages} pages`,
+                );
               } catch (pdfErr) {
-                logger.warn(`⚠️  [Evidence] PDF extraction failed: ${pdfErr.message} - will create stub reference`);
+                logger.warn(
+                  `⚠️  [Evidence] PDF extraction failed: ${pdfErr.message} - will create stub reference`,
+                );
                 // Set empty text so it creates a stub reference that can be manually scraped
                 pdfExtractedText = "";
               }
@@ -593,7 +623,12 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // 2. EXTRACT METADATA based on content type
             // ─────────────────────────────────────────────
-            let title, authors, publisher, thumbnail, cleanText, citationCount = 0;
+            let title,
+              authors,
+              publisher,
+              thumbnail,
+              cleanText,
+              citationCount = 0;
 
             if (isPdf) {
               // PDF metadata extraction
@@ -601,7 +636,10 @@ export async function runEvidenceEngine({
 
               // If no title from metadata, extract from first line of text
               if (!pdfTitleBase && pdfExtractedText) {
-                const lines = pdfExtractedText.split('\n').map(l => l.trim()).filter(Boolean);
+                const lines = pdfExtractedText
+                  .split("\n")
+                  .map((l) => l.trim())
+                  .filter(Boolean);
                 for (const line of lines) {
                   if (line.length > 10 && line.length < 200) {
                     pdfTitleBase = line;
@@ -612,7 +650,9 @@ export async function runEvidenceEngine({
 
               // Add [PDF] prefix if not already present
               title = pdfTitleBase
-                ? (pdfTitleBase.startsWith('[PDF]') ? pdfTitleBase : `[PDF] ${pdfTitleBase}`)
+                ? pdfTitleBase.startsWith("[PDF]")
+                  ? pdfTitleBase
+                  : `[PDF] ${pdfTitleBase}`
                 : "[PDF] Document";
 
               authors = pdfAuthors ? [pdfAuthors] : [];
@@ -626,10 +666,12 @@ export async function runEvidenceEngine({
                   const inlineRefs = extractInlineRefs(cleanText);
                   citationCount = inlineRefs?.length || 0;
                   logger.log(
-                    `📚 [Evidence] Extracted ${citationCount} inline citations from PDF: ${cand.url}`
+                    `📚 [Evidence] Extracted ${citationCount} inline citations from PDF: ${cand.url}`,
                   );
                 } catch (err) {
-                  logger.warn(`⚠️ [Evidence] Citation extraction failed: ${err.message}`);
+                  logger.warn(
+                    `⚠️ [Evidence] Citation extraction failed: ${err.message}`,
+                  );
                 }
               }
             } else {
@@ -660,11 +702,11 @@ export async function runEvidenceEngine({
                     .trim()
                     .slice(0, 60000);
                   logger.log(
-                    `📖 [Evidence] Readability extracted ${cleanText.length} chars`
+                    `📖 [Evidence] Readability extracted ${cleanText.length} chars`,
                   );
                 } else {
                   logger.warn(
-                    `⚠️  [Evidence] Readability failed, falling back to cheerio`
+                    `⚠️  [Evidence] Readability failed, falling back to cheerio`,
                   );
                   // Fallback to cheerio if Readability fails
                   $("script, style, link, noscript").remove();
@@ -675,10 +717,13 @@ export async function runEvidenceEngine({
                 }
               } catch (readabilityErr) {
                 logger.warn(
-                  `⚠️  [Evidence] Readability error: ${readabilityErr.message}`
+                  `⚠️  [Evidence] Readability error: ${readabilityErr.message}`,
                 );
                 $("script, style, link, noscript").remove();
-                cleanText = $.text().replace(/\s+/g, " ").trim().slice(0, 60000);
+                cleanText = $.text()
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 60000);
               }
 
               // ─────────────────────────────────────────────
@@ -688,20 +733,22 @@ export async function runEvidenceEngine({
               if (cleanText.length >= 100) {
                 try {
                   const inlineRefs = extractInlineRefs(cleanText);
-                  const domRefs = $('a[href]').length;
+                  const domRefs = $("a[href]").length;
                   citationCount = (inlineRefs?.length || 0) + domRefs;
                   logger.log(
-                    `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${cand.url}`
+                    `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${cand.url}`,
                   );
                 } catch (err) {
-                  logger.warn(`⚠️ [Evidence] Citation extraction failed: ${err.message}`);
+                  logger.warn(
+                    `⚠️ [Evidence] Citation extraction failed: ${err.message}`,
+                  );
                 }
               }
             }
 
             if (cleanText.length < 100) {
               logger.warn(
-                `⚠️  [Evidence] Insufficient text (${cleanText.length} chars): ${cand.url}`
+                `⚠️  [Evidence] Insufficient text (${cleanText.length} chars): ${cand.url}`,
               );
 
               // ─────────────────────────────────────────────
@@ -722,7 +769,7 @@ export async function runEvidenceEngine({
               });
 
               logger.log(
-                `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
+                `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`,
               );
 
               // ─────────────────────────────────────────────
@@ -746,7 +793,7 @@ export async function runEvidenceEngine({
               // Calculate quality for this candidate
               const base = cand.score ?? 0;
               const boost = cand.domain?.match(
-                /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+                /(reuters|apnews|nature|nih|who|gov|\.edu)/i,
               )
                 ? 0.2
                 : 0;
@@ -794,13 +841,17 @@ export async function runEvidenceEngine({
             });
 
             logger.log(
-              `✅ [Evidence] Created reference content_id=${referenceContentId}`
+              `✅ [Evidence] Created reference content_id=${referenceContentId}`,
             );
 
             // ─────────────────────────────────────────────
             // CRITICAL: Link reference to task via content_relations
             // ─────────────────────────────────────────────
-            await ensureContentRelation(query, taskContentId, referenceContentId);
+            await ensureContentRelation(
+              query,
+              taskContentId,
+              referenceContentId,
+            );
 
             // ─────────────────────────────────────────────
             // 5.5. SAVE FULL CLEANED TEXT (for quality analysis)
@@ -808,14 +859,14 @@ export async function runEvidenceEngine({
             try {
               await query(
                 `UPDATE content SET content_text = ? WHERE content_id = ?`,
-                [cleanText, referenceContentId]
+                [cleanText, referenceContentId],
               );
               logger.log(
-                `📝 [Evidence] Saved content_text (${cleanText.length} chars) for content_id=${referenceContentId}`
+                `📝 [Evidence] Saved content_text (${cleanText.length} chars) for content_id=${referenceContentId}`,
               );
             } catch (err) {
               logger.warn(
-                `⚠️ [Evidence] Failed to save content_text for content_id=${referenceContentId}: ${err.message}`
+                `⚠️ [Evidence] Failed to save content_text for content_id=${referenceContentId}: ${err.message}`,
               );
             }
 
@@ -825,7 +876,9 @@ export async function runEvidenceEngine({
             await persistAuthors(query, referenceContentId, authors);
             if (publisher?.name && publisher.name !== "Unknown Publisher") {
               // extractPublisher returns { name } but persistPublishers expects { publisher_name }
-              await persistPublishers(query, referenceContentId, { publisher_name: publisher.name });
+              await persistPublishers(query, referenceContentId, {
+                publisher_name: publisher.name,
+              });
             }
 
             const publisherLink = await ensureReferencePublisherLink({
@@ -856,7 +909,7 @@ export async function runEvidenceEngine({
             // Calculate quality for this candidate (simple 0-1.2 scale for ranking)
             const base = cand.score ?? 0;
             const boost = cand.domain?.match(
-              /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+              /(reuters|apnews|nature|nih|who|gov|\.edu)/i,
             )
               ? 0.2
               : 0;
@@ -875,7 +928,7 @@ export async function runEvidenceEngine({
             });
 
             logger.log(
-              `🎯 [Evidence] Fully processed reference: ${cand.url} → content_id=${referenceContentId}`
+              `🎯 [Evidence] Fully processed reference: ${cand.url} → content_id=${referenceContentId}`,
             );
 
             // Return object with cleanText + citationCount to avoid re-parsing in evidenceEngine
@@ -886,7 +939,7 @@ export async function runEvidenceEngine({
             };
           } catch (err) {
             logger.warn(
-              `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`
+              `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`,
             );
 
             // ─────────────────────────────────────────────
@@ -905,7 +958,7 @@ export async function runEvidenceEngine({
             });
 
             logger.log(
-              `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
+              `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`,
             );
 
             // ─────────────────────────────────────────────
@@ -929,7 +982,7 @@ export async function runEvidenceEngine({
             // Calculate quality for this candidate
             const base = cand.score ?? 0;
             const boost = cand.domain?.match(
-              /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+              /(reuters|apnews|nature|nih|who|gov|\.edu)/i,
             )
               ? 0.2
               : 0;
@@ -966,7 +1019,7 @@ export async function runEvidenceEngine({
     {
       // Constructor config is now empty - all settings come from database via runOptions
       maxParallelClaims: Infinity, // Process all claims in parallel
-    }
+    },
   );
 
   // engine.run(claims, contexts, opt)
@@ -983,7 +1036,10 @@ export async function runEvidenceEngine({
     // Apply mode-specific config (or fallback to defaults)
     queriesPerClaim: Math.min(modeConfig.queriesPerClaim || 6, 3),
     topKQueries: Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKCandidates: Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9),
+    topKCandidates: Math.min(
+      modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6,
+      9,
+    ),
     maxEvidencePerDoc: 2,
     maxEvidenceCandidates: Math.min(modeConfig.maxEvidenceCandidates || 4, 9),
     maxSearchTargetsPerClaim: 3,
@@ -1078,16 +1134,16 @@ export async function runEvidenceEngine({
               qs.original_reporting || 5,
               qs.quality_score || 5,
               qs.risk_score || 5,
-              qs.quality_tier || 'mid',
-            ]
+              qs.quality_tier || "mid",
+            ],
           );
 
           logger.log(
-            `📊 [Evidence] Saved quality scores: ${qs.quality_tier} (${qs.quality_score}/10) for content_id=${refData.referenceContentId}`
+            `📊 [Evidence] Saved quality scores: ${qs.quality_tier} (${qs.quality_score}/10) for content_id=${refData.referenceContentId}`,
           );
         } catch (err) {
           logger.warn(
-            `⚠️ [Evidence] Failed to save quality scores for content_id=${refData.referenceContentId}: ${err.message}`
+            `⚠️ [Evidence] Failed to save quality scores for content_id=${refData.referenceContentId}: ${err.message}`,
           );
         }
       }
@@ -1139,8 +1195,7 @@ export async function runEvidenceEngine({
           url,
           title: refData.title,
           stance: "nuance",
-          why:
-            "Search result snippet matched this claim, but the source scrape failed. Rescrape the source to verify the document-level match.",
+          why: "Search result snippet matched this claim, but the source scrape failed. Rescrape the source to verify the document-level match.",
           quote: snippet,
           claims: [...refData.claimIndices],
           quality: refData.quality || 0.25,
@@ -1148,26 +1203,101 @@ export async function runEvidenceEngine({
           scrapeStatus: "snippet_only",
         });
         logger.log(
-          `🧷 [Evidence] Keeping failed source as snippet-only document link: ${url}`
+          `🧷 [Evidence] Keeping failed source as snippet-only document link: ${url}`,
         );
         continue;
       }
 
       if (refData.referenceContentId) {
+        const referenceContentId = refData.referenceContentId;
+
         try {
+          // Remove this run's provisional system relation first.
           await query(
             `DELETE FROM content_relations
-             WHERE content_id = ? AND reference_content_id = ? AND is_system = 1`,
-            [taskContentId, refData.referenceContentId]
+       WHERE content_id = ?
+         AND reference_content_id = ?
+         AND is_system = 1`,
+            [taskContentId, referenceContentId],
           );
+
+          // Only delete the underlying reference content if nothing else
+          // in the evidence graph still owns or uses it.
+          const usageRows = await query(
+            `
+        SELECT
+          c.content_type,
+
+          EXISTS (
+            SELECT 1
+            FROM content_relations cr
+            WHERE cr.content_id = ?
+               OR cr.reference_content_id = ?
+          ) AS has_relations,
+
+          EXISTS (
+            SELECT 1
+            FROM content_claims cc
+            WHERE cc.content_id = ?
+          ) AS has_content_claims,
+
+          EXISTS (
+            SELECT 1
+            FROM reference_claim_links rcl
+            WHERE rcl.reference_content_id = ?
+          ) AS has_reference_claim_links,
+
+          EXISTS (
+            SELECT 1
+            FROM claim_sources cs
+            WHERE cs.reference_content_id = ?
+          ) AS has_claim_sources
+
+        FROM content c
+        WHERE c.content_id = ?
+        LIMIT 1
+      `,
+            [
+              referenceContentId,
+              referenceContentId,
+              referenceContentId,
+              referenceContentId,
+              referenceContentId,
+              referenceContentId,
+            ],
+          );
+
+          const usage = usageRows?.[0];
+
+          const isUnusedReference =
+            usage &&
+            usage.content_type === "reference" &&
+            !Number(usage.has_relations) &&
+            !Number(usage.has_content_claims) &&
+            !Number(usage.has_reference_claim_links) &&
+            !Number(usage.has_claim_sources);
+
+          if (isUnusedReference) {
+            await query(`CALL delete_content_cascade(?)`, [referenceContentId]);
+
+            logger.log(
+              `🧹 [Evidence] Deleted unused reference content ${referenceContentId}: ${url}`,
+            );
+          } else {
+            logger.log(
+              `🔗 [Evidence] Unlinked unused candidate ${referenceContentId} from task ${taskContentId}, but preserved content because it is still used elsewhere`,
+            );
+          }
         } catch (err) {
           logger.warn(
-            `⚠️  [Evidence] Failed to unlink orphan source ${refData.referenceContentId}: ${err.message}`
+            `⚠️  [Evidence] Failed to clean unused reference ${referenceContentId}: ${err.message}`,
           );
         }
       }
 
-      logger.log(`⏭️  [Evidence] Skipping unlinked source with no extracted evidence: ${url}`);
+      logger.log(
+        `⏭️  [Evidence] Skipping unlinked source with no extracted evidence: ${url}`,
+      );
     }
   }
 
@@ -1175,24 +1305,24 @@ export async function runEvidenceEngine({
   const aiReferences = Array.from(evidenceByUrl.values());
 
   logger.log(
-    `🟣 [runEvidenceEngine] Returning ${aiReferences.length} AI references (fully processed)`
+    `🟣 [runEvidenceEngine] Returning ${aiReferences.length} AI references (fully processed)`,
   );
 
   if (failedCandidates.length > 0) {
     logger.log(
-      `⚠️  [runEvidenceEngine] ${failedCandidates.length} failed candidates available for manual scrape`
+      `⚠️  [runEvidenceEngine] ${failedCandidates.length} failed candidates available for manual scrape`,
     );
 
     // Log first 5 failed scrapes with details for debugging
     logger.log(
-      `\n📋 [FAILED SCRAPES] Sample of failed references for debugging:\n`
+      `\n📋 [FAILED SCRAPES] Sample of failed references for debugging:\n`,
     );
     failedCandidates.slice(0, 5).forEach((failed, idx) => {
       logger.log(
         `  ${idx + 1}. URL: ${failed.url}\n` +
           `     Title: ${failed.title}\n` +
           `     Reason: ${failed.reason}\n` +
-          `     Content ID: ${failed.contentId}\n`
+          `     Content ID: ${failed.contentId}\n`,
       );
     });
   }
