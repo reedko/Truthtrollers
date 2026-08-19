@@ -166,6 +166,7 @@ function normalizeMappingItem(raw, inputClaim) {
     rationale: String(raw?.rationale || "")
       .trim()
       .slice(0, 1000),
+    targets: Array.isArray(raw?.targets) ? raw.targets : [],
   };
 }
 
@@ -223,9 +224,6 @@ export async function mapArgumentFunctions({
       maxRetries: 2,
       timeout: 90000,
     });
-    logger.log(
-      `[argumentMapping] RAW RESPONSE: ${JSON.stringify(response, null, 2)}`,
-    );
   } catch (err) {
     logger.warn(
       "[argumentMapping] LLM mapping failed; using deterministic fallback:",

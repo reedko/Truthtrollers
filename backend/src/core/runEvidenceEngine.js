@@ -400,8 +400,18 @@ export async function runEvidenceEngine({
         articleStance: meta.articleStance || meta.article_stance || "",
         argumentFunction: meta.argumentFunction || meta.argument_function || "",
         scoreTransform: meta.scoreTransform || meta.score_transform || "",
+        targets: Array.isArray(meta.targets) ? meta.targets : [],
       };
+      const studyIdentityTargets = claim.targets.filter(
+        (target) => target?.targetType === "study_identity",
+      );
 
+      if (studyIdentityTargets.length > 0) {
+        logger.log(
+          `📚 [Evidence] Study identity targets for claim ${claim.id}:`,
+          studyIdentityTargets,
+        );
+      }
       return claim;
     })
     .sort(
@@ -1027,19 +1037,16 @@ export async function runEvidenceEngine({
   const runOptions = {
     enableInternal: true,
     enableWeb: true,
-    searchEngine: "hybrid",
+    searchEngine: "tavily",
     preferDomains: [],
     avoidDomains: [],
     maxCharsPerDoc: 8000,
     enableRedTeam: false,
 
     // Apply mode-specific config (or fallback to defaults)
-    queriesPerClaim: Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKQueries: Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKCandidates: Math.min(
-      modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6,
-      9,
-    ),
+    queriesPerClaim: modeConfig.queriesPerClaim || 2,
+    topKQueries: modeConfig.queriesPerClaim || 2,
+    topKCandidates: Math.min(modeConfig.topKCandidates ?? 5, 9),
     maxEvidencePerDoc: 2,
     maxEvidenceCandidates: Math.min(modeConfig.maxEvidenceCandidates || 4, 9),
     maxSearchTargetsPerClaim: 3,
@@ -1053,15 +1060,28 @@ export async function runEvidenceEngine({
     maxFringeEvidenceCandidates: modeConfig.maxFringeEvidenceCandidates || 2,
 
     enableBalancedSearch: modeConfig.enableBalancedSearch || false,
-    supportQueries: modeConfig.supportQueries || 3,
-    refuteQueries: modeConfig.refuteQueries || 3,
-    nuanceQueries: modeConfig.nuanceQueries || 3,
+    supportQueries: modeConfig.supportQueries || 1,
+    refuteQueries: modeConfig.refuteQueries || 1,
+    nuanceQueries: modeConfig.nuanceQueries || 0,
     targetSupport: modeConfig.targetSupport || 3,
     targetRefute: modeConfig.targetRefute || 3,
     targetNuance: modeConfig.targetNuance || 3,
     excludeUrl: taskUrl, // Exclude task URL from being used as its own reference
   };
-
+  for (const claim of claims) {
+    logger.log(`🔎 [Evidence] Query input for claim ${claim.id}:`, {
+      text: claim.text,
+      originalText: claim.originalText,
+      promptText: claim.promptText,
+      searchText: claim.searchText,
+      objectClaim: claim.objectClaim,
+      isAttribution: claim.isAttribution,
+      speakerEntity: claim.speakerEntity,
+      articleStance: claim.articleStance,
+      argumentFunction: claim.argumentFunction,
+      scoreTransform: claim.scoreTransform,
+    });
+  }
   const results = await engine.run(claims, null, runOptions);
 
   // Build confidence map: claimIndex → confidence

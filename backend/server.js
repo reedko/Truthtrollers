@@ -1,7 +1,9 @@
 // /backend/server.js
 import dotenv from "dotenv";
 dotenv.config();
-console.error(`[BOOT] server.js module body reached at ${new Date().toISOString()}`);
+console.error(
+  `[BOOT] server.js module body reached at ${new Date().toISOString()}`,
+);
 
 // ═══════════════════════════════════════════════
 // GLOBAL ERROR HANDLERS - Catch all uncaught errors
@@ -323,7 +325,10 @@ app.use("/", createDiscussionSystemRouter({ query, pool })); // Discussion units
 app.use("/", createTTLiveSystemRouter({ query, pool })); // TruthTrollers Live Feed: /api/ttlive/*
 
 // Source provider diagnostics — dev/admin only
-if (process.env.NODE_ENV !== "production" || process.env.ENABLE_DEBUG_ROUTES === "true") {
+if (
+  process.env.NODE_ENV !== "production" ||
+  process.env.ENABLE_DEBUG_ROUTES === "true"
+) {
   app.use("/api/debug/source-providers", createSourceProviderDebugRoutes());
 }
 // ─────────────────────────────────────────────
@@ -363,7 +368,7 @@ app.get("/api/health", (req, res) => {
 // ─────────────────────────────────────────────
 // Initialize Logger (clear log file on startup)
 // ─────────────────────────────────────────────
-const DISABLE_STARTUP_LOG_ROTATION = true; // temporary boot diagnostic
+const DISABLE_STARTUP_LOG_ROTATION = false; // temporary boot diagnostic
 if (!DISABLE_STARTUP_LOG_ROTATION) {
   clearLogFile();
 }
@@ -404,7 +409,10 @@ httpServer.listen(httpPort, async () => {
   try {
     const { readFileSync } = await import("fs");
     const { join, dirname: pDirname } = await import("path");
-    const admSql = readFileSync(join(__dirname, "migrations/create-admiralty-evaluations.sql"), "utf8");
+    const admSql = readFileSync(
+      join(__dirname, "migrations/create-admiralty-evaluations.sql"),
+      "utf8",
+    );
     await poolQuery(admSql);
     console.log("🛡  admiralty_evaluations table ready.");
   } catch (err) {
@@ -417,11 +425,14 @@ httpServer.listen(httpPort, async () => {
   try {
     const { readFileSync: rfs } = await import("fs");
     const { join: pjoin } = await import("path");
-    const provSql = rfs(pjoin(__dirname, "migrations/add-content-provenance.sql"), "utf8");
+    const provSql = rfs(
+      pjoin(__dirname, "migrations/add-content-provenance.sql"),
+      "utf8",
+    );
     const statements = provSql
       .split(";")
-      .map(s => s.replace(/--[^\n]*/g, "").trim())
-      .filter(s => s.toUpperCase().startsWith("ALTER"));
+      .map((s) => s.replace(/--[^\n]*/g, "").trim())
+      .filter((s) => s.toUpperCase().startsWith("ALTER"));
     let added = 0;
     for (const stmt of statements) {
       try {
@@ -429,13 +440,18 @@ httpServer.listen(httpPort, async () => {
         added++;
       } catch (colErr) {
         // 1060 = Duplicate column name — column already exists, safe to ignore
-        if (colErr.errno !== 1060) console.warn("⚠️  content provenance column:", colErr.message);
+        if (colErr.errno !== 1060)
+          console.warn("⚠️  content provenance column:", colErr.message);
       }
     }
-    if (added > 0) console.log(`📋 Content provenance columns added (${added} new).`);
+    if (added > 0)
+      console.log(`📋 Content provenance columns added (${added} new).`);
     else console.log("📋 Content provenance columns already present.");
   } catch (err) {
-    console.warn("⚠️  Could not run content provenance migration:", err.message);
+    console.warn(
+      "⚠️  Could not run content provenance migration:",
+      err.message,
+    );
   }
 });
 

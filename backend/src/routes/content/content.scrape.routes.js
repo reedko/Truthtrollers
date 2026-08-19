@@ -10,7 +10,10 @@ import logger from "../../utils/logger.js";
 
 // Single-pass scraping functions
 import { scrapeTask } from "../../core/scrapeTask.js";
-import { inferFacebookChannelFromText, parseFacebookMeta } from "../../utils/parseSocialPublisher.js";
+import {
+  inferFacebookChannelFromText,
+  parseFacebookMeta,
+} from "../../utils/parseSocialPublisher.js";
 import { scrapeReference } from "../../core/scrapeReference.js"; // Used by /api/scrape-reference (legacy endpoint)
 
 // Storage helpers
@@ -64,7 +67,7 @@ export default function createContentScrapeRoutes({ query }) {
       task_content_id
     ) VALUES (?, 'dashboard', ?, ?, ?)
     `,
-      [userId, mode, url || null, taskContentId || null]
+      [userId, mode, url || null, taskContentId || null],
     );
 
     res.json({
@@ -91,10 +94,16 @@ export default function createContentScrapeRoutes({ query }) {
 
       const stuckJobs = await query(stuckJobsSql);
       if (stuckJobs.length > 0) {
-        logger.log(`⚠️ [SCRAPE RECOVERY] Found ${stuckJobs.length} abandoned job(s) stuck in 'claimed' status:`);
-        stuckJobs.forEach(job => {
-          const minutesStuck = Math.floor((Date.now() - new Date(job.claimed_at).getTime()) / 60000);
-          logger.log(`  - Job ${job.scrape_job_id}: claimed ${minutesStuck}min ago by ${job.claimed_by_instance_id}, mode=${job.scrape_mode}, url=${job.target_url || 'N/A'}`);
+        logger.log(
+          `⚠️ [SCRAPE RECOVERY] Found ${stuckJobs.length} abandoned job(s) stuck in 'claimed' status:`,
+        );
+        stuckJobs.forEach((job) => {
+          const minutesStuck = Math.floor(
+            (Date.now() - new Date(job.claimed_at).getTime()) / 60000,
+          );
+          logger.log(
+            `  - Job ${job.scrape_job_id}: claimed ${minutesStuck}min ago by ${job.claimed_by_instance_id}, mode=${job.scrape_mode}, url=${job.target_url || "N/A"}`,
+          );
         });
       }
 
@@ -112,7 +121,9 @@ export default function createContentScrapeRoutes({ query }) {
 
       const resetResult = await query(resetSql);
       if (resetResult.affectedRows > 0) {
-        logger.log(`✅ [SCRAPE RECOVERY] Reset ${resetResult.affectedRows} abandoned job(s) back to pending`);
+        logger.log(
+          `✅ [SCRAPE RECOVERY] Reset ${resetResult.affectedRows} abandoned job(s) back to pending`,
+        );
       }
 
       // Now fetch pending jobs
@@ -134,7 +145,9 @@ export default function createContentScrapeRoutes({ query }) {
 
       // Log if we have pending jobs waiting to be processed
       if (jobs.length > 0) {
-        logger.log(`📋 [SCRAPE JOBS] ${jobs.length} pending job(s) available for processing`);
+        logger.log(
+          `📋 [SCRAPE JOBS] ${jobs.length} pending job(s) available for processing`,
+        );
       }
 
       res.json(jobs);
@@ -174,7 +187,7 @@ export default function createContentScrapeRoutes({ query }) {
         status: job.status,
         content_id: job.result_content_id,
         error_message: job.error_message,
-        completed_at: job.completed_at
+        completed_at: job.completed_at,
       });
     } catch (err) {
       logger.error(`❌ Error fetching scrape job ${id} status:`, err);
@@ -196,13 +209,19 @@ export default function createContentScrapeRoutes({ query }) {
       const [currentJob] = await query(checkSql, [id]);
 
       if (!currentJob) {
-        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} not found (instance: ${instance_id})`);
+        logger.log(
+          `⚠️ [SCRAPE CLAIM] Job ${id} not found (instance: ${instance_id})`,
+        );
         return res.status(404).json({ error: "Job not found" });
       }
 
-      if (currentJob.status !== 'pending') {
-        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} cannot be claimed - status is '${currentJob.status}' (already claimed by: ${currentJob.claimed_by_instance_id || 'unknown'})`);
-        return res.status(409).json({ error: "Job already claimed or not found" });
+      if (currentJob.status !== "pending") {
+        logger.log(
+          `⚠️ [SCRAPE CLAIM] Job ${id} cannot be claimed - status is '${currentJob.status}' (already claimed by: ${currentJob.claimed_by_instance_id || "unknown"})`,
+        );
+        return res
+          .status(409)
+          .json({ error: "Job already claimed or not found" });
       }
 
       const sql = `
@@ -217,11 +236,17 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [instance_id, id]);
 
       if (result.affectedRows === 0) {
-        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} claim race condition - another instance claimed it first`);
-        return res.status(409).json({ error: "Job already claimed or not found" });
+        logger.log(
+          `⚠️ [SCRAPE CLAIM] Job ${id} claim race condition - another instance claimed it first`,
+        );
+        return res
+          .status(409)
+          .json({ error: "Job already claimed or not found" });
       }
 
-      logger.log(`✅ [SCRAPE CLAIM] Job ${id} claimed by instance ${instance_id}`);
+      logger.log(
+        `✅ [SCRAPE CLAIM] Job ${id} claimed by instance ${instance_id}`,
+      );
       res.json({ ok: true });
     } catch (err) {
       logger.error(`❌ [SCRAPE CLAIM] Error claiming scrape job ${id}:`, err);
@@ -243,18 +268,26 @@ export default function createContentScrapeRoutes({ query }) {
       const [currentJob] = await query(checkSql, [id]);
 
       if (!currentJob) {
-        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} not found when trying to mark complete (instance: ${instance_id})`);
+        logger.log(
+          `⚠️ [SCRAPE COMPLETE] Job ${id} not found when trying to mark complete (instance: ${instance_id})`,
+        );
         return res.status(404).json({ error: "Job not found" });
       }
 
-      if (currentJob.status !== 'claimed') {
-        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} cannot be completed - status is '${currentJob.status}' (instance: ${instance_id})`);
+      if (currentJob.status !== "claimed") {
+        logger.log(
+          `⚠️ [SCRAPE COMPLETE] Job ${id} cannot be completed - status is '${currentJob.status}' (instance: ${instance_id})`,
+        );
         return res.status(409).json({ error: "Job not in claimed state" });
       }
 
       if (currentJob.claimed_by_instance_id !== instance_id) {
-        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to complete: ${instance_id})`);
-        return res.status(409).json({ error: "Job not claimed by this instance" });
+        logger.log(
+          `⚠️ [SCRAPE COMPLETE] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to complete: ${instance_id})`,
+        );
+        return res
+          .status(409)
+          .json({ error: "Job not claimed by this instance" });
       }
 
       const sql = `
@@ -270,16 +303,24 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [content_id, id, instance_id]);
 
       if (result.affectedRows === 0) {
-        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} could not be updated to completed (race condition?)`);
+        logger.log(
+          `⚠️ [SCRAPE COMPLETE] Job ${id} could not be updated to completed (race condition?)`,
+        );
         return res.status(409).json({
-          error: "Job not found, not claimed by this instance, or already completed"
+          error:
+            "Job not found, not claimed by this instance, or already completed",
         });
       }
 
-      logger.log(`✅ [SCRAPE COMPLETE] Job ${id} completed successfully by ${instance_id}, content_id=${content_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || 'N/A'}`);
+      logger.log(
+        `✅ [SCRAPE COMPLETE] Job ${id} completed successfully by ${instance_id}, content_id=${content_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || "N/A"}`,
+      );
       res.json({ ok: true, content_id });
     } catch (err) {
-      logger.error(`❌ [SCRAPE COMPLETE] Error completing scrape job ${id}:`, err);
+      logger.error(
+        `❌ [SCRAPE COMPLETE] Error completing scrape job ${id}:`,
+        err,
+      );
       res.status(500).json({ error: "Failed to complete job" });
     }
   });
@@ -298,18 +339,26 @@ export default function createContentScrapeRoutes({ query }) {
       const [currentJob] = await query(checkSql, [id]);
 
       if (!currentJob) {
-        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} not found when trying to mark failed (instance: ${instance_id}, error: ${error_message})`);
+        logger.log(
+          `⚠️ [SCRAPE FAIL] Job ${id} not found when trying to mark failed (instance: ${instance_id}, error: ${error_message})`,
+        );
         return res.status(404).json({ error: "Job not found" });
       }
 
-      if (currentJob.status !== 'claimed') {
-        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} cannot be marked failed - status is '${currentJob.status}' (instance: ${instance_id}, error: ${error_message})`);
+      if (currentJob.status !== "claimed") {
+        logger.log(
+          `⚠️ [SCRAPE FAIL] Job ${id} cannot be marked failed - status is '${currentJob.status}' (instance: ${instance_id}, error: ${error_message})`,
+        );
         return res.status(409).json({ error: "Job not in claimed state" });
       }
 
       if (currentJob.claimed_by_instance_id !== instance_id) {
-        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to fail: ${instance_id})`);
-        return res.status(409).json({ error: "Job not claimed by this instance" });
+        logger.log(
+          `⚠️ [SCRAPE FAIL] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to fail: ${instance_id})`,
+        );
+        return res
+          .status(409)
+          .json({ error: "Job not claimed by this instance" });
       }
 
       const sql = `
@@ -325,16 +374,24 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [error_message, id, instance_id]);
 
       if (result.affectedRows === 0) {
-        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} could not be updated to failed (race condition?)`);
+        logger.log(
+          `⚠️ [SCRAPE FAIL] Job ${id} could not be updated to failed (race condition?)`,
+        );
         return res.status(409).json({
-          error: "Job not found, not claimed by this instance, or already processed"
+          error:
+            "Job not found, not claimed by this instance, or already processed",
         });
       }
 
-      logger.log(`❌ [SCRAPE FAIL] Job ${id} marked as failed by ${instance_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || 'N/A'}, error: ${error_message}`);
+      logger.log(
+        `❌ [SCRAPE FAIL] Job ${id} marked as failed by ${instance_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || "N/A"}, error: ${error_message}`,
+      );
       res.json({ ok: true });
     } catch (err) {
-      logger.error(`❌ [SCRAPE FAIL] Error marking scrape job ${id} as failed:`, err);
+      logger.error(
+        `❌ [SCRAPE FAIL] Error marking scrape job ${id} as failed:`,
+        err,
+      );
       res.status(500).json({ error: "Failed to mark job as failed" });
     }
   });
@@ -348,21 +405,30 @@ export default function createContentScrapeRoutes({ query }) {
   router.post("/api/scrape-task", async (req, res) => {
     try {
       const {
-        url, raw_html, raw_text, force, media_source,
+        url,
+        raw_html,
+        raw_text,
+        force,
+        media_source,
         authors: providedAuthors,
-        platform, distribution_channel, linked_url, linked_publisher,
+        platform,
+        distribution_channel,
+        linked_url,
+        linked_publisher,
       } = req.body;
 
-      logger.log(`\n${'='.repeat(80)}`);
+      logger.log(`\n${"=".repeat(80)}`);
       logger.log(`🔵 [/api/scrape-task] RECEIVED REQUEST`);
       logger.log(`🔵 URL: ${url}`);
-      logger.log(`🔵 Media source: ${media_source || 'not provided'}`);
-      logger.log(`🔵 Platform: ${platform || 'not provided'}`);
+      logger.log(`🔵 Media source: ${media_source || "not provided"}`);
+      logger.log(`🔵 Platform: ${platform || "not provided"}`);
       logger.log(`🔵 Force: ${force}`);
-      logger.log(`🔵 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`);
+      logger.log(
+        `🔵 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`,
+      );
       logger.log(`🔵 Has raw_text: ${!!raw_text}`);
       logger.log(`🔵 Provided authors: ${providedAuthors?.length || 0}`);
-      logger.log(`${'='.repeat(80)}\n`);
+      logger.log(`${"=".repeat(80)}\n`);
 
       if (!url) {
         return res.status(400).json({
@@ -375,7 +441,7 @@ export default function createContentScrapeRoutes({ query }) {
       if (!force) {
         const existing = await query(
           "SELECT content_id, content_name FROM content WHERE url = ? LIMIT 1",
-          [url]
+          [url],
         );
 
         if (existing.length > 0) {
@@ -385,7 +451,7 @@ export default function createContentScrapeRoutes({ query }) {
             duplicate: true,
             existing_content_id: existing[0].content_id,
             existing_content_name: existing[0].content_name,
-            message: `This URL already exists as "${existing[0].content_name}". Set force=true to create anyway.`
+            message: `This URL already exists as "${existing[0].content_name}". Set force=true to create anyway.`,
           });
         }
       }
@@ -398,7 +464,10 @@ export default function createContentScrapeRoutes({ query }) {
       const apiCheck = await openAiLLM.testConnection();
 
       if (!apiCheck.accessible) {
-        logger.error("❌ [/api/scrape-task] OpenAI API not accessible:", apiCheck.error);
+        logger.error(
+          "❌ [/api/scrape-task] OpenAI API not accessible:",
+          apiCheck.error,
+        );
         return res.status(503).json({
           success: false,
           error: "AI_SERVICE_UNAVAILABLE",
@@ -418,7 +487,7 @@ export default function createContentScrapeRoutes({ query }) {
       // ═════════════════════════════════════════════════════════════
       if (raw_text) {
         logger.log(
-          `🧪 [/api/scrape-task] TESTING MODE: Using provided raw_text (${raw_text.length} chars)`
+          `🧪 [/api/scrape-task] TESTING MODE: Using provided raw_text (${raw_text.length} chars)`,
         );
 
         const {
@@ -433,22 +502,19 @@ export default function createContentScrapeRoutes({ query }) {
         } = req.body;
 
         logger.log(`🧪 [/api/scrape-task] TESTING MODE data:`, {
-          content_name: content_name?.substring(0, 50) + '...' || 'NONE',
+          content_name: content_name?.substring(0, 50) + "..." || "NONE",
           media_source,
-          thumbnail: thumbnail ? `${thumbnail.substring(0, 60)}...` : 'NONE',
+          thumbnail: thumbnail ? `${thumbnail.substring(0, 60)}...` : "NONE",
           authorsCount: authors?.length || 0,
         });
 
         // Import legacy storage helpers
-        const { createContentInternal } = await import(
-          "../../storage/createContentInternal.js"
-        );
-        const { persistAuthors } = await import(
-          "../../storage/persistAuthors.js"
-        );
-        const { persistPublishers } = await import(
-          "../../storage/persistPublishers.js"
-        );
+        const { createContentInternal } =
+          await import("../../storage/createContentInternal.js");
+        const { persistAuthors } =
+          await import("../../storage/persistAuthors.js");
+        const { persistPublishers } =
+          await import("../../storage/persistPublishers.js");
 
         // For Facebook posts: if linked_publisher wasn't extracted by the extension
         // (tracker links use JS, not href), try to find the linked article domain
@@ -456,12 +522,18 @@ export default function createContentScrapeRoutes({ query }) {
         // standalone line (e.g. "emfacts.com\n<article title>").
         let resolvedLinkedPublisher = linked_publisher || null;
         if (platform === "facebook" && !resolvedLinkedPublisher && raw_text) {
-          const DOMAIN_LINE_RE = /^([a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?)$/i;
+          const DOMAIN_LINE_RE =
+            /^([a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?)$/i;
           for (const line of raw_text.split(/\r?\n/)) {
             const t = line.trim();
-            if (DOMAIN_LINE_RE.test(t) && !/facebook|fbcdn|instagram/i.test(t)) {
+            if (
+              DOMAIN_LINE_RE.test(t) &&
+              !/facebook|fbcdn|instagram/i.test(t)
+            ) {
               resolvedLinkedPublisher = t.toLowerCase();
-              logger.log(`🔗 [TESTING MODE] Extracted linked publisher from post text: ${resolvedLinkedPublisher}`);
+              logger.log(
+                `🔗 [TESTING MODE] Extracted linked publisher from post text: ${resolvedLinkedPublisher}`,
+              );
               break;
             }
           }
@@ -470,13 +542,25 @@ export default function createContentScrapeRoutes({ query }) {
         // Facebook distribution identity is the group/page. A linked article is
         // stored separately as provenance, not as the post publisher.
         const fbMeta = platform === "facebook" ? parseFacebookMeta(url) : null;
-        const inferredFbChannel = platform === "facebook" ? inferFacebookChannelFromText(raw_text) : null;
-        const fbChannel = inferredFbChannel ||
-          (distribution_channel && !/^facebook group \d+$/i.test(distribution_channel) ? distribution_channel : null) ||
+        const inferredFbChannel =
+          platform === "facebook"
+            ? inferFacebookChannelFromText(raw_text)
+            : null;
+        const fbChannel =
+          inferredFbChannel ||
+          (distribution_channel &&
+          !/^facebook group \d+$/i.test(distribution_channel)
+            ? distribution_channel
+            : null) ||
           fbMeta?.publisherLabel;
-        const resolvedMediaSource = platform === "facebook"
-          ? (fbChannel || (media_source && !/^facebook$/i.test(media_source) ? media_source : null) || "Facebook")
-          : (media_source || "Test");
+        const resolvedMediaSource =
+          platform === "facebook"
+            ? fbChannel ||
+              (media_source && !/^facebook$/i.test(media_source)
+                ? media_source
+                : null) ||
+              "Facebook"
+            : media_source || "Test";
 
         // Create task content row
         taskContentId = await createContentInternal(query, {
@@ -489,7 +573,10 @@ export default function createContentScrapeRoutes({ query }) {
           thumbnail: thumbnail || null,
           details: raw_text.slice(0, 500),
           platform,
-          distribution_channel: platform === "facebook" ? (fbChannel || distribution_channel) : distribution_channel,
+          distribution_channel:
+            platform === "facebook"
+              ? fbChannel || distribution_channel
+              : distribution_channel,
           linked_url,
           linked_publisher: resolvedLinkedPublisher,
         });
@@ -515,7 +602,7 @@ export default function createContentScrapeRoutes({ query }) {
         text = raw_text;
 
         logger.log(
-          `✅ [/api/scrape-task] TESTING MODE: Created task content_id=${taskContentId}`
+          `✅ [/api/scrape-task] TESTING MODE: Created task content_id=${taskContentId}`,
         );
       }
       // ═════════════════════════════════════════════════════════════
@@ -524,16 +611,22 @@ export default function createContentScrapeRoutes({ query }) {
       else {
         if (raw_html) {
           logger.log(
-            `🟦 [/api/scrape-task] NEW MODE: Using provided HTML (${raw_html.length} chars, no fetch needed)`
+            `🟦 [/api/scrape-task] NEW MODE: Using provided HTML (${raw_html.length} chars, no fetch needed)`,
           );
         } else {
           logger.log(
-            `🟦 [/api/scrape-task] NEW MODE: Starting single-pass scrape for: ${url}`
+            `🟦 [/api/scrape-task] NEW MODE: Starting single-pass scrape for: ${url}`,
           );
         }
 
         // Single-pass scraping
-        const scrapeResult = await scrapeTask(query, url, raw_html, media_source, providedAuthors);
+        const scrapeResult = await scrapeTask(
+          query,
+          url,
+          raw_html,
+          media_source,
+          providedAuthors,
+        );
 
         if (!scrapeResult) {
           return res.status(500).json({
@@ -548,8 +641,8 @@ export default function createContentScrapeRoutes({ query }) {
         resolveSourceIdentity(url, {
           query,
           hintName: scrapeResult.publisher?.name || null,
-          title:    scrapeResult.title || null,
-          author:   scrapeResult.authors?.[0]?.name || null,
+          title: scrapeResult.title || null,
+          author: scrapeResult.authors?.[0]?.name || null,
         }).catch(() => {});
 
         // Detect source lineage (excerpt/repost/pointer/archive) — fire-and-forget
@@ -559,7 +652,11 @@ export default function createContentScrapeRoutes({ query }) {
         // Looks up publisher from DB by name/domain after persistTaskContent ran.
         {
           const enrichDomain = (() => {
-            try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return null; }
+            try {
+              return new URL(url).hostname.replace(/^www\./, "");
+            } catch {
+              return null;
+            }
           })();
           import("../../services/publisherEnrichmentService.js")
             .then(({ enrichPublisherIfNeeded }) =>
@@ -569,10 +666,13 @@ export default function createContentScrapeRoutes({ query }) {
                 sourceUrl: url,
                 domain: enrichDomain,
                 context: "case_content",
-              })
+              }),
             )
             .catch((err) =>
-              logger.warn("[scrape-task] Publisher enrichment failed (non-fatal):", err.message)
+              logger.warn(
+                "[scrape-task] Publisher enrichment failed (non-fatal):",
+                err.message,
+              ),
             );
         }
       }
@@ -586,7 +686,7 @@ export default function createContentScrapeRoutes({ query }) {
         persistedDomRefs = await persistReferences(
           query,
           taskContentId,
-          allRefs
+          allRefs,
         );
       }
 
@@ -606,7 +706,7 @@ export default function createContentScrapeRoutes({ query }) {
         claims: taskClaims,
       });
       const mappingByClaimId = new Map(
-        argumentMappings.map((item) => [Number(item.claimId), item])
+        argumentMappings.map((item) => [Number(item.claimId), item]),
       );
       const mappedTaskClaims = taskClaims.map((claim) => {
         const mapping = mappingByClaimId.get(Number(claim.id));
@@ -623,6 +723,7 @@ export default function createContentScrapeRoutes({ query }) {
           scoreTransform: mapping.scoreTransform,
           accountabilityEligible: mapping.accountabilityEligible,
           argumentMappingConfidence: mapping.confidence,
+          targets: Array.isArray(mapping.targets) ? mapping.targets : [],
         };
       });
 
@@ -667,32 +768,35 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
 
       // Filter valid references (exclude self-references and short text)
-      const candidateReferences = enableReferenceClaimExtraction ? aiReferences.filter((ref) => {
-        // Filter out references without content_id
-        if (!ref.referenceContentId) return false;
+      const candidateReferences = enableReferenceClaimExtraction
+        ? aiReferences.filter((ref) => {
+            // Filter out references without content_id
+            if (!ref.referenceContentId) return false;
 
-        // Filter out self-references (reference is same as task)
-        if (ref.referenceContentId === taskContentId) {
-          logger.log(
-            `⏭️  [/api/scrape-task] Skipping self-reference: reference ${ref.referenceContentId} is the same as task ${taskContentId}`
-          );
-          return false;
-        }
+            // Filter out self-references (reference is same as task)
+            if (ref.referenceContentId === taskContentId) {
+              logger.log(
+                `⏭️  [/api/scrape-task] Skipping self-reference: reference ${ref.referenceContentId} is the same as task ${taskContentId}`,
+              );
+              return false;
+            }
 
-        // Filter out references with insufficient text (<500 chars)
-        // These rarely extract useful claims and waste LLM calls
-        if (ref.cleanText && ref.cleanText.length < 500) {
-          logger.log(
-            `⏭️  [/api/scrape-task] Skipping reference with insufficient text (${ref.cleanText.length} chars): ${ref.url}`
-          );
-          return false;
-        }
+            // Filter out references with insufficient text (<500 chars)
+            // These rarely extract useful claims and waste LLM calls
+            if (ref.cleanText && ref.cleanText.length < 500) {
+              logger.log(
+                `⏭️  [/api/scrape-task] Skipping reference with insufficient text (${ref.cleanText.length} chars): ${ref.url}`,
+              );
+              return false;
+            }
 
-        return true;
-      }) : [];
+            return true;
+          })
+        : [];
       const validReferences = candidateReferences.slice(
         0,
-        Number.isFinite(maxReferenceClaimExtraction) && maxReferenceClaimExtraction > 0
+        Number.isFinite(maxReferenceClaimExtraction) &&
+          maxReferenceClaimExtraction > 0
           ? maxReferenceClaimExtraction
           : 8,
       );
@@ -708,15 +812,17 @@ export default function createContentScrapeRoutes({ query }) {
 
       if (!enableReferenceClaimExtraction) {
         logger.log(
-          `⏭️  [/api/scrape-task] Skipping reference-claim extraction; ENABLE_REFERENCE_CLAIM_EXTRACTION=false`
+          `⏭️  [/api/scrape-task] Skipping reference-claim extraction; ENABLE_REFERENCE_CLAIM_EXTRACTION=false`,
         );
       } else {
         if (candidateReferences.length > validReferences.length) {
           logger.log(
-            `🔒 [/api/scrape-task] Reference-claim extraction capped at ${validReferences.length}/${candidateReferences.length} references; set MAX_REFERENCE_CLAIM_EXTRACTION to adjust`
+            `🔒 [/api/scrape-task] Reference-claim extraction capped at ${validReferences.length}/${candidateReferences.length} references; set MAX_REFERENCE_CLAIM_EXTRACTION to adjust`,
           );
         }
-        logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references in batches of ${BATCH_SIZE}`);
+        logger.log(
+          `🔄 [/api/scrape-task] Processing ${validReferences.length} references in batches of ${BATCH_SIZE}`,
+        );
       }
 
       // Track processing stats
@@ -727,120 +833,149 @@ export default function createContentScrapeRoutes({ query }) {
       const processReference = async (ref) => {
         try {
           // a) Create snippet claim from search engine snippet
-            if (ref.quote) {
-              await persistClaims(
-                query,
-                ref.referenceContentId,
-                [ref.quote],
-                "snippet", // relationshipType
-                "snippet" // claimType
+          if (ref.quote) {
+            await persistClaims(
+              query,
+              ref.referenceContentId,
+              [ref.quote],
+              "snippet", // relationshipType
+              "snippet", // claimType
+            );
+            logger.log(
+              `✅ [/api/scrape-task] Created snippet claim for reference ${ref.referenceContentId}`,
+            );
+          }
+
+          // b) Extract reference claims from full text (if available)
+          //    Pass task claim texts so the LLM also pulls statements that
+          //    directly respond to / contradict / support those claims.
+          if (ref.cleanText) {
+            const extractedClaims = await processTaskClaims({
+              query,
+              taskContentId: ref.referenceContentId,
+              text: ref.cleanText,
+              claimType: "reference",
+              taskClaimsContext: taskClaims.map((c) => c.text),
+            });
+
+            if (extractedClaims.length === 0) {
+              logger.warn(
+                `⚠️  [/api/scrape-task] WARNING: NO claims extracted from reference ${ref.referenceContentId}`,
               );
+              logger.warn(`   URL: ${ref.url}`);
+              logger.warn(`   Text length: ${ref.cleanText.length} chars`);
+              logger.warn(
+                `   This may indicate extraction prompt issues or non-claim-worthy content`,
+              );
+            } else {
               logger.log(
-                `✅ [/api/scrape-task] Created snippet claim for reference ${ref.referenceContentId}`
+                `✅ [/api/scrape-task] Extracted ${extractedClaims.length} reference claims from ${ref.referenceContentId}`,
               );
-            }
 
-            // b) Extract reference claims from full text (if available)
-            //    Pass task claim texts so the LLM also pulls statements that
-            //    directly respond to / contradict / support those claims.
-            if (ref.cleanText) {
-              const extractedClaims = await processTaskClaims({
-                query,
-                taskContentId: ref.referenceContentId,
-                text: ref.cleanText,
-                claimType: "reference",
-                taskClaimsContext: taskClaims.map((c) => c.text),
-              });
-
-              if (extractedClaims.length === 0) {
-                logger.warn(
-                  `⚠️  [/api/scrape-task] WARNING: NO claims extracted from reference ${ref.referenceContentId}`
-                );
-                logger.warn(`   URL: ${ref.url}`);
-                logger.warn(`   Text length: ${ref.cleanText.length} chars`);
-                logger.warn(`   This may indicate extraction prompt issues or non-claim-worthy content`);
-              } else {
+              // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
+              try {
                 logger.log(
-                  `✅ [/api/scrape-task] Extracted ${extractedClaims.length} reference claims from ${ref.referenceContentId}`
+                  `🔗 [/api/scrape-task] Calling matchClaimsToTaskClaims for reference ${ref.referenceContentId}...`,
+                );
+                logger.log(
+                  `   Reference claims: ${extractedClaims.length}, Task claims: ${taskClaims.length}`,
                 );
 
-                // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
-                try {
-                  logger.log(`🔗 [/api/scrape-task] Calling matchClaimsToTaskClaims for reference ${ref.referenceContentId}...`);
-                  logger.log(`   Reference claims: ${extractedClaims.length}, Task claims: ${taskClaims.length}`);
+                const claimMatches = await matchClaimsToTaskClaims({
+                  referenceClaims: extractedClaims,
+                  taskClaims: taskClaims,
+                  llm: openAiLLM,
+                });
 
-                  const claimMatches = await matchClaimsToTaskClaims({
-                    referenceClaims: extractedClaims,
-                    taskClaims: taskClaims,
-                    llm: openAiLLM
-                  });
+                logger.log(
+                  `🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`,
+                );
 
-                  logger.log(`🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`);
+                // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
+                if (claimMatches.length > 0) {
+                  const relationRows = await query(
+                    `SELECT content_relation_id
+   FROM content_relations
+   WHERE content_id = ?
+     AND reference_content_id = ?
+   ORDER BY content_relation_id ASC
+   LIMIT 1`,
+                    [taskContentId, ref.referenceContentId],
+                  );
 
-                  // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
-                  if (claimMatches.length > 0) {
-                    const values = claimMatches.map(match => {
-                      // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
-                      let mappedStance = match.stance;
-                      if (match.stance === 'supports') mappedStance = 'support';
-                      else if (match.stance === 'refutes') mappedStance = 'refute';
-                      else if (match.stance === 'related') mappedStance = 'nuance';
+                  const contentRelationId =
+                    relationRows?.[0]?.content_relation_id || null;
 
-                      return [
-                        match.referenceClaimId,
-                        match.taskClaimId,
-                        mappedStance,
-                        Math.round((match.veracityScore || 0.5) * 100), // score: 0-100
-                        match.confidence, // 0.15-0.98
-                        match.supportLevel, // -1.2 to +1.2
-                        match.rationale,
-                        null, // quote
-                        1 // created_by_ai
-                      ];
-                    });
-
-                    // Batch insert all AI-suggested links at once
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-
-                    await query(
-                      `INSERT INTO reference_claim_task_links
-                       (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                       VALUES ${placeholders}`,
-                      flatValues
-                    );
-
-                    logger.log(
-                      `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`
-                    );
-                  } else {
+                  if (!contentRelationId) {
                     logger.warn(
-                      `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`
+                      `⚠️ [/api/scrape-task] No content_relation_id found for task ${taskContentId} → reference ${ref.referenceContentId}`,
                     );
                   }
-                } catch (linkErr) {
-                  logger.error(
-                    `❌ [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
-                    linkErr.message
-                  );
-                  logger.error(`   Stack:`, linkErr.stack);
-                  failedReferences.push({
-                    url: ref.url,
-                    contentId: ref.referenceContentId,
-                    error: `Failed to create claim links: ${linkErr.message}`,
+                  const values = claimMatches.map((match) => {
+                    // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
+                    let mappedStance = match.stance;
+                    if (match.stance === "supports") mappedStance = "support";
+                    else if (match.stance === "refutes")
+                      mappedStance = "refute";
+                    else if (match.stance === "related")
+                      mappedStance = "nuance";
+                    return [
+                      contentRelationId,
+                      match.referenceClaimId,
+                      match.taskClaimId,
+                      mappedStance,
+                      Math.round((match.veracityScore || 0.5) * 100),
+                      match.confidence,
+                      match.supportLevel,
+                      match.rationale,
+                      null,
+                      1,
+                    ];
                   });
+
+                  // Batch insert all AI-suggested links at once
+                  const placeholders = values
+                    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+                    .join(", ");
+                  const flatValues = values.flat();
+
+                  await query(
+                    `INSERT INTO reference_claim_task_links
+                       (content_relation_id,reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
+                       VALUES ${placeholders}`,
+                    flatValues,
+                  );
+
+                  logger.log(
+                    `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`,
+                  );
+                } else {
+                  logger.warn(
+                    `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`,
+                  );
                 }
+              } catch (linkErr) {
+                logger.error(
+                  `❌ [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
+                  linkErr.message,
+                );
+                logger.error(`   Stack:`, linkErr.stack);
+                failedReferences.push({
+                  url: ref.url,
+                  contentId: ref.referenceContentId,
+                  error: `Failed to create claim links: ${linkErr.message}`,
+                });
               }
             }
+          }
 
           // Mark as successfully processed
           processedSuccessfully++;
           return { success: true };
-
         } catch (err) {
           logger.error(
             `❌ [/api/scrape-task] Failed to process reference ${ref.referenceContentId}:`,
-            err.message
+            err.message,
           );
           logger.error(`   URL: ${ref.url}`);
           logger.error(`   Error type: ${err.name}`);
@@ -858,15 +993,19 @@ export default function createContentScrapeRoutes({ query }) {
       // Process references in batches
       for (let i = 0; i < validReferences.length; i += BATCH_SIZE) {
         const batch = validReferences.slice(i, i + BATCH_SIZE);
-        logger.log(`📦 [/api/scrape-task] Processing batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} references)`);
+        logger.log(
+          `📦 [/api/scrape-task] Processing batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} references)`,
+        );
 
         // Process batch in parallel
-        await Promise.all(batch.map(ref => processReference(ref)));
+        await Promise.all(batch.map((ref) => processReference(ref)));
 
-        logger.log(`✅ [/api/scrape-task] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete`);
+        logger.log(
+          `✅ [/api/scrape-task] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete`,
+        );
       }
 
-      logger.log(`\n${'='.repeat(80)}`);
+      logger.log(`\n${"=".repeat(80)}`);
       logger.log(`📊 [/api/scrape-task] REFERENCE PROCESSING SUMMARY`);
       logger.log(`   Total references: ${validReferences.length}`);
       logger.log(`   Successfully processed: ${processedSuccessfully}`);
@@ -878,13 +1017,13 @@ export default function createContentScrapeRoutes({ query }) {
           logger.log(`      Error: ${failed.error}`);
         });
       }
-      logger.log(`${'='.repeat(80)}\n`);
+      logger.log(`${"=".repeat(80)}\n`);
 
       // -----------------------------------------------------------------
       // 7. Return unified reference set to extension
       // -----------------------------------------------------------------
       logger.log(
-        `✅ [/api/scrape-task] Complete: content_id=${taskContentId}, ${persistedDomRefs.length} DOM refs, ${aiRefs.length} AI refs`
+        `✅ [/api/scrape-task] Complete: content_id=${taskContentId}, ${persistedDomRefs.length} DOM refs, ${aiRefs.length} AI refs`,
       );
 
       return res.json({
@@ -947,7 +1086,7 @@ export default function createContentScrapeRoutes({ query }) {
       }
 
       logger.log(
-        `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ''}: ${url}`
+        `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ""}: ${url}`,
       );
 
       // -----------------------------------------------------------------
@@ -956,7 +1095,7 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
       const existing = await query(
         "SELECT content_id, content_name FROM content WHERE url = ? LIMIT 1",
-        [url]
+        [url],
       );
 
       let existingContentId = null;
@@ -967,27 +1106,27 @@ export default function createContentScrapeRoutes({ query }) {
         existingContentId = existing[0].content_id;
         existingContentName = existing[0].content_name;
         logger.log(
-          `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existingContentName}")`
+          `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existingContentName}")`,
         );
 
         // Ensure content_relations link exists (if taskContentId provided)
         if (taskContentId) {
           const relationCheck = await query(
             `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
-            [taskContentId, existingContentId]
+            [taskContentId, existingContentId],
           );
 
           if (relationCheck.length === 0) {
             await query(
               `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, ?, ?)`,
-              [taskContentId, existingContentId, null, 1]
+              [taskContentId, existingContentId, null, 1],
             );
             logger.log(
-              `🔗 [/api/scrape-reference] Created content_relations: task ${taskContentId} → reference ${existingContentId}`
+              `🔗 [/api/scrape-reference] Created content_relations: task ${taskContentId} → reference ${existingContentId}`,
             );
           } else {
             logger.log(
-              `✓ [/api/scrape-reference] Content_relations already exists: task ${taskContentId} → reference ${existingContentId}`
+              `✓ [/api/scrape-reference] Content_relations already exists: task ${taskContentId} → reference ${existingContentId}`,
             );
           }
         }
@@ -997,11 +1136,17 @@ export default function createContentScrapeRoutes({ query }) {
         isRetryScrape = !!(raw_html || raw_text) && taskContentId;
 
         if (isRetryScrape) {
-          logger.log(`🔄 [/api/scrape-reference] RETRY SCRAPE DETECTED - Will extract claims and run evidence engine`);
+          logger.log(
+            `🔄 [/api/scrape-reference] RETRY SCRAPE DETECTED - Will extract claims and run evidence engine`,
+          );
           logger.log(`   📋 URL: ${url}`);
           logger.log(`   🆔 Existing content_id: ${existingContentId}`);
-          logger.log(`   📄 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`);
-          logger.log(`   📝 Has raw_text: ${!!raw_text} (${raw_text?.length || 0} chars)`);
+          logger.log(
+            `   📄 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`,
+          );
+          logger.log(
+            `   📝 Has raw_text: ${!!raw_text} (${raw_text?.length || 0} chars)`,
+          );
           logger.log(`   🎯 Task content_id: ${taskContentId}`);
           // Don't return - continue to claim extraction below
         } else {
@@ -1009,11 +1154,11 @@ export default function createContentScrapeRoutes({ query }) {
           // if this content has never received an admiralty evaluation.
           // This handles the case where a prior scrape stored a short publisher name
           // (e.g. "CIDRAP" from title suffix) and enrichment never ran or produced no code.
-          ;(async () => {
+          (async () => {
             try {
               const [existingAdm] = await query(
                 `SELECT admiralty_code FROM admiralty_evaluations WHERE target_type = 'content' AND target_id = ? LIMIT 1`,
-                [existingContentId]
+                [existingContentId],
               );
               if (existingAdm?.admiralty_code) return; // already evaluated, skip
 
@@ -1023,13 +1168,21 @@ export default function createContentScrapeRoutes({ query }) {
                    JOIN publishers p ON cp.publisher_id = p.publisher_id
                   WHERE cp.content_id = ?
                   LIMIT 1`,
-                [existingContentId]
+                [existingContentId],
               );
               const pubName = pubRows[0]?.publisher_name;
-              if (!pubName || /^(unknown( publisher)?|recaptcha|bot protected)$/i.test(pubName)) return;
+              if (
+                !pubName ||
+                /^(unknown( publisher)?|recaptcha|bot protected)$/i.test(
+                  pubName,
+                )
+              )
+                return;
 
-              const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
-              const { enrichPublisherIfNeeded } = await import("../../services/publisherEnrichmentService.js");
+              const { evaluateAdmiraltyCode, storeEvaluation } =
+                await import("../../services/admiraltyEvaluator.js");
+              const { enrichPublisherIfNeeded } =
+                await import("../../services/publisherEnrichmentService.js");
 
               const admPublisherId = pubRows[0].publisher_id;
               const enrichResult = await enrichPublisherIfNeeded({
@@ -1041,26 +1194,51 @@ export default function createContentScrapeRoutes({ query }) {
                 force: true,
                 context: "case_content",
               });
-              logger.log(`📚 [/api/scrape-reference] Deferred enrichment for duplicate content_id=${existingContentId}: ${enrichResult?.status ?? 'done'}`);
+              logger.log(
+                `📚 [/api/scrape-reference] Deferred enrichment for duplicate content_id=${existingContentId}: ${enrichResult?.status ?? "done"}`,
+              );
 
               const [profileRows, ratingRows] = await Promise.all([
-                query(`SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`, [admPublisherId]),
-                query(`SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`, [admPublisherId]),
+                query(
+                  `SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
+                  [admPublisherId],
+                ),
+                query(
+                  `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`,
+                  [admPublisherId],
+                ),
               ]);
-              const { lookupPublisherAllProviders } = await import("../../services/sourceProviders/sourceProviderRegistry.js");
-              const providerResults = await lookupPublisherAllProviders({ sourceUrl: url, publisherName: pubName });
+              const { lookupPublisherAllProviders } =
+                await import("../../services/sourceProviders/sourceProviderRegistry.js");
+              const providerResults = await lookupPublisherAllProviders({
+                sourceUrl: url,
+                publisherName: pubName,
+              });
 
               const evaluation = await evaluateAdmiraltyCode({
                 sourceUrl: url,
                 publisherName: pubName,
-                sourceIdentity: { sourceType: profileRows[0]?.source_type || undefined, resolutionLevel: 3 },
+                sourceIdentity: {
+                  sourceType: profileRows[0]?.source_type || undefined,
+                  resolutionLevel: 3,
+                },
                 existingSourceRatings: ratingRows,
                 providerResults,
               });
-              await storeEvaluation(query, { targetType: "content", targetId: existingContentId, sourceUrl: url, publisherId: admPublisherId, evaluation });
-              logger.log(`🛡  [/api/scrape-reference] Deferred admiralty ${evaluation.admiraltyCode} stored for duplicate content_id=${existingContentId}`);
+              await storeEvaluation(query, {
+                targetType: "content",
+                targetId: existingContentId,
+                sourceUrl: url,
+                publisherId: admPublisherId,
+                evaluation,
+              });
+              logger.log(
+                `🛡  [/api/scrape-reference] Deferred admiralty ${evaluation.admiraltyCode} stored for duplicate content_id=${existingContentId}`,
+              );
             } catch (err) {
-              logger.warn(`⚠️  [/api/scrape-reference] Deferred admiralty failed for ${url}: ${err.message}`);
+              logger.warn(
+                `⚠️  [/api/scrape-reference] Deferred admiralty failed for ${url}: ${err.message}`,
+              );
             }
           })();
 
@@ -1078,7 +1256,9 @@ export default function createContentScrapeRoutes({ query }) {
       // 1. SCRAPE REFERENCE (using pre-fetched HTML/text if available)
       // For retry scrapes, scrapeReference will update existing content with authors/metadata
       // -----------------------------------------------------------------
-      logger.log(`  ⏱️  [1/5] Scraping reference${isRetryScrape ? ' (RETRY SCRAPE - will update existing content with metadata)' : ''}...`);
+      logger.log(
+        `  ⏱️  [1/5] Scraping reference${isRetryScrape ? " (RETRY SCRAPE - will update existing content with metadata)" : ""}...`,
+      );
       const scrapeResult = await scrapeReference(query, {
         url,
         raw_text,
@@ -1105,21 +1285,40 @@ export default function createContentScrapeRoutes({ query }) {
         try {
           // On retry scrape, replace stale publisher links so MIN() doesn't return an old domain-guess
           if (isRetryScrape) {
-            await query(`DELETE FROM content_publishers WHERE content_id = ?`, [referenceContentId]);
-            logger.log(`  🧹 Cleared old publisher links for retry scrape on ref ${referenceContentId}`);
+            await query(`DELETE FROM content_publishers WHERE content_id = ?`, [
+              referenceContentId,
+            ]);
+            logger.log(
+              `  🧹 Cleared old publisher links for retry scrape on ref ${referenceContentId}`,
+            );
           }
-          await persistPublishers(query, referenceContentId, { publisher_name: refPublisherName });
-          logger.log(`  ✅ Persisted publisher "${refPublisherName}" for ref ${referenceContentId}`);
+          await persistPublishers(query, referenceContentId, {
+            publisher_name: refPublisherName,
+          });
+          logger.log(
+            `  ✅ Persisted publisher "${refPublisherName}" for ref ${referenceContentId}`,
+          );
         } catch (e) {
-          logger.warn(`  ⚠️  Could not persist publisher for ref ${referenceContentId}:`, e.message);
+          logger.warn(
+            `  ⚠️  Could not persist publisher for ref ${referenceContentId}:`,
+            e.message,
+          );
         }
       }
-      if (Array.isArray(scrapeResult.authors) && scrapeResult.authors.length > 0) {
+      if (
+        Array.isArray(scrapeResult.authors) &&
+        scrapeResult.authors.length > 0
+      ) {
         try {
           await persistAuthors(query, referenceContentId, scrapeResult.authors);
-          logger.log(`  ✅ Persisted ${scrapeResult.authors.length} author(s) for ref ${referenceContentId}`);
+          logger.log(
+            `  ✅ Persisted ${scrapeResult.authors.length} author(s) for ref ${referenceContentId}`,
+          );
         } catch (e) {
-          logger.warn(`  ⚠️  Could not persist authors for ref ${referenceContentId}:`, e.message);
+          logger.warn(
+            `  ⚠️  Could not persist authors for ref ${referenceContentId}:`,
+            e.message,
+          );
         }
       }
 
@@ -1135,7 +1334,7 @@ export default function createContentScrapeRoutes({ query }) {
       if (isRetryScrape && !force) {
         const existingClaimsCheck = await query(
           `SELECT COUNT(*) AS cnt FROM content_claims WHERE content_id = ? AND relationship_type = 'reference'`,
-          [referenceContentId]
+          [referenceContentId],
         );
         existingClaimCount = existingClaimsCheck[0]?.cnt ?? 0;
       }
@@ -1144,10 +1343,12 @@ export default function createContentScrapeRoutes({ query }) {
       if (claimIds && Array.isArray(claimIds) && claimIds.length > 0) {
         const claimRows = await query(
           `SELECT claim_text FROM claims WHERE claim_id IN (?)`,
-          [claimIds]
+          [claimIds],
         );
-        taskClaimsContext = claimRows.map(row => row.claim_text);
-        logger.log(`  ✅ [2/5] Using ${taskClaimsContext.length} specific claims for context (${Date.now() - startTime}ms)`);
+        taskClaimsContext = claimRows.map((row) => row.claim_text);
+        logger.log(
+          `  ✅ [2/5] Using ${taskClaimsContext.length} specific claims for context (${Date.now() - startTime}ms)`,
+        );
       } else if (taskContentId) {
         const taskClaimRows = await query(
           `SELECT c.claim_text
@@ -1155,27 +1356,35 @@ export default function createContentScrapeRoutes({ query }) {
            JOIN claims c ON cc.claim_id = c.claim_id
            WHERE cc.content_id = ?
            AND cc.relationship_type IN ('task', 'content')`,
-          [taskContentId]
+          [taskContentId],
         );
         if (taskClaimRows.length > 0) {
-          taskClaimsContext = taskClaimRows.map(row => row.claim_text);
-          logger.log(`  ✅ [2/5] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context (${Date.now() - startTime}ms)`);
+          taskClaimsContext = taskClaimRows.map((row) => row.claim_text);
+          logger.log(
+            `  ✅ [2/5] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context (${Date.now() - startTime}ms)`,
+          );
         } else {
-          logger.log(`  ⚠️  [2/5] No task claims found for content_id=${taskContentId}`);
+          logger.log(
+            `  ⚠️  [2/5] No task claims found for content_id=${taskContentId}`,
+          );
         }
       }
 
       let refClaims = [];
       if (isRetryScrape && !force && existingClaimCount > 0) {
-        logger.log(`  ⏭️  [3/5] Skipping claim extraction — ${existingClaimCount} claims already exist for ref ${referenceContentId} (pass force=true to re-extract)`);
+        logger.log(
+          `  ⏭️  [3/5] Skipping claim extraction — ${existingClaimCount} claims already exist for ref ${referenceContentId} (pass force=true to re-extract)`,
+        );
         // Return existing claim IDs
         const existingRows = await query(
           `SELECT claim_id FROM content_claims WHERE content_id = ? AND relationship_type = 'reference'`,
-          [referenceContentId]
+          [referenceContentId],
         );
-        refClaims = existingRows.map(r => ({ id: r.claim_id }));
+        refClaims = existingRows.map((r) => ({ id: r.claim_id }));
       } else {
-        logger.log(`  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`);
+        logger.log(
+          `  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`,
+        );
         refClaims = await processTaskClaims({
           query,
           taskContentId: referenceContentId,
@@ -1184,7 +1393,9 @@ export default function createContentScrapeRoutes({ query }) {
           taskClaimsContext,
           clearOldLinks: isRetryScrape && !!force,
         });
-        logger.log(`  ✅ [3/5] Extracted ${refClaims.length} reference claims (${Date.now() - startTime}ms)`);
+        logger.log(
+          `  ✅ [3/5] Extracted ${refClaims.length} reference claims (${Date.now() - startTime}ms)`,
+        );
       }
 
       const refClaimIds = refClaims.map((c) => c.id);
@@ -1192,46 +1403,54 @@ export default function createContentScrapeRoutes({ query }) {
       // PROACTIVE DETECTION: Warn if manual scrape extracted no claims
       if (refClaimIds.length === 0) {
         logger.warn(
-          `⚠️  [/api/scrape-reference] WARNING: Manual scrape extracted NO claims from ${url}`
+          `⚠️  [/api/scrape-reference] WARNING: Manual scrape extracted NO claims from ${url}`,
         );
         logger.warn(`   Reference content_id: ${referenceContentId}`);
         logger.warn(`   Text length: ${text.length} chars`);
-        logger.warn(`   Task claims context: ${taskClaimsContext ? taskClaimsContext.length : 0} claims`);
+        logger.warn(
+          `   Task claims context: ${taskClaimsContext ? taskClaimsContext.length : 0} claims`,
+        );
       } else if (taskContentId && claimIds && claimIds.length > 0) {
         // Auto-generate claim_links for manual scrapes with task context
         try {
-            logger.log(`  ⏱️  [4/5] Matching reference claims to task claims via AI...`);
-            // Fetch task claims
-            const taskClaimRows = await query(
-              `SELECT c.claim_id, c.claim_text
+          logger.log(
+            `  ⏱️  [4/5] Matching reference claims to task claims via AI...`,
+          );
+          // Fetch task claims
+          const taskClaimRows = await query(
+            `SELECT c.claim_id, c.claim_text
                FROM content_claims cc
                JOIN claims c ON cc.claim_id = c.claim_id
                WHERE cc.content_id = ?
                AND cc.relationship_type IN ('task', 'content')`,
-              [taskContentId]
+            [taskContentId],
+          );
+
+          if (taskClaimRows.length > 0) {
+            const taskClaimsForMatching = taskClaimRows.map((row) => ({
+              id: row.claim_id,
+              text: row.claim_text,
+            }));
+
+            logger.log(
+              `  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`,
             );
-
-            if (taskClaimRows.length > 0) {
-              const taskClaimsForMatching = taskClaimRows.map(row => ({
-                id: row.claim_id,
-                text: row.claim_text
-              }));
-
-              logger.log(`  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`);
-              const claimMatches = await matchClaimsToTaskClaims({
-                referenceClaims: refClaims,
-                taskClaims: taskClaimsForMatching,
-                llm: openAiLLM
-              });
-            logger.log(`  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`);
+            const claimMatches = await matchClaimsToTaskClaims({
+              referenceClaims: refClaims,
+              taskClaims: taskClaimsForMatching,
+              llm: openAiLLM,
+            });
+            logger.log(
+              `  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`,
+            );
 
             // Insert into reference_claim_task_links (AI-suggested links)
             for (const match of claimMatches) {
               // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
               let mappedStance = match.stance;
-              if (match.stance === 'supports') mappedStance = 'support';
-              else if (match.stance === 'refutes') mappedStance = 'refute';
-              else if (match.stance === 'related') mappedStance = 'nuance';
+              if (match.stance === "supports") mappedStance = "support";
+              else if (match.stance === "refutes") mappedStance = "refute";
+              else if (match.stance === "related") mappedStance = "nuance";
 
               await query(
                 `INSERT INTO reference_claim_task_links
@@ -1245,21 +1464,21 @@ export default function createContentScrapeRoutes({ query }) {
                   match.confidence,
                   match.supportLevel,
                   match.rationale,
-                  null
-                ]
+                  null,
+                ],
               );
             }
 
             if (claimMatches.length > 0) {
               logger.log(
-                `✅ [/api/scrape-reference] Created ${claimMatches.length} claim_links for manual scrape ${referenceContentId}`
+                `✅ [/api/scrape-reference] Created ${claimMatches.length} claim_links for manual scrape ${referenceContentId}`,
               );
             }
           }
         } catch (linkErr) {
           logger.warn(
             `⚠️  [/api/scrape-reference] Failed to create claim_links:`,
-            linkErr.message
+            linkErr.message,
           );
         }
       }
@@ -1280,14 +1499,17 @@ export default function createContentScrapeRoutes({ query }) {
            JOIN claims c ON cc.claim_id = c.claim_id
            WHERE rcl.reference_content_id = ?
            AND rcl.scrape_status IN ('snippet_only', 'failed')`,
-          [referenceContentId]
+          [referenceContentId],
         );
 
         if (existingLinks.length > 0) {
-          logger.log(`🔍 [/api/scrape-reference] Validating ${existingLinks.length} snippet-based links with full text`);
+          logger.log(
+            `🔍 [/api/scrape-reference] Validating ${existingLinks.length} snippet-based links with full text`,
+          );
 
           // Import shared quote extraction utility
-          const { extractBestQuote } = await import("../../utils/extractQuote.js");
+          const { extractBestQuote } =
+            await import("../../utils/extractQuote.js");
 
           for (const link of existingLinks) {
             try {
@@ -1311,11 +1533,13 @@ export default function createContentScrapeRoutes({ query }) {
                   [
                     validation.stance || link.old_stance,
                     validation.quote,
-                    `✓ Validated with full text: ${validation.summary || 'Quote extracted from scraped content'}`,
-                    link.ref_claim_link_id
-                  ]
+                    `✓ Validated with full text: ${validation.summary || "Quote extracted from scraped content"}`,
+                    link.ref_claim_link_id,
+                  ],
                 );
-                logger.log(`✅ [/api/scrape-reference] Validated link ${link.ref_claim_link_id}: stance=${validation.stance}, extracted quote`);
+                logger.log(
+                  `✅ [/api/scrape-reference] Validated link ${link.ref_claim_link_id}: stance=${validation.stance}, extracted quote`,
+                );
               } else {
                 // No quote found, mark as insufficient
                 await query(
@@ -1324,19 +1548,24 @@ export default function createContentScrapeRoutes({ query }) {
                        stance = 'insufficient',
                        rationale = 'Manually scraped but no relevant quote found in full text'
                    WHERE ref_claim_link_id = ?`,
-                  [link.ref_claim_link_id]
+                  [link.ref_claim_link_id],
                 );
-                logger.log(`⚠️ [/api/scrape-reference] No quote found for link ${link.ref_claim_link_id}`);
+                logger.log(
+                  `⚠️ [/api/scrape-reference] No quote found for link ${link.ref_claim_link_id}`,
+                );
               }
             } catch (err) {
-              logger.warn(`⚠️ [/api/scrape-reference] Failed to validate link ${link.ref_claim_link_id}:`, err.message);
+              logger.warn(
+                `⚠️ [/api/scrape-reference] Failed to validate link ${link.ref_claim_link_id}:`,
+                err.message,
+              );
               // Fallback: just update scrape_status
               await query(
                 `UPDATE reference_claim_links
                  SET scrape_status = 'full',
                      rationale = CONCAT('Manually scraped from loaded page. ', rationale)
                  WHERE ref_claim_link_id = ?`,
-                [link.ref_claim_link_id]
+                [link.ref_claim_link_id],
               );
             }
           }
@@ -1359,13 +1588,12 @@ export default function createContentScrapeRoutes({ query }) {
           verified_by_user_id: null,
         }));
 
-        const { insertReferenceClaimLinksBulk } = await import(
-          "../../queries/referenceClaimLinks.js"
-        );
+        const { insertReferenceClaimLinksBulk } =
+          await import("../../queries/referenceClaimLinks.js");
         await insertReferenceClaimLinksBulk(query, referenceClaimLinksToInsert);
 
         logger.log(
-          `✅ [scrape-reference] Created ${referenceClaimLinksToInsert.length} reference_claim_links for ${referenceContentId}`
+          `✅ [scrape-reference] Created ${referenceClaimLinksToInsert.length} reference_claim_links for ${referenceContentId}`,
         );
       }
 
@@ -1374,7 +1602,7 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
       const totalTime = Date.now() - startTime;
       logger.log(
-        `✅ [/api/scrape-reference] COMPLETE: reference content_id=${referenceContentId} (total time: ${totalTime}ms / ${(totalTime/1000).toFixed(1)}s)`
+        `✅ [/api/scrape-reference] COMPLETE: reference content_id=${referenceContentId} (total time: ${totalTime}ms / ${(totalTime / 1000).toFixed(1)}s)`,
       );
 
       return res.json({
@@ -1391,7 +1619,7 @@ export default function createContentScrapeRoutes({ query }) {
       const elapsed = Date.now() - startTime;
       logger.error(`❌ [SCRAPE REFERENCE ERROR] Failed after ${elapsed}ms`);
       logger.error(`   URL: ${req.body.url}`);
-      logger.error(`   Task ID: ${req.body.taskContentId || 'N/A'}`);
+      logger.error(`   Task ID: ${req.body.taskContentId || "N/A"}`);
       logger.error(`   Error: ${err.message}`);
       logger.error(`   Stack: ${err.stack}`);
 

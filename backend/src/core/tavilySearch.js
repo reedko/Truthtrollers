@@ -11,7 +11,7 @@ const TAVILY_API_KEY = process.env.TAVILY_API_KEY || "";
 
 if (!TAVILY_API_KEY) {
   logger.warn(
-    "[tavilySearch] TAVILY_API_KEY is not set. EvidenceEngine web search will be disabled."
+    "[tavilySearch] TAVILY_API_KEY is not set. EvidenceEngine web search will be disabled.",
   );
 }
 
@@ -29,17 +29,34 @@ function createTavilyAdapter(apiKey) {
     return [];
   };
 
-  const web = async ({ query, topK = 10, prefer = [], avoid = [], includeRawContent = false }) => {
+  //const web = async ({ query, topK = 10, prefer = [], avoid = [], includeRawContent = false }) => {
+  const web = async ({
+    query,
+    topK = 10,
+    prefer = [],
+    avoid = [],
+    includeRawContent = false,
+    searchDepth = null,
+  }) => {
     if (!query || !query.trim()) return [];
 
-    const body = {
+    /*     const body = {
       api_key: apiKey,
       query,
       max_results: topK,
       search_depth: includeRawContent ? "advanced" : "basic",
       include_raw_content: includeRawContent,
+    }; */
+    const body = {
+      api_key: apiKey,
+      query,
+      max_results: topK,
+      search_depth: searchDepth || (includeRawContent ? "advanced" : "basic"),
+      include_raw_content: includeRawContent,
     };
-
+    logger.log(
+      `🔬 [Tavily] query="${query}" search_depth=${body.search_depth} include_raw_content=${body.include_raw_content} max_results=${body.max_results}`,
+    );
     if (Array.isArray(prefer) && prefer.length) {
       body.include_domains = prefer;
     }
@@ -58,7 +75,7 @@ function createTavilyAdapter(apiKey) {
         logger.warn(
           "[tavilySearch] HTTP error from Tavily:",
           resp.status,
-          resp.statusText
+          resp.statusText,
         );
         return [];
       }

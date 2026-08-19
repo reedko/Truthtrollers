@@ -1,6 +1,7 @@
 // backend/src/core/evidenceEngine.js
 
 import logger from "../utils/logger.js";
+import { searchPubMed } from "./pubmedSearch.js";
 
 function dedupe(arr, keyFn) {
   const s = new Set();
@@ -27,7 +28,7 @@ export class EvidenceEngine {
         evidencePerDoc: 2,
         concurrency: 4,
       },
-    }
+    },
   ) {
     this.deps = deps;
     this.cfg = cfg;
@@ -36,7 +37,17 @@ export class EvidenceEngine {
   async generateQueries(claim, ctx, n = 6, searchMode = null) {
     const label = `[EV][queries][${claim.id}]`;
     logger.time(label);
-
+    const queryContext = {
+      ...(ctx ?? {}),
+      originalText: claim.originalText || null,
+      searchText: claim.searchText || null,
+      objectClaim: claim.objectClaim || null,
+      isAttribution: claim.isAttribution || false,
+      speakerEntity: claim.speakerEntity || null,
+      articleStance: claim.articleStance || null,
+      argumentFunction: claim.argumentFunction || null,
+      targets: Array.isArray(claim.targets) ? claim.targets : [],
+    };
     if (Array.isArray(claim.searchTargets) && claim.searchTargets.length > 0) {
       const directQueries = claim.searchTargets.slice(0, n).map((target) => ({
         claimId: claim.id,
@@ -44,11 +55,15 @@ export class EvidenceEngine {
         intent: target.intent || "both",
         matchedPart: target.matchedPart || "object_claim",
       }));
-      logger.log(`🎯 [EV][queries][${claim.id}] Using direct search targets:`, directQueries);
+      logger.log(
+        `🎯 [EV][queries][${claim.id}] Using direct search targets:`,
+        directQueries,
+      );
       logger.timeEnd(label);
       return dedupe(
         directQueries,
-        (q) => `${q.intent}|${q.matchedPart}|${String(q.query || "").toLowerCase()}`
+        (q) =>
+          `${q.intent}|${q.matchedPart}|${String(q.query || "").toLowerCase()}`,
       );
     }
 
@@ -56,20 +71,56 @@ export class EvidenceEngine {
     let fallbackSystem, fallbackUser;
 
     if (searchMode?.enableBalancedSearch) {
-      logger.log(`🎯 [EV][queries][${claim.id}] BALANCED SEARCH MODE ACTIVE - Targeting ${searchMode.supportQueries} support, ${searchMode.refuteQueries} refute, ${searchMode.nuanceQueries} nuance`);
+      logger.log(
+        `🎯 [EV][queries][${claim.id}] BALANCED SEARCH MODE ACTIVE - Targeting ${searchMode.supportQueries} support, ${searchMode.refuteQueries} refute, ${searchMode.nuanceQueries} nuance`,
+      );
       // Mode 3: Balanced search - explicitly request support/refute/nuance
-      fallbackSystem = "You generate diverse search queries for fact-checking. CRITICAL: Create EQUAL numbers of queries for sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
-      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce EXACTLY {{n}} queries with BALANCED intent distribution:
-- ${searchMode.supportQueries || 3} queries to find sources that SUPPORT the claim
-- ${searchMode.refuteQueries || 3} queries to find sources that REFUTE the claim
-- ${searchMode.nuanceQueries || 3} queries to find sources that provide NUANCED perspective
+      fallbackSystem =
+        "You generate precise, high-relevance search queries for fact-checking. Return strict JSON only.";
 
-CRITICAL: Design queries to actively find OPPOSING viewpoints. For refute queries, search for debunking, fact-checks, counterarguments, alternative interpretations. For support queries, search for confirmatory evidence, corroboration, similar findings. For nuance queries, search for context, caveats, limitations, partial agreements.`;
+      fallbackUser = `CLAIM TO VERIFY:
+{{claimText}}
+
+CONTEXT:
+{{context}}
+
+TASK: Generate EXACTLY {{n}} high-precision search queries for this exact claim:
+
+1. SUPPORT — a query designed to retrieve evidence that would support or corroborate the substantive claim.
+2. REFUTE — a query designed to retrieve evidence that would contradict, rebut, or provide an alternative explanation for the substantive claim.
+
+QUERY DESIGN RULES:
+- Preserve the exact proposition being tested. Do not broaden it into the surrounding topic.
+- Keep the query tightly anchored to the specific event, study, dispute, institution, action, population, date, or other identifying details supplied in the claim or context.
+- A named person or source may be retained when that identity materially disambiguates the specific event, study, dispute, or evidence at issue.
+- If a named person, institution, study, document, event, or other identity in the supplied context materially identifies the specific dispute or evidence at issue, retain that identity in the query.
+- Do not drop such an identity merely because the substantive proposition can be expressed without it.
+- Omit an identity only when it is merely an attribution wrapper and does not help distinguish the specific dispute, study, event, or evidence being searched.
+- Do not include a person's identity merely to verify that the person made the claim.
+- For attribution wrappers, target the underlying substantive assertion unless attribution itself is independently material.
+- For misconduct allegations, preserve the exact alleged action and object.
+- Do not invent names, studies, dates, identifiers, or facts not present in the supplied claim or context.
+- Do not generate a separate nuance query. Nuance will be determined from the retrieved evidence.
+
+DIRECTIONALITY RULES:
+- SUPPORT and REFUTE must pursue genuinely different evidentiary possibilities, not cosmetic rewrites of the same search.
+- For negative, absence, or "no evidence/studies" claims:
+  - SUPPORT should seek evidence consistent with the claimed absence, non-association, or lack of credible evidence.
+  - REFUTE should seek evidence demonstrating the allegedly absent study, effect, association, event, or evidence.
+- Do not create a refute query merely by adding words such as "controversy", "not", "false", "refutation", or "debunked".
+- Formulate the substantive alternative that, if supported, would make the claim false.
+
+Return JSON only:
+{"queries":[
+  {"query":"...","intent":"support"},
+  {"query":"...","intent":"refute"}
+]}`;
     } else {
       logger.log(`🎯 [EV][queries][${claim.id}] Standard search mode`);
 
       // Mode 1 & 2: Standard query generation
-      fallbackSystem = "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
+      fallbackSystem =
+        "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
       fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce {{n}} queries across intents with the following distribution:
 - At least 2 queries designed to find sources that SUPPORT the claim (prefer 3)
 - At least 2 queries designed to find sources that REFUTE the claim (prefer 3)
@@ -86,54 +137,60 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     if (this.deps.promptManager) {
       try {
         const systemPrompt = await this.deps.promptManager.getPrompt(
-          'evidence_query_generation_system',
-          { system: fallbackSystem, user: '', parameters: {} }
+          "evidence_query_generation_system",
+          { system: fallbackSystem, user: "", parameters: {} },
         );
 
         // Choose user prompt based on search mode
         const userPromptName = searchMode?.enableBalancedSearch
-          ? 'evidence_query_generation_user_balanced'
-          : 'evidence_query_generation_user';
+          ? "evidence_query_generation_user_balanced"
+          : "evidence_query_generation_user";
 
-        logger.log(`🎯 [EV][queries][${claim.id}] Loading prompt: ${userPromptName}`);
+        logger.log(
+          `🎯 [EV][queries][${claim.id}] Loading prompt: ${userPromptName}`,
+        );
 
         const userPrompt = await this.deps.promptManager.getPrompt(
           userPromptName,
-          { system: '', user: fallbackUser, parameters: { n: n } }
+          { system: "", user: fallbackUser, parameters: { n: n } },
         );
 
         system = systemPrompt.system;
         user = userPrompt.user
           .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
-          .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+          .replace(/\{\{context\}\}/g, JSON.stringify(queryContext))
           .replace(/\{\{n\}\}/g, n);
 
         // For balanced mode, also replace query distribution variables
         if (searchMode?.enableBalancedSearch) {
           user = user
-            .replace(/\{\{supportQueries\}\}/g, searchMode.supportQueries || 3)
-            .replace(/\{\{refuteQueries\}\}/g, searchMode.refuteQueries || 3)
-            .replace(/\{\{nuanceQueries\}\}/g, searchMode.nuanceQueries || 3);
+            .replace(/\{\{supportQueries\}\}/g, searchMode.supportQueries ?? 3)
+            .replace(/\{\{refuteQueries\}\}/g, searchMode.refuteQueries ?? 3)
+            .replace(/\{\{nuanceQueries\}\}/g, searchMode.nuanceQueries ?? 3);
         }
+        logger.log(
+          `🧪 [EV][queries][${claim.id}] Rendered query prompt:\n${user}`,
+        );
       } catch (err) {
-        logger.warn(`⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`, err.message);
+        logger.warn(
+          `⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`,
+          err.message,
+        );
         // Use fallback - replace template variables
         user = fallbackUser
           .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
-          .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+          .replace(/\{\{context\}\}/g, JSON.stringify(queryContext))
           .replace(/\{\{n\}\}/g, n);
       }
     } else {
       // No promptManager, use fallback with template replacement
       user = fallbackUser
         .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
-        .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+        .replace(/\{\{context\}\}/g, JSON.stringify(queryContext))
         .replace(/\{\{n\}\}/g, n);
     }
 
-    const schema =
-      '{"queries":[{"query":"...","intent":"support|refute|nuance|background|factbox"}]}';
-
+    const schema = '{"queries":[{"query":"...","intent":"support|refute"}]}';
     const out = await this.deps.llm.generate({
       system,
       user,
@@ -142,12 +199,50 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     });
 
     const queriesArray = out && Array.isArray(out.queries) ? out.queries : [];
+    const speakerEntity = String(claim?.speakerEntity || "").trim();
+    const objectClaimText = String(claim?.objectClaim || "").toLowerCase();
 
-    const qs = queriesArray.slice(0, n).map((q) => ({
-      claimId: claim.id,
-      query: q.query,
-      intent: q.intent,
-    }));
+    const identityAnchor =
+      claim?.isAttribution === true &&
+      speakerEntity &&
+      !objectClaimText.includes(speakerEntity.toLowerCase()) &&
+      Array.isArray(claim?.targets) &&
+      claim.targets.some(
+        (t) =>
+          t?.targetType === "attribution" &&
+          t?.searchEligible === true &&
+          String(t?.subjectEntity || "")
+            .trim()
+            .toLowerCase() === speakerEntity.toLowerCase(),
+      )
+        ? speakerEntity
+        : null;
+
+    const ensureIdentityAnchor = (query, anchor) => {
+      const text = String(query || "").trim();
+      if (!text || !anchor) return text;
+
+      if (text.toLowerCase().includes(anchor.toLowerCase())) {
+        return text;
+      }
+
+      return `${anchor} ${text}`;
+    };
+    const qs = queriesArray.slice(0, n).map((q) => {
+      const anchoredQuery = ensureIdentityAnchor(q.query, identityAnchor);
+
+      if (identityAnchor && anchoredQuery !== q.query) {
+        logger.log(
+          `🧷 [EV][queries][${claim.id}] Added identity anchor "${identityAnchor}": "${anchoredQuery}"`,
+        );
+      }
+
+      return {
+        claimId: claim.id,
+        query: anchoredQuery,
+        intent: q.intent,
+      };
+    });
 
     logger.timeEnd(label);
 
@@ -155,7 +250,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     return dedupe(
       qs,
-      (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`
+      (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`,
     );
   }
 
@@ -164,45 +259,65 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
    * Used in two-pass search to map source credibility
    */
   generateFringeQueries(claim, claimType = null, n = 3) {
-    logger.log(`🔍 [EV][fringe-queries][${claim.id}] Generating fringe queries for claim type: ${claimType || 'unknown'}`);
+    logger.log(
+      `🔍 [EV][fringe-queries][${claim.id}] Generating fringe queries for claim type: ${claimType || "unknown"}`,
+    );
 
     const baseQueries = [
-      { query: `${claim.text} hoax`, intent: 'refute-fringe' },
-      { query: `${claim.text} false flag`, intent: 'refute-fringe' },
-      { query: `${claim.text} conspiracy theory`, intent: 'refute-fringe' },
+      { query: `${claim.text} hoax`, intent: "refute-fringe" },
+      { query: `${claim.text} false flag`, intent: "refute-fringe" },
+      { query: `${claim.text} conspiracy theory`, intent: "refute-fringe" },
     ];
 
     // Claim-type specific fringe sites and keywords
     const typeSpecificQueries = {
       antisemitism: [
-        { query: `site:gab.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `site:bitchute.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"antisemitism myth" ${claim.text}`, intent: 'refute-fringe' },
+        { query: `site:gab.com ${claim.text}`, intent: "refute-fringe" },
+        { query: `site:bitchute.com ${claim.text}`, intent: "refute-fringe" },
+        { query: `"antisemitism myth" ${claim.text}`, intent: "refute-fringe" },
       ],
       vaccines: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `site:childrenshealthdefense.org ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"vaccine dangers coverup" ${claim.text}`, intent: 'refute-fringe' },
+        {
+          query: `site:naturalnews.com ${claim.text}`,
+          intent: "refute-fringe",
+        },
+        {
+          query: `site:childrenshealthdefense.org ${claim.text}`,
+          intent: "refute-fringe",
+        },
+        {
+          query: `"vaccine dangers coverup" ${claim.text}`,
+          intent: "refute-fringe",
+        },
       ],
       climate: [
-        { query: `site:wattsupwiththat.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"climate hoax" ${claim.text}`, intent: 'refute-fringe' },
+        {
+          query: `site:wattsupwiththat.com ${claim.text}`,
+          intent: "refute-fringe",
+        },
+        { query: `"climate hoax" ${claim.text}`, intent: "refute-fringe" },
       ],
       covid: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"covid hoax" ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"plandemic" ${claim.text}`, intent: 'refute-fringe' },
+        {
+          query: `site:naturalnews.com ${claim.text}`,
+          intent: "refute-fringe",
+        },
+        { query: `"covid hoax" ${claim.text}`, intent: "refute-fringe" },
+        { query: `"plandemic" ${claim.text}`, intent: "refute-fringe" },
       ],
       pesticides: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"pesticide safety" ${claim.text}`, intent: 'refute-fringe' },
+        {
+          query: `site:naturalnews.com ${claim.text}`,
+          intent: "refute-fringe",
+        },
+        { query: `"pesticide safety" ${claim.text}`, intent: "refute-fringe" },
       ],
     };
 
     const specific = typeSpecificQueries[claimType] || [];
     const allQueries = [...baseQueries, ...specific];
 
-    const fringeQueries = allQueries.slice(0, n).map(q => ({
+    const fringeQueries = allQueries.slice(0, n).map((q) => ({
       claimId: claim.id,
       query: q.query,
       intent: q.intent,
@@ -212,7 +327,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     return dedupe(
       fringeQueries,
-      (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`
+      (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`,
     );
   }
 
@@ -222,17 +337,68 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
   detectClaimType(claimText) {
     const text = claimText.toLowerCase();
 
-    if (text.match(/antisemit|jewish|jew|israel|zion/)) return 'antisemitism';
-    if (text.match(/vaccine|vax|immuniz/)) return 'vaccines';
-    if (text.match(/climate|global warming|carbon|emissions/)) return 'climate';
-    if (text.match(/election|vote|ballot|fraud/)) return 'election';
-    if (text.match(/covid|coronavirus|pandemic/)) return 'covid';
-    if (text.match(/pesticide|herbicide|glyphosate/)) return 'pesticides';
+    if (text.match(/antisemit|jewish|jew|israel|zion/)) return "antisemitism";
+    if (text.match(/vaccine|vax|immuniz/)) return "vaccines";
+    if (text.match(/climate|global warming|carbon|emissions/)) return "climate";
+    if (text.match(/election|vote|ballot|fraud/)) return "election";
+    if (text.match(/covid|coronavirus|pandemic/)) return "covid";
+    if (text.match(/pesticide|herbicide|glyphosate/)) return "pesticides";
 
     return null;
   }
+  shouldSearchPubMed(claim) {
+    const text = [
+      claim?.text,
+      claim?.originalText,
+      claim?.objectClaim,
+      claim?.searchText,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const hasResearchSignal =
+      /\b(study|studies|paper|research|data|dataset|analysis|trial|results?|findings?|cohort|sample|subgroup|protocol|methodology|manipulat(?:e|ed|ion)|omitt?(?:ed|ing|ion)?|exclud(?:e|ed|ing)|reanalys(?:is|ed)|reanalyz(?:e|ed)|suppress(?:ed|ion)?|retract(?:ed|ion)?)\b/i.test(
+        text,
+      );
+
+    return hasResearchSignal;
+  }
+
+  buildPubMedQuery(claim) {
+    const speaker = String(claim?.speakerEntity || "").trim();
+
+    let subject = String(
+      claim?.objectClaim || claim?.searchText || claim?.text || "",
+    ).trim();
+
+    subject = subject.replace(
+      /\b(manipulat(?:e|ed|ion)|destroy(?:ed|ing)?|conceal(?:ed|ment)?|suppress(?:ed|ion)?|omit(?:ted|ting|s)?|exclude(?:d|s|ing)?|fraud(?:ulent)?|cover[- ]?up|whistleblower|revealed?|claimed?|alleged?|agency)\b/gi,
+      " ",
+    );
+    subject = subject.replace(
+      /\b(data|linking|linked|link|was|were|is|are|had|has|have|been|the|a|an|to|by|of|that|did|not|cause|caused|declare|released|credible|evidence)\b/gi,
+      " ",
+    );
+    subject = subject
+      .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const query = [speaker, subject]
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return query.split(" ").slice(0, 10).join(" ");
+  }
 
   async retrieveCandidates(claim, queries, opt) {
+    if (this.shouldSearchPubMed(claim)) {
+      logger.log(
+        `📚 [PubMed] Query candidate for claim ${claim.id}: "${this.buildPubMedQuery(claim)}"`,
+      );
+    }
     const topK = opt.topKCandidates ?? 12;
     const limitQueries = queries.slice(0, opt.topKQueries ?? queries.length);
 
@@ -241,7 +407,8 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     const label = `[EV][retrieve][${claim.id}]`;
     logger.time(label);
-
+    const pubMedEligible = this.shouldSearchPubMed(claim);
+    const pubMedQuery = pubMedEligible ? this.buildPubMedQuery(claim) : null;
     // Convert list of queries → list of async tasks
     // Tag each result with the intent of the query that produced it
     const tasks = limitQueries.map((q) => async () => {
@@ -267,21 +434,40 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
                   topK,
                   prefer: opt.preferDomains,
                   avoid: opt.avoidDomains,
+                  searchDepth: "advanced",
+                  includeRawContent: false,
                 });
                 if (web?.length) sub.push(...web);
               })()
             : null,
-        ].filter(Boolean)
+        ].filter(Boolean),
       );
 
       // Tag every result with this query's intent so we can bucket later
-      const intent = q.intent || 'background';
-      return sub.map(r => ({
+      const intent = q.intent || "background";
+      return sub.map((r) => ({
         ...r,
         searchIntent: intent,
-        matchedPart: q.matchedPart || 'context',
+        matchedPart: q.matchedPart || "context",
       }));
     });
+    if (pubMedEligible && pubMedQuery) {
+      tasks.push(async () => {
+        logger.log(`📚 [PubMed] Searching claim ${claim.id}: "${pubMedQuery}"`);
+
+        const results = await searchPubMed({
+          query: pubMedQuery,
+          topK: 10,
+        });
+
+        return (results || []).map((r) => ({
+          ...r,
+          searchIntent: "background",
+          matchedPart: "pubmed_research",
+          scholarlyLane: true,
+        }));
+      });
+    }
 
     //
     // Execute tasks with optional concurrency limit
@@ -321,18 +507,18 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     // Group deduplicated candidates by intent, take top N per bucket
     // This guarantees stance diversity instead of whatever the global top-12 happen to be
-    const topKPerIntent = opt.topKPerIntent ?? 4;
+    const topKPerIntent = opt.topKPerIntent ?? 5;
     const INTENT_LIMITS = {
-      support:    topKPerIntent,
-      refute:     topKPerIntent,
-      nuance:     Math.ceil(topKPerIntent / 2),
+      support: topKPerIntent,
+      refute: topKPerIntent,
+      nuance: Math.ceil(topKPerIntent / 2),
       background: 2,
-      factbox:    2,
+      factbox: 2,
     };
 
     const byIntent = {};
     for (const c of best.values()) {
-      const intent = c.searchIntent || 'background';
+      const intent = c.searchIntent || "background";
       if (!byIntent[intent]) byIntent[intent] = [];
       byIntent[intent].push(c);
     }
@@ -342,22 +528,24 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       const limit = INTENT_LIMITS[intent] ?? topKPerIntent;
       const sorted = bucket.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
       finalCandidates.push(...sorted.slice(0, limit));
-      logger.log(`🎯 [EV][intent-bucket][${claim.id}] ${intent}: ${Math.min(sorted.length, limit)}/${sorted.length} selected`);
+      logger.log(
+        `🎯 [EV][intent-bucket][${claim.id}] ${intent}: ${Math.min(sorted.length, limit)}/${sorted.length} selected`,
+      );
     }
 
     // Filter out excluded URL (e.g., task URL to prevent self-referencing)
     if (opt.excludeUrl) {
       const beforeCount = finalCandidates.length;
-      finalCandidates = finalCandidates.filter(c => c.url !== opt.excludeUrl);
+      finalCandidates = finalCandidates.filter((c) => c.url !== opt.excludeUrl);
       if (beforeCount > finalCandidates.length) {
         logger.log(
-          `🚫 [Evidence] Filtered out task URL from candidates: ${opt.excludeUrl}`
+          `🚫 [Evidence] Filtered out task URL from candidates: ${opt.excludeUrl}`,
         );
       }
     }
 
     logger.log(
-      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (intent-bucketed), scores: ${finalCandidates.map(c => `${c.searchIntent}:${c.score?.toFixed(2) || 'null'}`).join(', ')}`
+      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (intent-bucketed), scores: ${finalCandidates.map((c) => `${c.searchIntent}:${c.score?.toFixed(2) || "null"}`).join(", ")}`,
     );
 
     return finalCandidates;
@@ -381,17 +569,20 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     // Handle both old format (string) and new format (object with cleanText + citationCount)
     let cleanText, citationCount, html;
 
-    if (typeof fetchResult === 'object' && fetchResult.isProcessed) {
+    if (typeof fetchResult === "object" && fetchResult.isProcessed) {
       // New format: already processed by runEvidenceEngine
       cleanText = fetchResult.cleanText;
       citationCount = fetchResult.citationCount || 0;
       html = cleanText; // Store for raw_text field
       logger.log(
-        `♻️  [Evidence] Using pre-processed text (${citationCount} citations) from ${shortUrl}`
+        `♻️  [Evidence] Using pre-processed text (${citationCount} citations) from ${shortUrl}`,
       );
     } else {
       // Old format: raw HTML/text that needs parsing
-      html = typeof fetchResult === 'string' ? fetchResult : fetchResult.cleanText || '';
+      html =
+        typeof fetchResult === "string"
+          ? fetchResult
+          : fetchResult.cleanText || "";
       cleanText = html;
       citationCount = 0;
 
@@ -400,18 +591,19 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         const $ = cheerio.load(html);
 
         // Extract citation count before removing elements
-        const domRefs = $('a[href]').length;
+        const domRefs = $("a[href]").length;
 
         $("script, style, link, noscript").remove();
         cleanText = $.text().replace(/\s+/g, " ").trim();
 
         // Extract inline citations from text
-        const { extractInlineRefs } = await import("../utils/extractInlineRefs.js");
+        const { extractInlineRefs } =
+          await import("../utils/extractInlineRefs.js");
         const inlineRefs = extractInlineRefs(cleanText);
         citationCount = (inlineRefs?.length || 0) + domRefs;
 
         logger.log(
-          `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${shortUrl}`
+          `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${shortUrl}`,
         );
       } catch (err) {
         // If HTML parsing fails, use original text as-is
@@ -423,7 +615,8 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     const maxEvidencePerDoc = opt.maxEvidencePerDoc ?? 2;
 
     // Use COMBINED quote extraction + quality scoring (saves 1 LLM call per source)
-    const { extractQuotesAndScoreQuality } = await import("../utils/extractQuote.js");
+    const { extractQuotesAndScoreQuality } =
+      await import("../utils/extractQuote.js");
 
     const llmLabel = `[EV][llm-evidence+quality][${claim.id}][${shortUrl}]`;
     logger.time(llmLabel);
@@ -450,22 +643,24 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     logger.log(
       `📘 [DEBUG] LLM raw evidence for ${claim.id}/${shortUrl}:`,
-      items
+      items,
     );
 
     logger.log(
-      `📙 [DEBUG] Parsed ${items.length} evidence items + quality=${qualityScores?.quality_tier || 'unknown'} for ${claim.id}/${shortUrl}`
+      `📙 [DEBUG] Parsed ${items.length} evidence items + quality=${qualityScores?.quality_tier || "unknown"} for ${claim.id}/${shortUrl}`,
     );
 
     const quality = (c) => {
       const base = c.score ?? 0; // Score is already 0-1 range from search engines
       const boost = c.domain?.match(
-        /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+        /(reuters|apnews|nature|nih|who|gov|\.edu)/i,
       )
         ? 0.2
         : 0;
       const q = Math.max(0, Math.min(1.2, base + boost)); // Max 1.2 (1.0 + 0.2 boost)
-      logger.log(`🔢 [DEBUG] Quality calc for ${c.url?.slice(0, 50)}: score=${c.score}, base=${base.toFixed(4)}, boost=${boost}, quality=${q.toFixed(4)}`);
+      logger.log(
+        `🔢 [DEBUG] Quality calc for ${c.url?.slice(0, 50)}: score=${c.score}, base=${base.toFixed(4)}, boost=${boost}, quality=${q.toFixed(4)}`,
+      );
       return q;
     };
 
@@ -484,8 +679,8 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         quote: String(it.quote).trim(),
         summary: (it.summary || "").trim(),
         stance: it.stance || "insufficient",
-        searchIntent: cand.searchIntent || 'background',
-        matchedPart: cand.matchedPart || 'context',
+        searchIntent: cand.searchIntent || "background",
+        matchedPart: cand.matchedPart || "context",
         quality: quality(cand),
         location: it.location || undefined,
         raw_text: html,
@@ -495,7 +690,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     logger.log(
       `🟪 [DEBUG] Final evidence array for ${claim.id}/${shortUrl}:`,
-      arr
+      arr,
     );
 
     return arr;
@@ -504,7 +699,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
   adjudicate(claim, evidence) {
     logger.log(
       `🟫 [DEBUG] Adjudicating ${claim.id} with evidence count:`,
-      evidence.length
+      evidence.length,
     );
 
     const now = Date.now();
@@ -515,7 +710,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
             0.5,
             1 -
               (now - Date.parse(e.publishedAt)) /
-                (1000 * 60 * 60 * 24 * 365 * 5)
+                (1000 * 60 * 60 * 24 * 365 * 5),
           )
         : 0.8;
       return (e.quality ?? 0) * rec;
@@ -537,7 +732,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     const dominance = ranked[0][1] / total;
     const confidence = Math.max(
       0.15,
-      Math.min(0.98, 0.4 * dominance + 0.6 * Math.min(1, total))
+      Math.min(0.98, 0.4 * dominance + 0.6 * Math.min(1, total)),
     );
 
     const sortedEv = [...evidence].sort((a, b) => w(b) - w(a));
@@ -565,7 +760,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       `🟧 [DEBUG] Verdict for ${claim.id}:`,
       finalVerdict,
       "confidence",
-      confidence
+      confidence,
     );
 
     return {
@@ -642,7 +837,7 @@ TASK:
       finalVerdict: out.finalVerdict || adjudication.finalVerdict,
       confidence: Math.max(
         0.1,
-        Math.min(0.99, out.confidence || adjudication.confidence)
+        Math.min(0.99, out.confidence || adjudication.confidence),
       ),
       rationale: out.rationale || adjudication.rationale,
       evidenceIds: adjudication.evidenceIds,
@@ -664,8 +859,8 @@ TASK:
       logger.log(
         `\n🔵 [DEBUG] Starting claim ${claim.id}: "${claim.text.slice(
           0,
-          50
-        )}..."`
+          50,
+        )}..."`,
       );
 
       const claimLabel = `[EV][claim:${claim.id}]`;
@@ -675,7 +870,7 @@ TASK:
         claim,
         ctx,
         opt.topKQueries ?? opt.queriesPerClaim ?? 6,
-        opt // Pass full options for balanced search mode detection
+        opt, // Pass full options for balanced search mode detection
       );
 
       const candidates = await this.retrieveCandidates(claim, queries, opt);
@@ -685,13 +880,13 @@ TASK:
         await Promise.all(
           candidates
             .slice(0, opt.maxEvidenceCandidates)
-            .map((c) => this.extractEvidence(claim, c, opt))
+            .map((c) => this.extractEvidence(claim, c, opt)),
         )
       ).flat();
 
       logger.log(
         `🟨 [DEBUG] Evidence items returned for ${claim.id}:`,
-        evs.length
+        evs.length,
       );
 
       let adj = this.adjudicate(claim, evs);
@@ -715,23 +910,29 @@ TASK:
       let fringeCandidates = [];
 
       if (opt.enableFringeSearch) {
-        logger.log(`🔍 [EV][fringe][${claim.id}] Starting fringe source discovery...`);
+        logger.log(
+          `🔍 [EV][fringe][${claim.id}] Starting fringe source discovery...`,
+        );
 
         // Detect claim type for targeted fringe searches
         const claimType = this.detectClaimType(claim.text);
-        logger.log(`🔍 [EV][fringe][${claim.id}] Detected claim type: ${claimType || 'unknown'}`);
+        logger.log(
+          `🔍 [EV][fringe][${claim.id}] Detected claim type: ${claimType || "unknown"}`,
+        );
 
         // Generate fringe-seeking queries
         fringeQueries = this.generateFringeQueries(
           claim,
           claimType,
-          opt.topKFringeQueries ?? 3
+          opt.topKFringeQueries ?? 3,
         );
 
         // Only search for fringe sources if primary verdict is strong support
         // (this is where we expect to find low-quality refutations)
-        if (adj.finalVerdict === 'support' && adj.confidence > 0.7) {
-          logger.log(`🔍 [EV][fringe][${claim.id}] Primary verdict is strong support - searching for fringe refutations...`);
+        if (adj.finalVerdict === "support" && adj.confidence > 0.7) {
+          logger.log(
+            `🔍 [EV][fringe][${claim.id}] Primary verdict is strong support - searching for fringe refutations...`,
+          );
 
           fringeCandidates = await this.retrieveCandidates(
             claim,
@@ -742,8 +943,8 @@ TASK:
               enableInternal: false,
               topKCandidates: opt.topKFringeCandidates ?? 3,
               preferDomains: [], // Don't filter - we WANT fringe sources
-              avoidDomains: [],  // Don't filter
-            }
+              avoidDomains: [], // Don't filter
+            },
           );
 
           // Extract evidence from fringe sources (fewer candidates)
@@ -751,21 +952,23 @@ TASK:
             await Promise.all(
               fringeCandidates
                 .slice(0, opt.maxFringeEvidenceCandidates ?? 2)
-                .map((c) => this.extractEvidence(claim, c, opt))
+                .map((c) => this.extractEvidence(claim, c, opt)),
             )
           ).flat();
 
           logger.log(
-            `🔍 [EV][fringe][${claim.id}] Found ${fringeEvidence.length} fringe evidence items`
+            `🔍 [EV][fringe][${claim.id}] Found ${fringeEvidence.length} fringe evidence items`,
           );
 
           // Tag fringe evidence for credibility analysis
-          fringeEvidence.forEach(ev => {
+          fringeEvidence.forEach((ev) => {
             ev.isFringe = true;
-            ev.fringeReason = 'Found via fringe-seeking queries';
+            ev.fringeReason = "Found via fringe-seeking queries";
           });
         } else {
-          logger.log(`🔍 [EV][fringe][${claim.id}] Skipping fringe search (verdict not strong support or low confidence)`);
+          logger.log(
+            `🔍 [EV][fringe][${claim.id}] Skipping fringe search (verdict not strong support or low confidence)`,
+          );
         }
       }
 
