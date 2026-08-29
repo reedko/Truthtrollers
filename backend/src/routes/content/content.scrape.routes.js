@@ -28,6 +28,8 @@ import { processTaskClaims } from "../../core/processTaskClaims.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
+import PromptManager from "../../core/promptManager.js";
+import { adjudicateEvidenceBearing } from "../../core/adjudicateEvidenceBearing.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
 import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
@@ -734,23 +736,362 @@ export default function createContentScrapeRoutes({ query }) {
       //    → References are FULLY PROCESSED during fetch (inline)
       //    → Returns: { aiReferences, failedCandidates, claimConfidenceMap }
       // -----------------------------------------------------------------
-      const { aiReferences, failedCandidates, claimConfidenceMap } =
-        await runEvidenceEngine({
-          taskContentId,
-          claimIds,
-          claims: mappedTaskClaims,
-          readableText: text,
-        });
+      const {
+        aiReferences,
+        failedCandidates,
+        claimConfidenceMap,
+        bearingResults,
+      } = await runEvidenceEngine({
+        taskContentId,
+        claimIds,
+        claims: mappedTaskClaims,
+        readableText: text,
+      });
 
+      const bearingPromptManager = new PromptManager(query);
+
+      const caseAssertionById = new Map(
+        mappedTaskClaims.map((claim) => [Number(claim.id), claim]),
+      );
+      const retainedReferenceContentIds = new Set();
+
+      for (const doc of bearingResults || []) {
+        const assertions = doc?.bearing?.assertions || [];
+
+        if (!doc.referenceContentId || assertions.length === 0) {
+          continue;
+        }
+
+        const referenceClaimIds = await persistClaims(
+          query,
+          doc.referenceContentId,
+          assertions.map((a) => ({
+            text: a.evidenceAssertion,
+          })),
+          "reference",
+          "reference",
+          false,
+        );
+
+        const assertionsByTaskClaim = new Map();
+
+        for (let i = 0; i < assertions.length; i++) {
+          const assertion = assertions[i];
+          const referenceClaimId = referenceClaimIds[i];
+          const taskClaimId = Number(assertion.taskClaimId);
+
+          if (!referenceClaimId || !Number.isInteger(taskClaimId)) {
+            continue;
+          }
+
+          if (!assertionsByTaskClaim.has(taskClaimId)) {
+            assertionsByTaskClaim.set(taskClaimId, []);
+          }
+
+          assertionsByTaskClaim.get(taskClaimId).push({
+            evidenceAssertionId: String(referenceClaimId),
+            evidenceAssertion: assertion.evidenceAssertion,
+          });
+        }
+
+        for (const [taskClaimId, evidenceAssertions] of assertionsByTaskClaim) {
+          const caseAssertion = caseAssertionById.get(taskClaimId);
+
+          if (!caseAssertion || evidenceAssertions.length === 0) {
+            continue;
+          }
+
+          const adjudication = await adjudicateEvidenceBearing({
+            caseAssertion,
+            evidenceAssertions,
+            llm: openAiLLM,
+            promptManager: bearingPromptManager,
+          });
+
+          for (const result of adjudication.results || []) {
+            if (result.bearingScore === null) {
+              continue;
+            }
+            retainedReferenceContentIds.add(Number(doc.referenceContentId));
+            const referenceClaimId = Number(result.evidenceAssertionId);
+
+            if (!Number.isInteger(referenceClaimId)) {
+              continue;
+            }
+
+            let mappedStance = "nuance";
+
+            if (result.bearingScore > 0) {
+              mappedStance = "support";
+            } else if (result.bearingScore < 0) {
+              mappedStance = "refute";
+            }
+
+            await query(
+              `INSERT INTO reference_claim_task_links
+(
+  reference_claim_id,
+  task_claim_id,
+  stance,
+  score,
+  confidence,
+  support_level,
+  rationale,
+  quote,
+  created_by_ai
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+ON DUPLICATE KEY UPDATE
+  stance = VALUES(stance),
+  score = VALUES(score),
+  confidence = VALUES(confidence),
+  support_level = VALUES(support_level),
+  rationale = VALUES(rationale),
+  quote = VALUES(quote),
+  created_by_ai = VALUES(created_by_ai)`,
+              [
+                referenceClaimId,
+                taskClaimId,
+                mappedStance,
+                50,
+                0.5,
+                result.bearingScore,
+                result.rationale,
+                null,
+              ],
+            );
+          }
+        }
+
+        logger.log(
+          `💾 [Bearing] Persisted ${referenceClaimIds.length} assertions for reference ${doc.referenceContentId}`,
+        );
+      }
+
+      const retainedBearingResults = [];
+
+      for (const doc of bearingResults || []) {
+        const referenceContentId = Number(doc?.referenceContentId);
+
+        if (!Number.isInteger(referenceContentId)) {
+          continue;
+        }
+
+        if (retainedReferenceContentIds.has(referenceContentId)) {
+          retainedBearingResults.push(doc);
+          continue;
+        }
+
+        logger.log(
+          `✂️ [BearingPrune] Pruning acquired reference ${referenceContentId}: no claim-level bearing found`,
+        );
+
+        // Check ownership BEFORE removing the task → reference relationship.
+        const owners = await query(
+          `SELECT content_id
+   FROM content_relations
+   WHERE reference_content_id = ?`,
+          [referenceContentId],
+        );
+
+        const currentTaskIsOnlyOwner =
+          owners.length === 1 &&
+          Number(owners[0].content_id) === Number(taskContentId);
+
+        const hasNoOwners = owners.length === 0;
+
+        if (currentTaskIsOnlyOwner || hasNoOwners) {
+          // Exclusive to this case, or already orphaned:
+          // remove the reference itself rather than leaving a ghost content row.
+          logger.log(
+            `🗑️ [BearingPrune] Deleting unowned/exclusive reference ${referenceContentId}`,
+          );
+
+          await query(`CALL delete_content_cascade(?)`, [referenceContentId]);
+        } else {
+          // Shared reference: retain the content but remove this case's links.
+          if (claimIds.length > 0) {
+            const placeholders = claimIds.map(() => "?").join(", ");
+
+            await query(
+              `DELETE FROM reference_claim_links
+       WHERE reference_content_id = ?
+         AND claim_id IN (${placeholders})`,
+              [referenceContentId, ...claimIds],
+            );
+          }
+
+          await query(
+            `DELETE FROM content_relations
+     WHERE content_id = ?
+       AND reference_content_id = ?
+       AND is_system = 1`,
+            [taskContentId, referenceContentId],
+          );
+
+          logger.log(
+            `♻️ [BearingPrune] Preserved shared reference ${referenceContentId}; removed only task ${taskContentId} relationship`,
+          );
+        }
+      }
+
+      logger.log(
+        `✂️ [BearingPrune] Retained ${retainedBearingResults.length}/${bearingResults?.length || 0} acquired references`,
+      );
+
+      const retainedAiReferences = (aiReferences || []).filter((ref) => {
+        if (!ref?.referenceContentId) return false;
+
+        // Failed scrape: keep it on snippet evidence.
+        if (ref.scrapeStatus === "snippet_only") {
+          return true;
+        }
+
+        // Successfully acquired: keep only if Call 2 found bearing somewhere.
+        return retainedReferenceContentIds.has(Number(ref.referenceContentId));
+      });
       // -----------------------------------------------------------------
       // 5. Create reference_claim_links (task claims → references)
       // -----------------------------------------------------------------
-      const aiRefs = await persistAIResults(query, {
-        contentId: taskContentId,
-        evidenceRefs: aiReferences,
-        claimIds,
-        claimConfidenceMap, // Pass confidence map for storing per-claim confidence
-      });
+      const referenceClaimLinksToInsert = [];
+
+      for (const doc of retainedBearingResults) {
+        if (!doc?.referenceContentId) continue;
+
+        for (const bearing of doc.snippetBearings || []) {
+          const bearingScore =
+            bearing.bearingScore === null || bearing.bearingScore === undefined
+              ? null
+              : Number(bearing.bearingScore);
+
+          let stance = "insufficient";
+
+          if (bearingScore !== null) {
+            if (bearingScore > 0) {
+              stance = "support";
+            } else if (bearingScore < 0) {
+              stance = "refute";
+            } else {
+              stance = "nuance";
+            }
+          }
+
+          const quality = Number(doc.quality ?? 0);
+
+          logger.log(
+            `🔗 [SnippetBearing] claim=${bearing.taskClaimId} ref=${doc.referenceContentId} bearingScore=${bearingScore === null ? "null" : bearingScore.toFixed(3)} stance=${stance} quality=${quality.toFixed(3)}`,
+          );
+
+          referenceClaimLinksToInsert.push({
+            claim_id: bearing.taskClaimId,
+            reference_content_id: doc.referenceContentId,
+            stance,
+            score: Math.round(quality * 100),
+
+            // Legacy compatibility field. Bearing strength now lives in support_level.
+            confidence: 0.5,
+
+            support_level: bearingScore ?? 0,
+            rationale: bearing.rationale ?? null,
+            evidence_text: bearing.snippet || doc.candidate?.snippet || null,
+            evidence_offsets: null,
+            created_by_ai: 1,
+            verified_by_user_id: null,
+            scrape_status: "full",
+          });
+        }
+      }
+      for (const ref of retainedAiReferences) {
+        if (!ref?.referenceContentId || ref.scrapeStatus !== "snippet_only") {
+          continue;
+        }
+
+        for (const bearing of ref.snippetBearings || []) {
+          const taskClaimId = claimIds[bearing.claimIndex];
+
+          if (!taskClaimId) {
+            continue;
+          }
+
+          const bearingScore =
+            bearing.bearingScore === null || bearing.bearingScore === undefined
+              ? null
+              : Number(bearing.bearingScore);
+
+          let stance = "insufficient";
+
+          if (bearingScore !== null) {
+            if (bearingScore > 0) {
+              stance = "support";
+            } else if (bearingScore < 0) {
+              stance = "refute";
+            } else {
+              stance = "nuance";
+            }
+          }
+
+          const quality = Number(ref.quality ?? 0);
+
+          referenceClaimLinksToInsert.push({
+            claim_id: taskClaimId,
+            reference_content_id: ref.referenceContentId,
+            stance,
+            score: Math.round(quality * 100),
+
+            // Legacy compatibility field.
+            confidence: 0.5,
+
+            support_level: bearingScore ?? 0,
+            rationale: bearing.rationale ?? null,
+            evidence_text: bearing.snippet || ref.quote || null,
+            evidence_offsets: null,
+            created_by_ai: 1,
+            verified_by_user_id: null,
+            scrape_status: "snippet_only",
+          });
+
+          logger.log(
+            `🧷 [SnippetOnlyLink] claim=${taskClaimId} ref=${ref.referenceContentId} bearingScore=${bearingScore === null ? "null" : bearingScore.toFixed(3)} stance=${stance}`,
+          );
+        }
+      }
+      if (referenceClaimLinksToInsert.length > 0) {
+        const { insertReferenceClaimLinksBulk } =
+          await import("../../queries/referenceClaimLinks.js");
+
+        await insertReferenceClaimLinksBulk(query, referenceClaimLinksToInsert);
+
+        logger.log(
+          `💾 [SnippetBearing] Persisted ${referenceClaimLinksToInsert.length} reference_claim_links`,
+        );
+      }
+
+      const aiRefs = (retainedAiReferences || [])
+        .filter((ref) => ref?.url && ref?.referenceContentId)
+        .map((ref) => {
+          const taskClaimIds = [];
+
+          if (Array.isArray(ref.claims)) {
+            for (const idx of ref.claims) {
+              const claimId = claimIds[idx];
+              if (claimId) {
+                taskClaimIds.push(claimId);
+              }
+            }
+          }
+
+          const why = ref.why || ref.summary || ref.quote || null;
+
+          return {
+            referenceContentId: ref.referenceContentId,
+            url: ref.url,
+            content_name: ref.title || "AI Reference",
+            claimIds: taskClaimIds,
+            stance: ref.stance || "insufficient",
+            quote: ref.quote || null,
+            summary: why,
+          };
+        });
 
       const enableReferenceClaimExtraction =
         process.env.ENABLE_REFERENCE_CLAIM_EXTRACTION !== "false";
@@ -769,7 +1110,7 @@ export default function createContentScrapeRoutes({ query }) {
 
       // Filter valid references (exclude self-references and short text)
       const candidateReferences = enableReferenceClaimExtraction
-        ? aiReferences.filter((ref) => {
+        ? retainedAiReferences.filter((ref) => {
             // Filter out references without content_id
             if (!ref.referenceContentId) return false;
 
@@ -846,129 +1187,35 @@ export default function createContentScrapeRoutes({ query }) {
             );
           }
 
-          // b) Extract reference claims from full text (if available)
-          //    Pass task claim texts so the LLM also pulls statements that
-          //    directly respond to / contradict / support those claims.
           if (ref.cleanText) {
-            const extractedClaims = await processTaskClaims({
-              query,
-              taskContentId: ref.referenceContentId,
-              text: ref.cleanText,
-              claimType: "reference",
-              taskClaimsContext: taskClaims.map((c) => c.text),
+            await saveBearingFixture({
+              referenceContentId: ref.referenceContentId,
+              url: ref.url,
+              evidenceText: ref.cleanText,
+              taskClaims: taskClaims.map((c) => ({
+                id: c.id,
+                text: c.text,
+              })),
             });
 
-            if (extractedClaims.length === 0) {
-              logger.warn(
-                `⚠️  [/api/scrape-task] WARNING: NO claims extracted from reference ${ref.referenceContentId}`,
-              );
-              logger.warn(`   URL: ${ref.url}`);
-              logger.warn(`   Text length: ${ref.cleanText.length} chars`);
-              logger.warn(
-                `   This may indicate extraction prompt issues or non-claim-worthy content`,
-              );
-            } else {
-              logger.log(
-                `✅ [/api/scrape-task] Extracted ${extractedClaims.length} reference claims from ${ref.referenceContentId}`,
-              );
-
-              // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
-              try {
-                logger.log(
-                  `🔗 [/api/scrape-task] Calling matchClaimsToTaskClaims for reference ${ref.referenceContentId}...`,
-                );
-                logger.log(
-                  `   Reference claims: ${extractedClaims.length}, Task claims: ${taskClaims.length}`,
-                );
-
-                const claimMatches = await matchClaimsToTaskClaims({
-                  referenceClaims: extractedClaims,
-                  taskClaims: taskClaims,
-                  llm: openAiLLM,
-                });
-
-                logger.log(
-                  `🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`,
-                );
-
-                // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
-                if (claimMatches.length > 0) {
-                  const relationRows = await query(
-                    `SELECT content_relation_id
-   FROM content_relations
-   WHERE content_id = ?
-     AND reference_content_id = ?
-   ORDER BY content_relation_id ASC
-   LIMIT 1`,
-                    [taskContentId, ref.referenceContentId],
-                  );
-
-                  const contentRelationId =
-                    relationRows?.[0]?.content_relation_id || null;
-
-                  if (!contentRelationId) {
-                    logger.warn(
-                      `⚠️ [/api/scrape-task] No content_relation_id found for task ${taskContentId} → reference ${ref.referenceContentId}`,
-                    );
-                  }
-                  const values = claimMatches.map((match) => {
-                    // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
-                    let mappedStance = match.stance;
-                    if (match.stance === "supports") mappedStance = "support";
-                    else if (match.stance === "refutes")
-                      mappedStance = "refute";
-                    else if (match.stance === "related")
-                      mappedStance = "nuance";
-                    return [
-                      contentRelationId,
-                      match.referenceClaimId,
-                      match.taskClaimId,
-                      mappedStance,
-                      Math.round((match.veracityScore || 0.5) * 100),
-                      match.confidence,
-                      match.supportLevel,
-                      match.rationale,
-                      null,
-                      1,
-                    ];
-                  });
-
-                  // Batch insert all AI-suggested links at once
-                  const placeholders = values
-                    .map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
-                    .join(", ");
-                  const flatValues = values.flat();
-
-                  await query(
-                    `INSERT INTO reference_claim_task_links
-                       (content_relation_id,reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                       VALUES ${placeholders}`,
-                    flatValues,
-                  );
-
-                  logger.log(
-                    `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`,
-                  );
-                } else {
-                  logger.warn(
-                    `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`,
-                  );
-                }
-              } catch (linkErr) {
-                logger.error(
-                  `❌ [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
-                  linkErr.message,
-                );
-                logger.error(`   Stack:`, linkErr.stack);
-                failedReferences.push({
-                  url: ref.url,
-                  contentId: ref.referenceContentId,
-                  error: `Failed to create claim links: ${linkErr.message}`,
-                });
-              }
-            }
+            logger.log(
+              `🧪 [BEARING-EXPERIMENT] Saved fixture for reference ${ref.referenceContentId}`,
+            );
           }
+          logger.log(
+            `🧪 [BEARING-EXPERIMENT] ref=${ref.referenceContentId} text=${ref.cleanText?.length || 0} chars`,
+          );
 
+          logger.log(
+            `🧪 [BEARING-EXPERIMENT] taskClaims=${JSON.stringify(
+              taskClaims.map((c) => ({
+                id: c.id,
+                text: c.text,
+              })),
+              null,
+              2,
+            )}`,
+          );
           // Mark as successfully processed
           processedSuccessfully++;
           return { success: true };

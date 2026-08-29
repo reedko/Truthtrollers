@@ -6,7 +6,12 @@ import logger from "../utils/logger.js";
 
 export async function persistAIResults(
   query,
-  { contentId, evidenceRefs = [], claimIds = [], claimConfidenceMap = new Map() }
+  {
+    contentId,
+    evidenceRefs = [],
+    claimIds = [],
+    claimConfidenceMap = new Map(),
+  },
 ) {
   if (!contentId || !Array.isArray(evidenceRefs)) return [];
 
@@ -14,7 +19,9 @@ export async function persistAIResults(
 
   for (const ref of evidenceRefs) {
     if (!ref.url || !ref.referenceContentId) {
-      logger.warn(`⚠️  [persistAIResults] Skipping reference missing url or contentId`);
+      logger.warn(
+        `⚠️  [persistAIResults] Skipping reference missing url or contentId`,
+      );
       continue;
     }
 
@@ -25,7 +32,7 @@ export async function persistAIResults(
     const quality = ref.quality || 0;
 
     logger.log(
-      `🔍 [persistAIResults] Processing ref ${referenceContentId}: quality=${quality}, score=${Math.round(quality * 100)}, claims=${ref.claims?.length || 0}`
+      `🔍 [persistAIResults] Processing ref ${referenceContentId}: quality=${quality}, score=${Math.round(quality * 100)}, claims=${ref.claims?.length || 0}`,
     );
 
     // Convert claim indices to actual claim IDs + get confidence for each
@@ -51,12 +58,13 @@ export async function persistAIResults(
         const conf = claimIndexToConfidence.get(taskClaimId) || 0;
 
         // Calculate support_level: stance_multiplier * confidence * quality
-        const stanceMultiplier = {
-          'support': 1.0,
-          'refute': -1.0,
-          'nuance': 0.5,
-          'insufficient': 0.0
-        }[stance] || 0;
+        const stanceMultiplier =
+          {
+            support: 1.0,
+            refute: -1.0,
+            nuance: 0.5,
+            insufficient: 0.0,
+          }[stance] || 0;
 
         const supportLevel = stanceMultiplier * conf * quality;
 
@@ -96,21 +104,27 @@ export async function persistAIResults(
               link.created_by_ai,
               link.verified_by_user_id,
               link.scrape_status || "full", // Default to "full" if not specified
-            ]
+            ],
           );
         } catch (err) {
           logger.warn(
             `⚠️  [persistAIResults] Failed to insert reference_claim_link for claim ${link.claim_id}:`,
-            err.message
+            err.message,
           );
         }
       }
 
-      const avgConfidence = linksToInsert.reduce((sum, link) => sum + (link.confidence || 0), 0) / linksToInsert.length;
-      const avgSupportLevel = linksToInsert.reduce((sum, link) => sum + (link.support_level || 0), 0) / linksToInsert.length;
+      const avgConfidence =
+        linksToInsert.reduce((sum, link) => sum + (link.confidence || 0), 0) /
+        linksToInsert.length;
+      const avgSupportLevel =
+        linksToInsert.reduce(
+          (sum, link) => sum + (link.support_level || 0),
+          0,
+        ) / linksToInsert.length;
       logger.log(
         `✅ [persistAIResults] Created ${linksToInsert.length} reference_claim_links for reference ${referenceContentId} ` +
-        `(avg confidence: ${avgConfidence.toFixed(4)}, avg support_level: ${avgSupportLevel.toFixed(4)})`
+          `(avg confidence: ${avgConfidence.toFixed(4)}, avg support_level: ${avgSupportLevel.toFixed(4)})`,
       );
     }
 
@@ -127,7 +141,7 @@ export async function persistAIResults(
   }
 
   logger.log(
-    `💾 [persistAIResults] Processed ${saved.length} AI references (already created during evidence fetch)`
+    `💾 [persistAIResults] Processed ${saved.length} AI references (already created during evidence fetch)`,
   );
 
   return saved;

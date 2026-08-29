@@ -38,7 +38,7 @@ import logger from "../utils/logger.js";
 import * as cheerio from "cheerio";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
-
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import fetch from "node-fetch";
 
 /**
@@ -544,12 +544,49 @@ export async function runEvidenceEngine({
               ) {
                 cached.claimIndices.push(claimIndex);
               }
+              if (claimIndex !== -1) {
+                if (!Array.isArray(cached.snippetBearings)) {
+                  cached.snippetBearings = [];
+                }
 
+                const existingBearing = cached.snippetBearings.find(
+                  (bearing) => bearing.claimIndex === claimIndex,
+                );
+
+                const newBearing = {
+                  claimIndex,
+                  bearingScore: cand.snippetBearingScore ?? null,
+                  rationale: cand.snippetRationale ?? null,
+                  snippet: cand.snippet || cand.content || null,
+                };
+
+                if (!existingBearing) {
+                  cached.snippetBearings.push(newBearing);
+                } else {
+                  const newStrength =
+                    newBearing.bearingScore === null
+                      ? -1
+                      : Math.abs(Number(newBearing.bearingScore));
+
+                  const oldStrength =
+                    existingBearing.bearingScore === null
+                      ? -1
+                      : Math.abs(Number(existingBearing.bearingScore));
+
+                  if (newStrength > oldStrength) {
+                    existingBearing.bearingScore = newBearing.bearingScore;
+                    existingBearing.rationale = newBearing.rationale;
+                    existingBearing.snippet = newBearing.snippet;
+                  }
+                }
+              }
               // Return object with cleanText + citationCount to avoid re-parsing
               return {
+                referenceContentId: cached.referenceContentId,
                 cleanText: cached.cleanText,
                 citationCount: cached.citationCount || 0,
-                isProcessed: true, // Flag that this is already processed
+                quality: cached.quality ?? null,
+                isProcessed: true,
               };
             }
 
@@ -580,7 +617,6 @@ export async function runEvidenceEngine({
               );
               try {
                 // Import pdf-parse dynamically
-                const pdfParse = (await import("pdf-parse")).default;
 
                 const buffer = await resp.arrayBuffer();
                 const parsed = await pdfParse(Buffer.from(buffer));
@@ -822,6 +858,17 @@ export async function runEvidenceEngine({
                 quality, // Store quality
                 isFailed: true, // Mark as needing manual scrape
                 claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+                snippetBearings:
+                  claimIndex !== -1
+                    ? [
+                        {
+                          claimIndex,
+                          bearingScore: cand.snippetBearingScore ?? null,
+                          rationale: cand.snippetRationale ?? null,
+                          snippet: cand.snippet || cand.content || null,
+                        },
+                      ]
+                    : [],
               });
 
               // Track for UI to display as "needs manual scrape"
@@ -935,6 +982,17 @@ export async function runEvidenceEngine({
               quality, // Store quality for later use
               citationCount, // Store citation count for quality scoring
               claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+              snippetBearings:
+                claimIndex !== -1
+                  ? [
+                      {
+                        claimIndex,
+                        bearingScore: cand.snippetBearingScore ?? null,
+                        rationale: cand.snippetRationale ?? null,
+                        snippet: cand.snippet || cand.content || null,
+                      },
+                    ]
+                  : [],
             });
 
             logger.log(
@@ -943,9 +1001,11 @@ export async function runEvidenceEngine({
 
             // Return object with cleanText + citationCount to avoid re-parsing in evidenceEngine
             return {
+              referenceContentId,
               cleanText,
               citationCount,
-              isProcessed: true, // Flag that this is already processed
+              quality,
+              isProcessed: true,
             };
           } catch (err) {
             logger.warn(
@@ -1011,6 +1071,17 @@ export async function runEvidenceEngine({
               quality, // Store quality
               isFailed: true,
               claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+              snippetBearings:
+                claimIndex !== -1
+                  ? [
+                      {
+                        claimIndex,
+                        bearingScore: cand.snippetBearingScore ?? null,
+                        rationale: cand.snippetRationale ?? null,
+                        snippet: cand.snippet || cand.content || null,
+                      },
+                    ]
+                  : [],
             });
 
             // Track for UI fallback
@@ -1041,10 +1112,12 @@ export async function runEvidenceEngine({
     preferDomains: [],
     avoidDomains: [],
     maxCharsPerDoc: 8000,
-    enableRedTeam: false,
 
+    enableRedTeam: false,
+    maxParallelBearing: 6,
     // Apply mode-specific config (or fallback to defaults)
     queriesPerClaim: modeConfig.queriesPerClaim || 2,
+
     topKQueries: modeConfig.queriesPerClaim || 2,
     topKCandidates: Math.min(modeConfig.topKCandidates ?? 5, 9),
     maxEvidencePerDoc: 2,
@@ -1083,7 +1156,23 @@ export async function runEvidenceEngine({
     });
   }
   const results = await engine.run(claims, null, runOptions);
+  const bearingResults = Array.isArray(results.bearingResults)
+    ? results.bearingResults
+    : [];
 
+  logger.log(
+    "🧪 [Bearing] Returned bearingResults:",
+    JSON.stringify(
+      bearingResults.map((doc) => ({
+        referenceContentId: doc?.referenceContentId,
+        url: doc?.url,
+        assertionCount: doc?.bearing?.assertions?.length || 0,
+        bearing: doc?.bearing,
+      })),
+      null,
+      2,
+    ),
+  );
   // Build confidence map: claimIndex → confidence
   const claimConfidenceMap = new Map();
   for (let claimIndex = 0; claimIndex < results.length; claimIndex++) {
@@ -1221,13 +1310,22 @@ export async function runEvidenceEngine({
           quality: refData.quality || 0.25,
           cleanText: "",
           scrapeStatus: "snippet_only",
+          snippetBearings: [...(refData.snippetBearings || [])],
         });
         logger.log(
           `🧷 [Evidence] Keeping failed source as snippet-only document link: ${url}`,
         );
         continue;
       }
-
+      // NEW ARCHITECTURE:
+      // successful acquisition is sufficient reason to retain the document;
+      // bearing extraction happens after acquisition.
+      if (!refData.isFailed) {
+        logger.log(
+          `📚 [Evidence] Retaining acquired reference for bearing extraction: ${url}`,
+        );
+        continue;
+      }
       if (refData.referenceContentId) {
         const referenceContentId = refData.referenceContentId;
 
@@ -1349,7 +1447,8 @@ export async function runEvidenceEngine({
 
   return {
     aiReferences,
-    failedCandidates, // For UI to display as "scrape manually" options
-    claimConfidenceMap, // Map of claimIndex → confidence for persistAIResults
+    failedCandidates,
+    claimConfidenceMap,
+    bearingResults,
   };
 }

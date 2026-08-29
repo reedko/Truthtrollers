@@ -13,22 +13,24 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
    * Fetch all reference_claim_links (dotted lines) for a specific task claim
    * Returns reference documents that have evidence engine links to this task claim
    */
-  router.get("/api/task-claim/reference-links/:taskClaimId", async (req, res) => {
-    try {
-      const taskClaimId = parseInt(req.params.taskClaimId, 10);
+  router.get(
+    "/api/task-claim/reference-links/:taskClaimId",
+    async (req, res) => {
+      try {
+        const taskClaimId = parseInt(req.params.taskClaimId, 10);
 
-      if (!taskClaimId) {
-        return res.status(400).json({ error: "Invalid task claim ID" });
-      }
+        if (!taskClaimId) {
+          return res.status(400).json({ error: "Invalid task claim ID" });
+        }
 
-      // Query reference_claim_links to find references with dotted lines
-      const links = await query(
-        `SELECT
+        // Query reference_claim_links to find references with dotted lines
+        const links = await query(
+          `SELECT
           ref_claim_link_id,
           claim_id,
           reference_content_id,
-          stance,
           score,
+          support_level,
           rationale,
           evidence_text,
           evidence_offsets,
@@ -37,36 +39,41 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           created_at
          FROM reference_claim_links
          WHERE claim_id = ?`,
-        [taskClaimId]
-      );
+          [taskClaimId],
+        );
 
-      console.log(`🔗 Found ${links.length} reference document links (dotted lines) for task claim ${taskClaimId}`);
+        console.log(
+          `🔗 Found ${links.length} reference document links (dotted lines) for task claim ${taskClaimId}`,
+        );
 
-      return res.json(links);
-    } catch (err) {
-      console.error("❌ /api/task-claim/reference-links/:taskClaimId:", err);
-      return res.status(500).json({ error: err.message });
-    }
-  });
+        return res.json(links);
+      } catch (err) {
+        console.error("❌ /api/task-claim/reference-links/:taskClaimId:", err);
+        return res.status(500).json({ error: err.message });
+      }
+    },
+  );
 
   /**
    * GET /api/reference-claim-task-links/:taskClaimId
    * Fetch all reference claim → task claim links for a specific task claim
    * Checks BOTH reference_claim_task_links (AI assessments) AND claim_links (manual links)
    */
-  router.get("/api/reference-claim-task-links/:taskClaimId", async (req, res) => {
-    try {
-      const taskClaimId = parseInt(req.params.taskClaimId, 10);
+  router.get(
+    "/api/reference-claim-task-links/:taskClaimId",
+    async (req, res) => {
+      try {
+        const taskClaimId = parseInt(req.params.taskClaimId, 10);
 
-      if (!taskClaimId) {
-        return res.status(400).json({ error: "Invalid task claim ID" });
-      }
+        if (!taskClaimId) {
+          return res.status(400).json({ error: "Invalid task claim ID" });
+        }
 
-      // Query both tables and merge results
-      // Map claim_links fields to match reference_claim_task_links schema
-      // Check BOTH source and target in claim_links (links can be stored either way)
-      const links = await query(
-        `SELECT
+        // Query both tables and merge results
+        // Map claim_links fields to match reference_claim_task_links schema
+        // Check BOTH source and target in claim_links (links can be stored either way)
+        const links = await query(
+          `SELECT
           rctl.reference_claim_task_links_id,
           rctl.reference_claim_id,
           rctl.task_claim_id,
@@ -151,32 +158,49 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
          LEFT JOIN content ON cc.content_id = content.content_id
          WHERE cl.source_claim_id = ? AND cl.disabled = 0`,
-        [taskClaimId, taskClaimId, taskClaimId]
-      );
+          [taskClaimId, taskClaimId, taskClaimId],
+        );
 
-      // Debug logging
-      const referenceLinks = links.filter(l => l.source_table === 'reference_claim_task_links');
-      const claimLinksAsTarget = links.filter(l => l.source_table === 'claim_links:target');
-      const claimLinksAsSource = links.filter(l => l.source_table === 'claim_links:source');
+        // Debug logging
+        const referenceLinks = links.filter(
+          (l) => l.source_table === "reference_claim_task_links",
+        );
+        const claimLinksAsTarget = links.filter(
+          (l) => l.source_table === "claim_links:target",
+        );
+        const claimLinksAsSource = links.filter(
+          (l) => l.source_table === "claim_links:source",
+        );
 
-      console.log(`🔗 Found ${links.length} total links for task claim ${taskClaimId}:`);
-      console.log(`   - ${referenceLinks.length} from reference_claim_task_links`);
-      console.log(`   - ${claimLinksAsTarget.length} from claim_links (as target)`);
-      console.log(`   - ${claimLinksAsSource.length} from claim_links (as source)`);
+        console.log(
+          `🔗 Found ${links.length} total links for task claim ${taskClaimId}:`,
+        );
+        console.log(
+          `   - ${referenceLinks.length} from reference_claim_task_links`,
+        );
+        console.log(
+          `   - ${claimLinksAsTarget.length} from claim_links (as target)`,
+        );
+        console.log(
+          `   - ${claimLinksAsSource.length} from claim_links (as source)`,
+        );
 
-      if (links.length > 0) {
-        console.log('📋 Sample links:');
-        links.slice(0, 3).forEach(link => {
-          console.log(`   [${link.source_table}] ref_claim=${link.reference_claim_id} → task=${link.task_claim_id}, stance=${link.stance}, support=${link.support_level}`);
-        });
+        if (links.length > 0) {
+          console.log("📋 Sample links:");
+          links.slice(0, 3).forEach((link) => {
+            console.log(
+              `   [${link.source_table}] ref_claim=${link.reference_claim_id} → task=${link.task_claim_id}, stance=${link.stance}, support=${link.support_level}`,
+            );
+          });
+        }
+
+        return res.json(links);
+      } catch (err) {
+        console.error("❌ /api/reference-claim-task-links/:taskClaimId:", err);
+        return res.status(500).json({ error: err.message });
       }
-
-      return res.json(links);
-    } catch (err) {
-      console.error("❌ /api/reference-claim-task-links/:taskClaimId:", err);
-      return res.status(500).json({ error: err.message });
-    }
-  });
+    },
+  );
 
   /**
    * POST /api/assess-claim-relevance
@@ -192,21 +216,26 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         taskClaimText,
       } = req.body;
 
-      if (!referenceClaimId || !taskClaimId || !referenceClaimText || !taskClaimText) {
+      if (
+        !referenceClaimId ||
+        !taskClaimId ||
+        !referenceClaimText ||
+        !taskClaimText
+      ) {
         return res.status(400).json({
           error: "Missing required fields",
         });
       }
 
       console.log(
-        `[Assess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`
+        `[Assess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`,
       );
 
       // Check if assessment already exists
       const existing = await query(
         `SELECT * FROM reference_claim_task_links
          WHERE reference_claim_id = ? AND task_claim_id = ?`,
-        [referenceClaimId, taskClaimId]
+        [referenceClaimId, taskClaimId],
       );
 
       if (existing.length > 0) {
@@ -221,17 +250,20 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       });
 
       // 🎯 FILTER: Don't store irrelevant assessments (insufficient stance with low quality/confidence)
-      const isIrrelevant = assessment.stance === 'insufficient' &&
-                          (assessment.quality < 0.4 || assessment.confidence < 0.4);
+      const isIrrelevant =
+        assessment.stance === "insufficient" &&
+        (assessment.quality < 0.4 || assessment.confidence < 0.4);
 
       if (isIrrelevant) {
-        console.log(`[Assess Claim] Skipping irrelevant assessment - stance: ${assessment.stance}, quality: ${assessment.quality}, confidence: ${assessment.confidence}`);
+        console.log(
+          `[Assess Claim] Skipping irrelevant assessment - stance: ${assessment.stance}, quality: ${assessment.quality}, confidence: ${assessment.confidence}`,
+        );
         return res.json({
           assessed: true,
           link: null, // No link created - claim is irrelevant
           assessment,
           skipped: true,
-          reason: 'insufficient_relevance'
+          reason: "insufficient_relevance",
         });
       }
 
@@ -258,14 +290,14 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           assessment.rationale,
           assessment.quote || null,
           true,
-        ]
+        ],
       );
 
       // Fetch the created link
       const link = await query(
         `SELECT * FROM reference_claim_task_links
          WHERE reference_claim_task_links_id = ?`,
-        [result.insertId]
+        [result.insertId],
       );
 
       console.log(`[Assess Claim] Complete - stance: ${assessment.stance}`);
@@ -288,15 +320,19 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
    */
   router.post("/api/reference-claim-links/approve", async (req, res) => {
     try {
-      const { claim_id, reference_content_id, user_id, stance, support_level } = req.body;
+      const { claim_id, reference_content_id, user_id, stance, support_level } =
+        req.body;
 
       if (!claim_id || !reference_content_id || !user_id) {
         return res.status(400).json({
-          error: "Missing required fields: claim_id, reference_content_id, user_id"
+          error:
+            "Missing required fields: claim_id, reference_content_id, user_id",
         });
       }
 
-      console.log(`[Approve Link] User ${user_id} approving ref ${reference_content_id} → claim ${claim_id} with stance: ${stance}`);
+      console.log(
+        `[Approve Link] User ${user_id} approving ref ${reference_content_id} → claim ${claim_id} with stance: ${stance}`,
+      );
 
       // Update the existing AI-suggested link to mark it as verified
       const result = await query(
@@ -306,7 +342,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
              support_level = COALESCE(?, support_level),
              verified_at = NOW()
          WHERE claim_id = ? AND reference_content_id = ?`,
-        [user_id, stance, support_level, claim_id, reference_content_id]
+        [user_id, stance, support_level, claim_id, reference_content_id],
       );
 
       if (result.affectedRows === 0) {
@@ -321,7 +357,13 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
             created_by_ai,
             verified_at
           ) VALUES (?, ?, ?, ?, ?, false, NOW())`,
-          [claim_id, reference_content_id, stance || 'support', support_level || 1.0, user_id]
+          [
+            claim_id,
+            reference_content_id,
+            stance || "support",
+            support_level || 1.0,
+            user_id,
+          ],
         );
         console.log(`[Approve Link] Created new link`);
       } else {
@@ -332,12 +374,12 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       const link = await query(
         `SELECT * FROM reference_claim_links
          WHERE claim_id = ? AND reference_content_id = ? AND verified_by_user_id = ?`,
-        [claim_id, reference_content_id, user_id]
+        [claim_id, reference_content_id, user_id],
       );
 
       return res.json({
         success: true,
-        link: link[0]
+        link: link[0],
       });
     } catch (err) {
       console.error("❌ /api/reference-claim-links/approve:", err);
@@ -361,21 +403,26 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         customInstructions,
       } = req.body;
 
-      if (!referenceClaimId || !taskClaimId || !referenceClaimText || !taskClaimText) {
+      if (
+        !referenceClaimId ||
+        !taskClaimId ||
+        !referenceClaimText ||
+        !taskClaimText
+      ) {
         return res.status(400).json({
           error: "Missing required fields",
         });
       }
 
       console.log(
-        `[Reassess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`
+        `[Reassess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`,
       );
 
       // Delete existing assessment
       await query(
         `DELETE FROM reference_claim_task_links
          WHERE reference_claim_id = ? AND task_claim_id = ?`,
-        [referenceClaimId, taskClaimId]
+        [referenceClaimId, taskClaimId],
       );
 
       console.log(`[Reassess Claim] Deleted existing assessment`);
@@ -411,17 +458,19 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           assessment.rationale,
           assessment.quote || null,
           true,
-        ]
+        ],
       );
 
       // Fetch the created link
       const link = await query(
         `SELECT * FROM reference_claim_task_links
          WHERE reference_claim_task_links_id = ?`,
-        [result.insertId]
+        [result.insertId],
       );
 
-      console.log(`[Reassess Claim] Complete - new stance: ${assessment.stance}`);
+      console.log(
+        `[Reassess Claim] Complete - new stance: ${assessment.stance}`,
+      );
 
       return res.json({
         reassessed: true,

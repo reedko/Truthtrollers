@@ -2,6 +2,7 @@
 
 import logger from "../utils/logger.js";
 import { searchPubMed } from "./pubmedSearch.js";
+import { extractEvidenceBearing } from "./extractEvidenceBearing.js";
 
 function dedupe(arr, keyFn) {
   const s = new Set();
@@ -543,7 +544,12 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         );
       }
     }
-
+    if (finalCandidates.length > 0) {
+      finalCandidates = await this.triageCandidateSnippets(
+        claim,
+        finalCandidates,
+      );
+    }
     logger.log(
       `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (intent-bucketed), scores: ${finalCandidates.map((c) => `${c.searchIntent}:${c.score?.toFixed(2) || "null"}`).join(", ")}`,
     );
@@ -551,6 +557,275 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     return finalCandidates;
   }
 
+  async triageCandidateSnippets(claim, candidates) {
+    const candidatesForModel = candidates.map((candidate, index) => ({
+      candidateIndex: index,
+      title: candidate.title || "",
+      snippet: candidate.snippet || candidate.content || "",
+    }));
+
+    const triageable = candidatesForModel.filter(
+      (candidate) => candidate.snippet.trim().length > 0,
+    );
+
+    if (triageable.length === 0) {
+      logger.log(
+        `🧪 [SnippetTriage][${claim.id}] No candidates had usable snippets`,
+      );
+
+      return candidates.map((candidate) => ({
+        ...candidate,
+        snippetBearingScore: null,
+        snippetRationale: null,
+      }));
+    }
+
+    const prompt = await this.deps.promptManager.getPrompt(
+      "evidence_snippet_bearing_user",
+    );
+
+    if (!prompt?.user) {
+      throw new Error(
+        "evidence_snippet_bearing_user returned no user prompt text",
+      );
+    }
+
+    const user = prompt.user
+      .replace(
+        "{{caseAssertion}}",
+        JSON.stringify(
+          {
+            taskClaimId: claim.id,
+            assertion: claim.text,
+          },
+          null,
+          2,
+        ),
+      )
+      .replace("{{candidates}}", JSON.stringify(triageable, null, 2));
+
+    const schema = {
+      type: "object",
+      additionalProperties: false,
+      required: ["candidates"],
+      properties: {
+        candidates: {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: ["candidateIndex", "bearingScore", "rationale"],
+            properties: {
+              candidateIndex: {
+                type: "integer",
+              },
+              bearingScore: {
+                anyOf: [
+                  {
+                    type: "number",
+                    minimum: -1,
+                    maximum: 1,
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+              rationale: {
+                anyOf: [
+                  {
+                    type: "string",
+                    minLength: 1,
+                  },
+                  {
+                    type: "null",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    };
+
+    const result = await this.deps.llm.generate({
+      user,
+      schemaHint: schema,
+      strictJsonSchema: true,
+      model: "gpt-5.4-mini",
+      reasoning: {
+        effort: "low",
+      },
+      max_output_tokens: 3000,
+      api: "responses",
+      timeout: 60000,
+    });
+
+    const bearingByIndex = new Map();
+
+    for (const item of result?.candidates || []) {
+      bearingByIndex.set(item.candidateIndex, {
+        bearingScore: item.bearingScore,
+        rationale: item.rationale,
+      });
+    }
+
+    logger.log(
+      `🧪 [SnippetTriage][${claim.id}] results:`,
+      JSON.stringify(
+        candidates.map((candidate, index) => {
+          const bearing = bearingByIndex.get(index);
+
+          return {
+            candidateIndex: index,
+            title: candidate.title || "",
+            url: candidate.url || "",
+            searchIntent: candidate.searchIntent || null,
+            bearingScore: bearing?.bearingScore ?? null,
+            rationale: bearing?.rationale ?? null,
+            snippet: String(candidate.snippet || candidate.content || "").slice(
+              0,
+              300,
+            ),
+          };
+        }),
+        null,
+        2,
+      ),
+    );
+
+    const annotatedCandidates = candidates.map((candidate, index) => {
+      const bearing = bearingByIndex.get(index);
+
+      return {
+        ...candidate,
+        snippetBearingScore: bearing?.bearingScore ?? null,
+        snippetRationale: bearing?.rationale ?? null,
+      };
+    });
+
+    logger.log(
+      `🧪 [SnippetTriage][${claim.id}] Annotated ${annotatedCandidates.length} candidates without filtering`,
+    );
+
+    return annotatedCandidates;
+  }
+
+  async acquireEvidenceDocument(claim, cand, opt) {
+    const url = cand.url || cand.id || "unknown";
+    const shortUrl = url.length > 80 ? url.slice(0, 77) + "..." : url;
+
+    const fetchLabel = `[EV][fetch][${claim.id}][${shortUrl}]`;
+    logger.time(fetchLabel);
+    let acquisitionCandidate = cand;
+
+    if (cand.source === "pubmed" && cand.pmcid) {
+      const pmcid = String(cand.pmcid).trim();
+
+      acquisitionCandidate = {
+        ...cand,
+        url: `https://pmc.ncbi.nlm.nih.gov/articles/${pmcid}/`,
+      };
+
+      logger.log(
+        `📚 [PubMed] PMID ${cand.pmid} has ${pmcid}; acquiring PMC full text`,
+      );
+    }
+    let fetchResult = await this.deps.fetcher.getText(
+      acquisitionCandidate,
+      claim,
+    );
+    logger.timeEnd(fetchLabel);
+
+    const pubmedAbstract =
+      cand.source === "pubmed" ? String(cand.snippet || "").trim() : "";
+
+    if (!fetchResult && pubmedAbstract) {
+      logger.log(
+        `📚 [PubMed] Fetch failed for PMID ${cand.pmid}; using abstract (${pubmedAbstract.length} chars)`,
+      );
+
+      fetchResult = {
+        cleanText: pubmedAbstract,
+      };
+    }
+
+    if (!fetchResult) {
+      logger.log(`🟥 [DEBUG] No text for ${claim.id} from ${shortUrl}`);
+      return null;
+    }
+
+    let cleanText, citationCount, html, referenceContentId, quality;
+
+    if (typeof fetchResult === "object" && fetchResult.isProcessed) {
+      referenceContentId = fetchResult.referenceContentId;
+      cleanText = fetchResult.cleanText;
+      citationCount = fetchResult.citationCount || 0;
+      html = cleanText;
+      quality = fetchResult.quality ?? null;
+
+      logger.log(
+        `♻️  [Evidence] Using pre-processed text (${citationCount} citations) from ${shortUrl}`,
+      );
+    } else {
+      html =
+        typeof fetchResult === "string"
+          ? fetchResult
+          : fetchResult.cleanText || "";
+
+      cleanText = html;
+      citationCount = 0;
+
+      try {
+        const cheerio = await import("cheerio");
+        const $ = cheerio.load(html);
+
+        const domRefs = $("a[href]").length;
+
+        $("script, style, link, noscript").remove();
+        cleanText = $.text().replace(/\s+/g, " ").trim();
+
+        const { extractInlineRefs } =
+          await import("../utils/extractInlineRefs.js");
+
+        const inlineRefs = extractInlineRefs(cleanText);
+        citationCount = (inlineRefs?.length || 0) + domRefs;
+
+        logger.log(
+          `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${shortUrl}`,
+        );
+      } catch (err) {
+        logger.warn(`⚠️ Failed to parse HTML for ${shortUrl}, using raw text`);
+      }
+    }
+    if (
+      cand.source === "pubmed" &&
+      pubmedAbstract &&
+      (!cleanText || cleanText.trim().length < 500)
+    ) {
+      logger.log(
+        `📚 [PubMed] Replacing short acquisition for PMID ${cand.pmid} with abstract (${pubmedAbstract.length} chars)`,
+      );
+
+      cleanText = pubmedAbstract;
+      html = pubmedAbstract;
+      citationCount = 0;
+    }
+    return {
+      referenceContentId,
+      candidateId: cand.id,
+      url: cand.url,
+      title: cand.title,
+      publishedAt: cand.publishedAt,
+      searchIntent: cand.searchIntent || "background",
+      matchedPart: cand.matchedPart || "context",
+      cleanText,
+      rawText: html,
+      citationCount,
+      quality,
+      candidate: cand,
+    };
+  }
   async extractEvidence(claim, cand, opt) {
     const url = cand.url || cand.id || "unknown";
     const shortUrl = url.length > 80 ? url.slice(0, 77) + "..." : url;
@@ -612,88 +887,6 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     }
 
     const maxChars = opt.maxCharsPerDoc ?? 8000;
-    const maxEvidencePerDoc = opt.maxEvidencePerDoc ?? 2;
-
-    // Use COMBINED quote extraction + quality scoring (saves 1 LLM call per source)
-    const { extractQuotesAndScoreQuality } =
-      await import("../utils/extractQuote.js");
-
-    const llmLabel = `[EV][llm-evidence+quality][${claim.id}][${shortUrl}]`;
-    logger.time(llmLabel);
-
-    const result = await extractQuotesAndScoreQuality({
-      claimText: claim.text,
-      fullText: cleanText,
-      sourceTitle: cand.title || cand.url,
-      url: cand.url || "",
-      domain: cand.domain || "",
-      metadata: {
-        author: "unknown", // Will be extracted later in runEvidenceEngine
-        publisher: "unknown",
-        citationCount, // Use actual extracted citations for evidence_density
-      },
-      maxChars,
-      maxQuotes: maxEvidencePerDoc,
-    });
-
-    const items = result.quotes || [];
-    const qualityScores = result.qualityScores;
-
-    logger.timeEnd(llmLabel);
-
-    logger.log(
-      `📘 [DEBUG] LLM raw evidence for ${claim.id}/${shortUrl}:`,
-      items,
-    );
-
-    logger.log(
-      `📙 [DEBUG] Parsed ${items.length} evidence items + quality=${qualityScores?.quality_tier || "unknown"} for ${claim.id}/${shortUrl}`,
-    );
-
-    const quality = (c) => {
-      const base = c.score ?? 0; // Score is already 0-1 range from search engines
-      const boost = c.domain?.match(
-        /(reuters|apnews|nature|nih|who|gov|\.edu)/i,
-      )
-        ? 0.2
-        : 0;
-      const q = Math.max(0, Math.min(1.2, base + boost)); // Max 1.2 (1.0 + 0.2 boost)
-      logger.log(
-        `🔢 [DEBUG] Quality calc for ${c.url?.slice(0, 50)}: score=${c.score}, base=${base.toFixed(4)}, boost=${boost}, quality=${q.toFixed(4)}`,
-      );
-      return q;
-    };
-
-    let i = 0;
-    const arr = [];
-
-    for (const it of items) {
-      if (!it || !it.quote) continue;
-      arr.push({
-        id: `${claim.id}:${cand.id}:${i++}`,
-        claimId: claim.id,
-        candidateId: cand.id,
-        url: cand.url,
-        title: cand.title,
-        publishedAt: cand.publishedAt,
-        quote: String(it.quote).trim(),
-        summary: (it.summary || "").trim(),
-        stance: it.stance || "insufficient",
-        searchIntent: cand.searchIntent || "background",
-        matchedPart: cand.matchedPart || "context",
-        quality: quality(cand),
-        location: it.location || undefined,
-        raw_text: html,
-        qualityScores,
-      });
-    }
-
-    logger.log(
-      `🟪 [DEBUG] Final evidence array for ${claim.id}/${shortUrl}:`,
-      arr,
-    );
-
-    return arr;
   }
 
   adjudicate(claim, evidence) {
@@ -874,121 +1067,16 @@ TASK:
       );
 
       const candidates = await this.retrieveCandidates(claim, queries, opt);
-
-      // Process all candidates in parallel (parallel is faster than sequential early exit)
-      const evs = (
-        await Promise.all(
-          candidates
-            .slice(0, opt.maxEvidenceCandidates)
-            .map((c) => this.extractEvidence(claim, c, opt)),
-        )
-      ).flat();
-
-      logger.log(
-        `🟨 [DEBUG] Evidence items returned for ${claim.id}:`,
-        evs.length,
-      );
-
-      let adj = this.adjudicate(claim, evs);
-      if (evs.length === 0) {
-        adj = {
-          ...adj,
-          finalVerdict: "insufficient",
-          unresolved_search_failed: true,
-          rationale: "No matching evidence found within search/source caps.",
-        };
-      }
-      if (opt.enableRedTeam) {
-        adj = await this.redTeam(claim, adj, evs);
-      }
-
-      // ═══════════════════════════════════════════════════════════════════
-      // PASS 2: FRINGE SOURCE DISCOVERY (if enabled)
-      // ═══════════════════════════════════════════════════════════════════
-      let fringeEvidence = [];
-      let fringeQueries = [];
-      let fringeCandidates = [];
-
-      if (opt.enableFringeSearch) {
-        logger.log(
-          `🔍 [EV][fringe][${claim.id}] Starting fringe source discovery...`,
-        );
-
-        // Detect claim type for targeted fringe searches
-        const claimType = this.detectClaimType(claim.text);
-        logger.log(
-          `🔍 [EV][fringe][${claim.id}] Detected claim type: ${claimType || "unknown"}`,
-        );
-
-        // Generate fringe-seeking queries
-        fringeQueries = this.generateFringeQueries(
-          claim,
-          claimType,
-          opt.topKFringeQueries ?? 3,
-        );
-
-        // Only search for fringe sources if primary verdict is strong support
-        // (this is where we expect to find low-quality refutations)
-        if (adj.finalVerdict === "support" && adj.confidence > 0.7) {
-          logger.log(
-            `🔍 [EV][fringe][${claim.id}] Primary verdict is strong support - searching for fringe refutations...`,
-          );
-
-          fringeCandidates = await this.retrieveCandidates(
-            claim,
-            fringeQueries,
-            {
-              ...opt,
-              enableWeb: true,
-              enableInternal: false,
-              topKCandidates: opt.topKFringeCandidates ?? 3,
-              preferDomains: [], // Don't filter - we WANT fringe sources
-              avoidDomains: [], // Don't filter
-            },
-          );
-
-          // Extract evidence from fringe sources (fewer candidates)
-          fringeEvidence = (
-            await Promise.all(
-              fringeCandidates
-                .slice(0, opt.maxFringeEvidenceCandidates ?? 2)
-                .map((c) => this.extractEvidence(claim, c, opt)),
-            )
-          ).flat();
-
-          logger.log(
-            `🔍 [EV][fringe][${claim.id}] Found ${fringeEvidence.length} fringe evidence items`,
-          );
-
-          // Tag fringe evidence for credibility analysis
-          fringeEvidence.forEach((ev) => {
-            ev.isFringe = true;
-            ev.fringeReason = "Found via fringe-seeking queries";
-          });
-        } else {
-          logger.log(
-            `🔍 [EV][fringe][${claim.id}] Skipping fringe search (verdict not strong support or low confidence)`,
-          );
-        }
-      }
-
-      const row = {
+      results[index] = {
         claim,
         context: ctx,
         meta: undefined,
         queries,
         candidates,
-        evidence: evs,
-        adjudication: adj,
-        // Add fringe data
-        fringeQueries,
-        fringeCandidates,
-        fringeEvidence,
       };
 
-      results[index] = row;
-
       logger.timeEnd(`${claimLabel} total`);
+      // Process all candidates in parallel (parallel is faster than sequential early exit)
     });
 
     // Execute tasks with concurrency limit
@@ -1006,7 +1094,255 @@ TASK:
       });
       await Promise.all(workers);
     }
+    function candidateAcquisitionKey(candidate) {
+      if (candidate.source === "pubmed" && candidate.pmcid) {
+        return normalizeCandidateUrl(
+          `https://pmc.ncbi.nlm.nih.gov/articles/${candidate.pmcid}/`,
+        );
+      }
 
+      return normalizeCandidateUrl(candidate.url || candidate.id);
+    }
+    function normalizeCandidateUrl(value) {
+      try {
+        const url = new URL(value);
+
+        url.hash = "";
+
+        for (const key of [...url.searchParams.keys()]) {
+          if (
+            /^utm_/i.test(key) ||
+            ["fbclid", "gclid", "mc_cid", "mc_eid"].includes(key)
+          ) {
+            url.searchParams.delete(key);
+          }
+        }
+
+        url.hostname = url.hostname.replace(/^www\./i, "");
+
+        if (url.pathname.length > 1) {
+          url.pathname = url.pathname.replace(/\/+$/, "");
+        }
+
+        return url.toString();
+      } catch {
+        return String(value || "").trim();
+      }
+    }
+
+    const candidateMap = new Map();
+
+    for (const row of results) {
+      for (const candidate of row?.candidates || []) {
+        const key = candidateAcquisitionKey(candidate);
+        if (!key) continue;
+
+        const existing = candidateMap.get(key);
+
+        const newBearing = {
+          taskClaimId: row.claim.id,
+          bearingScore: candidate.snippetBearingScore ?? null,
+          rationale: candidate.snippetRationale ?? null,
+          snippet: candidate.snippet || candidate.content || null,
+        };
+
+        if (!existing) {
+          candidateMap.set(key, {
+            candidate,
+            discoveredForClaimIds: [row.claim.id],
+            searchIntents: [candidate.searchIntent || "background"],
+            snippetBearings: [newBearing],
+          });
+        } else {
+          if (!existing.discoveredForClaimIds.includes(row.claim.id)) {
+            existing.discoveredForClaimIds.push(row.claim.id);
+          }
+
+          const intent = candidate.searchIntent || "background";
+
+          if (!existing.searchIntents.includes(intent)) {
+            existing.searchIntents.push(intent);
+          }
+
+          const existingBearing = existing.snippetBearings.find(
+            (bearing) => Number(bearing.taskClaimId) === Number(row.claim.id),
+          );
+
+          if (!existingBearing) {
+            existing.snippetBearings.push(newBearing);
+          } else {
+            const newScore = newBearing.bearingScore;
+            const oldScore = existingBearing.bearingScore;
+
+            const newStrength =
+              newScore === null ? -1 : Math.abs(Number(newScore));
+
+            const oldStrength =
+              oldScore === null ? -1 : Math.abs(Number(oldScore));
+
+            if (newStrength > oldStrength) {
+              existingBearing.bearingScore = newBearing.bearingScore;
+              existingBearing.rationale = newBearing.rationale;
+              existingBearing.snippet = newBearing.snippet;
+            }
+          }
+
+          if ((candidate.score ?? 0) > (existing.candidate.score ?? 0)) {
+            existing.candidate = candidate;
+          }
+        }
+      }
+    }
+
+    const uniqueCandidates = [...candidateMap.values()];
+    const acquiredDocuments = (
+      await Promise.all(
+        uniqueCandidates.map(async (entry) => {
+          const representativeClaimId = entry.discoveredForClaimIds[0];
+
+          const representativeClaim = claims.find(
+            (claim) => Number(claim.id) === Number(representativeClaimId),
+          );
+
+          if (!representativeClaim) {
+            logger.warn(
+              `⚠️ [Evidence] No representative claim found for candidate ${entry.candidate.url || entry.candidate.id}`,
+            );
+            return null;
+          }
+
+          const acquisitionUrl =
+            entry.candidate.url || entry.candidate.id || "unknown";
+
+          logger.log(`🚦 [AcquireBatch] START ${acquisitionUrl}`);
+
+          const startedAt = Date.now();
+
+          const acquired = await this.acquireEvidenceDocument(
+            representativeClaim,
+            entry.candidate,
+            opt,
+          );
+
+          logger.log(
+            `🏁 [AcquireBatch] END ${acquisitionUrl} (${Date.now() - startedAt}ms)`,
+          );
+
+          if (!acquired) return null;
+
+          return {
+            ...acquired,
+            discoveredForClaimIds: entry.discoveredForClaimIds,
+            searchIntents: entry.searchIntents,
+            snippetBearings: entry.snippetBearings,
+          };
+        }),
+      )
+    ).filter(Boolean);
+
+    logger.log(
+      `📚 [Evidence] Acquired ${acquiredDocuments.length}/${uniqueCandidates.length} unique documents`,
+    );
+
+    const bearingResults = acquiredDocuments.map((doc) => ({
+      ...doc,
+      bearing: {
+        assertions: [],
+      },
+    }));
+
+    const documentIndexById = new Map(
+      bearingResults.map((doc, index) => [
+        Number(doc.referenceContentId),
+        index,
+      ]),
+    );
+
+    const maxParallelBearing = opt.maxParallelBearing ?? 6;
+    let claimIndex = 0;
+
+    const bearingWorkers = new Array(
+      Math.min(maxParallelBearing, claims.length),
+    )
+      .fill(0)
+      .map(async () => {
+        while (claimIndex < claims.length) {
+          const index = claimIndex++;
+          const caseAssertion = claims[index];
+
+          const evidenceDocuments = acquiredDocuments
+            .filter((doc) =>
+              (doc.discoveredForClaimIds || []).some(
+                (id) => Number(id) === Number(caseAssertion.id),
+              ),
+            )
+            .map((doc) => ({
+              referenceContentId: Number(doc.referenceContentId),
+              evidenceText: doc.cleanText,
+            }))
+            .filter(
+              (doc) =>
+                Number.isInteger(doc.referenceContentId) &&
+                typeof doc.evidenceText === "string" &&
+                doc.evidenceText.trim(),
+            );
+
+          if (evidenceDocuments.length === 0) {
+            continue;
+          }
+
+          const extraction = await extractEvidenceBearing({
+            caseAssertion,
+            evidenceDocuments,
+            llm: this.deps.llm,
+            promptManager: this.deps.promptManager,
+          });
+
+          const seenAssertions = new Set();
+
+          for (const assertion of extraction.assertions || []) {
+            const docIndex = documentIndexById.get(
+              Number(assertion.referenceContentId),
+            );
+
+            if (docIndex === undefined) continue;
+
+            const normalizedText = assertion.evidenceAssertion
+              .trim()
+              .replace(/\s+/g, " ")
+              .toLowerCase();
+
+            const duplicateKey = `${assertion.referenceContentId}|${caseAssertion.id}|${normalizedText}`;
+
+            if (seenAssertions.has(duplicateKey)) {
+              continue;
+            }
+
+            seenAssertions.add(duplicateKey);
+
+            bearingResults[docIndex].bearing.assertions.push({
+              referenceContentId: assertion.referenceContentId,
+              evidenceAssertion: assertion.evidenceAssertion.trim(),
+              taskClaimId: Number(caseAssertion.id),
+            });
+          }
+        }
+      });
+
+    await Promise.all(bearingWorkers);
+
+    logger.log(
+      `🧠 [EvidenceExtraction] Extracted assertion-relative evidence for ${claims.length} case assertions across ${acquiredDocuments.length} acquired documents`,
+    );
+
+    results.bearingResults = bearingResults;
+
+    logger.log(
+      `🧺 [Evidence] ${results.reduce(
+        (n, row) => n + (row?.candidates?.length || 0),
+        0,
+      )} claim-relative candidates → ${uniqueCandidates.length} unique documents`,
+    );
     logger.log("🟩 [DEBUG] Final results before persist:", results);
 
     return results;

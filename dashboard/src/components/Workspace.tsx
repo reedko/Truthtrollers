@@ -33,10 +33,11 @@ import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModa
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
-import RelationshipMap, { ClaimLink } from "./RelationshipMap";
+import RelationshipMap from "./RelationshipMap";
 import {
   mapAssertionLinkForWorkspace,
   mapDocumentDiscoveryLinkForWorkspace,
+  type WorkspaceClaimLink,
 } from "./evidenceLinkPresentation";
 import {
   fetchClaimById,
@@ -92,7 +93,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   } = useClaimLinkSession({ contentId, viewerId });
 
   // ── Workspace-specific: RelationshipMap data ─────────────────────────────
-  const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
+  const [claimLinks, setClaimLinks] = useState<WorkspaceClaimLink[]>([]);
   const [aiEvidenceLinks, setAIEvidenceLinks] = useState<
     import("../../../shared/entities/types").AIEvidenceLink[]
   >([]);
@@ -133,9 +134,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [rightX, setRightX] = useState(0);
   const [computedHeight, setComputedHeight] = useState(500);
   const [readOnly, setReadOnly] = useState<boolean>(false);
-  const [selectedClaimLink, setSelectedClaimLink] = useState<ClaimLink | null>(
-    null,
-  );
+  const [selectedClaimLink, setSelectedClaimLink] =
+    useState<WorkspaceClaimLink | null>(null);
   const [linkRationale, setLinkRationale] = useState<string>("");
   const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<
     number | null
@@ -185,7 +185,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId, scope)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
-        const formattedLinks: ClaimLink[] = data.map(mapAssertionLinkForWorkspace);
+        const formattedLinks: WorkspaceClaimLink[] = data.map(
+          mapAssertionLinkForWorkspace,
+        );
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {
@@ -348,7 +350,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsReferenceClaimsModalOpen(true);
   };
 
-  const handleLineClick = async (link: ClaimLink) => {
+  const handleLineClick = async (link: WorkspaceClaimLink) => {
     // Count how many links connect to this reference
     const linksToReference = claimLinks.filter(
       (l) => l.referenceId === link.referenceId,
@@ -421,7 +423,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     }
   };
 
-  const handleLineHover = (link: ClaimLink) => {
+  const handleLineHover = (link: WorkspaceClaimLink) => {
     // Find the reference for this link and open modal after 2s
     const reference = references.find(
       (ref) => ref.reference_content_id === link.referenceId,

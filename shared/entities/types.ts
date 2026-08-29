@@ -126,6 +126,8 @@ export interface ReferenceWithClaims {
   media_source?: string;
   publisher_name?: string;
   author_name?: string;
+  authors?: Author[];
+  source_type?: string | null;
   topic?: string;
   subtopic?: string;
   claims: Claim[];
@@ -223,6 +225,7 @@ export interface AIEvidenceLink {
   reference_title: string;
   reference_url: string;
   reference_topic: string;
+  scrape_status?: string | null;
 }
 
 // Failed Reference - needs manual scraping
@@ -233,6 +236,7 @@ export interface FailedReference {
   failure_reason: string;
   created_at: string;
   linked_claims_count: number;
+  scrape_status?: string | null;
 }
 
 export interface ClaimLinker {
@@ -278,6 +282,8 @@ export interface ClaimLinks {
   source_claim_id: number;
   relationship: "supports" | "refutes" | "related";
   confidence: number;
+  score?: number | null;
+  pair_confidence?: number | null;
   notes?: string;
   support_level?: number;
   verimeter_score?: number | null; // 👈 Add this if missing

@@ -2,7 +2,10 @@
 import { Router } from "express";
 import { logUserActivity } from "../../utils/logUserActivity.js";
 import { authenticateToken } from "../../middleware/auth.js";
-import { calculateAIContentScore, calculateAIClaimScore } from "../../modules/aiRatings.js";
+import {
+  calculateAIContentScore,
+  calculateAIClaimScore,
+} from "../../modules/aiRatings.js";
 import {
   calculateUserClaimScore,
   calculateUserClaimScoresForContent,
@@ -637,14 +640,16 @@ export default function createClaimsRoutes({ query, pool }) {
       const normalizeRelation = (relationship, supportLevel) => {
         // If we have a support_level, use it to determine the relation
         if (supportLevel !== null && supportLevel !== undefined) {
-          if (supportLevel > 15) return "support";
-          if (supportLevel < -15) return "refute";
+          if (supportLevel > 0.15) return "support";
+          if (supportLevel < -0.15) return "refute";
           return "nuance";
         }
 
         // Otherwise fall back to the relationship field
-        if (relationship === "supports" || relationship === "support") return "support";
-        if (relationship === "refutes" || relationship === "refute") return "refute";
+        if (relationship === "supports" || relationship === "support")
+          return "support";
+        if (relationship === "refutes" || relationship === "refute")
+          return "refute";
         return "nuance";
       };
 
@@ -702,11 +707,13 @@ export default function createClaimsRoutes({ query, pool }) {
   // Tries reference_claim_task_links first; falls back to reference_claim_links.
   router.get("/api/content/:contentId/preview-links", async (req, res) => {
     const contentId = parseInt(req.params.contentId);
-    if (isNaN(contentId)) return res.status(400).json({ error: "Invalid content ID" });
+    if (isNaN(contentId))
+      return res.status(400).json({ error: "Invalid content ID" });
 
     try {
       // 1. Fetch up to 5 claim-to-claim links (reference_claim_task_links)
-      const rctlRows = await query(`
+      const rctlRows = await query(
+        `
         SELECT
           rctl.reference_claim_id,
           rctl.task_claim_id,
@@ -736,7 +743,9 @@ export default function createClaimsRoutes({ query, pool }) {
           ABS(COALESCE(rctl.support_level, 0)) DESC,
           COALESCE(task_cc.claim_order, 999999) ASC
         LIMIT 5
-      `, [contentId]);
+      `,
+        [contentId],
+      );
 
       let rawPairs = rctlRows.map((r) => ({
         caseClaim: {
@@ -751,14 +760,21 @@ export default function createClaimsRoutes({ query, pool }) {
           verifiability_score: r.task_verifiability_score,
           claim_order: r.task_claim_order,
         },
-        sourceClaim: { claim_id: r.reference_claim_id, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
+        sourceClaim: {
+          claim_id: r.reference_claim_id,
+          claim_text: r.source_claim_text,
+          publisher: r.source_publisher || "Reference",
+          url: r.source_url || "",
+          relationship: r.stance,
+        },
         rationale: r.rationale || "",
       }));
 
       // 2. Pad with reference_claim_links if fewer than 5
       if (rawPairs.length < 5) {
         const needed = 5 - rawPairs.length;
-        const rclRows = await query(`
+        const rclRows = await query(
+          `
           SELECT
             rcl.claim_id AS task_claim_id,
             rcl.stance,
@@ -786,38 +802,54 @@ export default function createClaimsRoutes({ query, pool }) {
             ABS(COALESCE(rcl.support_level, 0)) DESC,
             COALESCE(task_cc.claim_order, 999999) ASC
           LIMIT ?
-        `, [contentId, needed]);
+        `,
+          [contentId, needed],
+        );
 
-        rawPairs = rawPairs.concat(rclRows.map((r) => ({
-          caseClaim: {
-            claim_id: r.task_claim_id,
-            claim_text: r.task_claim_text,
-            publisher: r.task_publisher,
-            url: r.task_url,
-            claim_role: r.task_claim_role,
-            parent_claim_id: r.task_parent_claim_id,
-            claim_depth: r.task_claim_depth,
-            centrality_score: r.task_centrality_score,
-            verifiability_score: r.task_verifiability_score,
-            claim_order: r.task_claim_order,
-          },
-          sourceClaim: { claim_id: null, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
-          rationale: r.rationale || "",
-        })));
+        rawPairs = rawPairs.concat(
+          rclRows.map((r) => ({
+            caseClaim: {
+              claim_id: r.task_claim_id,
+              claim_text: r.task_claim_text,
+              publisher: r.task_publisher,
+              url: r.task_url,
+              claim_role: r.task_claim_role,
+              parent_claim_id: r.task_parent_claim_id,
+              claim_depth: r.task_claim_depth,
+              centrality_score: r.task_centrality_score,
+              verifiability_score: r.task_verifiability_score,
+              claim_order: r.task_claim_order,
+            },
+            sourceClaim: {
+              claim_id: null,
+              claim_text: r.source_claim_text,
+              publisher: r.source_publisher || "Reference",
+              url: r.source_url || "",
+              relationship: r.stance,
+            },
+            rationale: r.rationale || "",
+          })),
+        );
       }
 
       // Score each case claim using the same calculateAIClaimScore used by the workspace
-      const pairs = await Promise.all(rawPairs.map(async (p) => {
-        const score = p.caseClaim.claim_id
-          ? await calculateAIClaimScore(query, p.caseClaim.claim_id)
-          : 0;
-        return { ...p, verimeter_score: score, support_level: score };
-      }));
+      const pairs = await Promise.all(
+        rawPairs.map(async (p) => {
+          const score = p.caseClaim.claim_id
+            ? await calculateAIClaimScore(query, p.caseClaim.claim_id)
+            : 0;
+          return { ...p, verimeter_score: score, support_level: score };
+        }),
+      );
 
       const aiScores = await calculateAIContentScore(query, contentId);
       const overall = aiScores.verimeter_score || 0;
 
-      res.json({ overall_verimeter: overall, claim_pairs: pairs, is_ai_preview: true });
+      res.json({
+        overall_verimeter: overall,
+        claim_pairs: pairs,
+        is_ai_preview: true,
+      });
     } catch (err) {
       console.error("❌ preview-links error:", err);
       res.status(500).json({ error: "Failed to fetch preview links" });
@@ -835,7 +867,8 @@ export default function createClaimsRoutes({ query, pool }) {
     }
 
     try {
-      const topClaims = await query(`
+      const topClaims = await query(
+        `
         SELECT
           c.claim_id,
           c.claim_text,
@@ -864,7 +897,9 @@ export default function createClaimsRoutes({ query, pool }) {
           COALESCE(cc.claim_order, 999999) ASC,
           c.claim_id
         LIMIT ?
-      `, [contentId, limit]);
+      `,
+        [contentId, limit],
+      );
 
       res.json(topClaims);
     } catch (err) {
@@ -1087,7 +1122,9 @@ WHERE cc_task.content_id = ?
     const { contentId } = req.params;
     const userId = req.query.viewerId ?? null;
 
-    console.log(`📊 [claim-scores] Fetching scores for contentId=${contentId}, userId=${userId}`);
+    console.log(
+      `📊 [claim-scores] Fetching scores for contentId=${contentId}, userId=${userId}`,
+    );
 
     try {
       const scoreMap = await calculateUserClaimScoresForContent(
@@ -1100,7 +1137,9 @@ WHERE cc_task.content_id = ?
       res.json(scoreMap);
     } catch (err) {
       console.error("❌ [claim-scores] Error:", err);
-      res.status(500).json({ error: "Failed to fetch claim scores", details: err.message });
+      res
+        .status(500)
+        .json({ error: "Failed to fetch claim scores", details: err.message });
     }
   });
 
@@ -1454,7 +1493,9 @@ WHERE cc_task.content_id = ?
   router.post("/api/claims/hide", async (req, res) => {
     const { claimId, userId } = req.body;
 
-    console.log(`🔍 Hide claim request - claimId: ${claimId}, userId: ${userId}`);
+    console.log(
+      `🔍 Hide claim request - claimId: ${claimId}, userId: ${userId}`,
+    );
 
     if (!userId) {
       console.log("❌ No userId provided");
@@ -1518,31 +1559,52 @@ WHERE cc_task.content_id = ?
   });
 
   // Hard-delete claims for everyone (super_admin only)
-  router.delete("/api/claims/permanent", authenticateToken, async (req, res) => {
-    if (req.user?.role !== "super_admin") {
-      return res.status(403).json({ error: "Super admin required" });
-    }
+  router.delete(
+    "/api/claims/permanent",
+    authenticateToken,
+    async (req, res) => {
+      if (req.user?.role !== "super_admin") {
+        return res.status(403).json({ error: "Super admin required" });
+      }
 
-    const { claimIds } = req.body;
-    if (!Array.isArray(claimIds) || claimIds.length === 0) {
-      return res.status(400).json({ error: "claimIds array required" });
-    }
+      const { claimIds } = req.body;
+      if (!Array.isArray(claimIds) || claimIds.length === 0) {
+        return res.status(400).json({ error: "claimIds array required" });
+      }
 
-    try {
-      const ph = claimIds.map(() => "?").join(",");
-      // Delete child rows in FK dependency order before removing the claim rows
-      await query(`DELETE FROM reference_claim_task_links WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
-      await query(`DELETE FROM user_claim_ratings WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
-      await query(`DELETE FROM claim_links WHERE source_claim_id IN (${ph}) OR target_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
-      await query(`DELETE FROM user_claim_visibility WHERE claim_id IN (${ph})`, claimIds);
-      await query(`DELETE FROM content_claims WHERE claim_id IN (${ph})`, claimIds);
-      await query(`DELETE FROM claims WHERE claim_id IN (${ph})`, claimIds);
-      res.json({ message: `${claimIds.length} claim(s) permanently deleted` });
-    } catch (err) {
-      console.error("Error permanently deleting claims:", err);
-      res.status(500).json({ error: "Error deleting claims" });
-    }
-  });
+      try {
+        const ph = claimIds.map(() => "?").join(",");
+        // Delete child rows in FK dependency order before removing the claim rows
+        await query(
+          `DELETE FROM reference_claim_task_links WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`,
+          [...claimIds, ...claimIds],
+        );
+        await query(
+          `DELETE FROM user_claim_ratings WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`,
+          [...claimIds, ...claimIds],
+        );
+        await query(
+          `DELETE FROM claim_links WHERE source_claim_id IN (${ph}) OR target_claim_id IN (${ph})`,
+          [...claimIds, ...claimIds],
+        );
+        await query(
+          `DELETE FROM user_claim_visibility WHERE claim_id IN (${ph})`,
+          claimIds,
+        );
+        await query(
+          `DELETE FROM content_claims WHERE claim_id IN (${ph})`,
+          claimIds,
+        );
+        await query(`DELETE FROM claims WHERE claim_id IN (${ph})`, claimIds);
+        res.json({
+          message: `${claimIds.length} claim(s) permanently deleted`,
+        });
+      } catch (err) {
+        console.error("Error permanently deleting claims:", err);
+        res.status(500).json({ error: "Error deleting claims" });
+      }
+    },
+  );
 
   // GET /api/claim-links/my-links?userId=123
   // Get all claim links created by a specific user
@@ -1551,7 +1613,9 @@ WHERE cc_task.content_id = ?
       const userId = parseInt(req.query.userId, 10);
 
       if (!userId) {
-        return res.status(400).json({ error: "userId query parameter required" });
+        return res
+          .status(400)
+          .json({ error: "userId query parameter required" });
       }
 
       const sql = `
@@ -1596,7 +1660,7 @@ WHERE cc_task.content_id = ?
       const links = await query(sql, [userId]);
 
       // Debug: Check for duplicates
-      const uniqueIds = new Set(links.map(l => l.claim_link_id));
+      const uniqueIds = new Set(links.map((l) => l.claim_link_id));
       console.log(`📊 /api/claim-links/my-links - User ${userId}:`);
       console.log(`   Total rows returned: ${links.length}`);
       console.log(`   Unique claim_link_ids: ${uniqueIds.size}`);
@@ -1607,8 +1671,8 @@ WHERE cc_task.content_id = ?
       res.json({
         success: true,
         data: {
-          claim_links: links
-        }
+          claim_links: links,
+        },
       });
     } catch (err) {
       console.error("❌ Error fetching user's claim links:", err);
@@ -1618,16 +1682,18 @@ WHERE cc_task.content_id = ?
 
   // GET /api/claim-links/content/:contentId/all-users?userId=123
   // Get all claim links for a specific content from other users (excludes current user)
-  router.get("/api/claim-links/content/:contentId/all-users", async (req, res) => {
-    try {
-      const contentId = parseInt(req.params.contentId, 10);
-      const currentUserId = parseInt(req.query.userId, 10) || 0;
+  router.get(
+    "/api/claim-links/content/:contentId/all-users",
+    async (req, res) => {
+      try {
+        const contentId = parseInt(req.params.contentId, 10);
+        const currentUserId = parseInt(req.query.userId, 10) || 0;
 
-      if (!contentId) {
-        return res.status(400).json({ error: "Content ID required" });
-      }
+        if (!contentId) {
+          return res.status(400).json({ error: "Content ID required" });
+        }
 
-      const sql = `
+        const sql = `
         SELECT
           cl.*,
           u.username,
@@ -1673,19 +1739,20 @@ WHERE cc_task.content_id = ?
         ORDER BY cl.created_at DESC
       `;
 
-      const links = await query(sql, [contentId, currentUserId || 0]);
+        const links = await query(sql, [contentId, currentUserId || 0]);
 
-      res.json({
-        success: true,
-        data: {
-          claim_links: links
-        }
-      });
-    } catch (err) {
-      console.error("❌ Error fetching content claim links:", err);
-      res.status(500).json({ error: "Database error" });
-    }
-  });
+        res.json({
+          success: true,
+          data: {
+            claim_links: links,
+          },
+        });
+      } catch (err) {
+        console.error("❌ Error fetching content claim links:", err);
+        res.status(500).json({ error: "Database error" });
+      }
+    },
+  );
 
   return router;
 }

@@ -119,7 +119,9 @@ export async function fetchExternalPageContent(url) {
       const authors = choosePdfAuthors(infoAuthor, lines);
       const publisher = choosePdfPublisher(parsed.info, lines);
 
-      logger.log(`✅ [fetchExternalPageContent] PDF parsed: ${title}${publisher ? ` | publisher: ${publisher}` : ""}`);
+      logger.log(
+        `✅ [fetchExternalPageContent] PDF parsed: ${title}${publisher ? ` | publisher: ${publisher}` : ""}`,
+      );
 
       // Wrap text in HTML body for cheerio
       const htmlBody = `<body>${fullText}</body>`;
@@ -145,7 +147,7 @@ export async function fetchExternalPageContent(url) {
       }
 
       logger.log(
-        `✅ [fetchExternalPageContent] Fetched ${result.text.length} chars via ${result.method}`
+        `✅ [fetchExternalPageContent] Fetched ${result.text.length} chars via ${result.method}`,
       );
 
       const $ = cheerio.load(result.text);

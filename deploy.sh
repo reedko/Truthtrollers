@@ -11,7 +11,7 @@ cd "$ROOT_DIR"
 # ═══════════════════════════════════════════════════════════
 # 🔒 SAFETY CHECK: Prevent deploying from wrong directory
 # ═══════════════════════════════════════════════════════════
-EXPECTED_PATH="/Users/reedko/Desktop/Truthtrollers_root"
+EXPECTED_PATH="/Users/reedko/VeriStrata/veristrata-platform"
 if [[ "$PWD" != "$EXPECTED_PATH" ]]; then
   echo "════════════════════════════════════════════════════════"
   echo "❌ ERROR: Deploy script must run from correct directory"
@@ -173,6 +173,9 @@ rsync -azP --partial --inplace \
   --exclude 'assets/videos/' \
   --exclude 'temp/' \
   --exclude 'temp-out/' \
+  --exclude 'scripts/Razor-claims-evaluations/' \
+  --exclude 'scripts/referenceSemanticInputDiagnostic-results/' \
+  --exclude 'scripts/referenceSemanticInputDiagnostic.last-run.txt' \
   --exclude 'node_modules' \
   --exclude '*.log' \
   backend/ "$SERVER:$BACKEND_PATH/"
@@ -301,6 +304,23 @@ if [[ "\$PROC_DEF" != *"ORDER BY publisher_id ASC"* ]] || \
 fi
 
 echo "✅ InsertOrGetPublisher verified"
+
+echo "🧠 Applying reviewed bearing-pipeline prompts and search config..."
+
+BEARING_MIGRATION_FILE="$BACKEND_PATH/migrations/2026-08-28-bearing-pipeline-prompts-and-search-config.sql"
+
+if [ ! -f "\$BEARING_MIGRATION_FILE" ]; then
+  echo "❌ Missing migration: \$BEARING_MIGRATION_FILE"
+  exit 1
+fi
+
+MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
+  -h "\$DB_HOST" \
+  -u "\$DB_USER" \
+  "\$DB_DATABASE" \
+  < "\$BEARING_MIGRATION_FILE"
+
+echo "✅ Bearing-pipeline prompts and search config applied and verified"
 
 pm2 flush
 pm2 restart truthtrollers --update-env

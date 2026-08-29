@@ -31,7 +31,10 @@ import {
   ClaimWithRelevance,
   ReferenceDocumentLink,
 } from "../../services/referenceClaimRelevance";
-import { fetchClaimScoresForTask, fetchAIEvidenceLinks } from "../../services/useDashboardAPI";
+import {
+  fetchClaimScoresForTask,
+  fetchAIEvidenceLinks,
+} from "../../services/useDashboardAPI";
 import VerimeterBar from "../VerimeterBar";
 import SourceCrest from "../SourceCrest";
 import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
@@ -42,13 +45,16 @@ interface RelevanceScanModalProps {
   onClose: () => void;
   taskClaim: Claim | null;
   references: ReferenceWithClaims[];
-  onSelectReferenceClaim?: (claim: ClaimWithRelevance, referenceId: number) => void;
+  onSelectReferenceClaim?: (
+    claim: ClaimWithRelevance,
+    referenceId: number,
+  ) => void;
   // Opens the ClaimLinkOverlay pre-populated with AI suggestion
   onOpenLinkOverlay?: (
     sourceClaim: { claim_id: number; claim_text: string },
     targetClaim: Claim,
     rationale: string,
-    supportLevel: number
+    supportLevel: number,
   ) => void;
   contentId?: number; // Task content_id for fetching computed scores
   viewerId?: number | null; // User viewing for scope filtering
@@ -72,25 +78,38 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   // Debug logging
   useEffect(() => {
     if (isOpen && taskClaim) {
-      console.log('[RelevanceScanModal] OPENED - taskClaim:', taskClaim.claim_id, 'references:', references.length, 'contentId:', contentId);
+      console.log(
+        "[RelevanceScanModal] OPENED - taskClaim:",
+        taskClaim.claim_id,
+        "references:",
+        references.length,
+        "contentId:",
+        contentId,
+      );
     }
   }, [isOpen]);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [topClaims, setTopClaims] = useState<ClaimWithRelevance[]>([]);
-  const [documentLinks, setDocumentLinks] = useState<ReferenceDocumentLink[]>([]);
-  const [claimReferenceMap, setClaimReferenceMap] = useState<Map<number, number>>(new Map());
+  const [documentLinks, setDocumentLinks] = useState<ReferenceDocumentLink[]>(
+    [],
+  );
+  const [claimReferenceMap, setClaimReferenceMap] = useState<
+    Map<number, number>
+  >(new Map());
   const [allReferenceClaims, setAllReferenceClaims] = useState<Claim[]>([]);
   const lastTaskClaimId = useRef<number | null>(null);
-  const [scanMode, setScanMode] = useState<'quick' | 'deep'>('quick');
+  const [scanMode, setScanMode] = useState<"quick" | "deep">("quick");
 
   // NEW: Computed verimeter score from linked reference claims
   const [computedScore, setComputedScore] = useState<number | null>(null);
 
   // Debug panel expand/collapse state
   const [debugExpanded, setDebugExpanded] = useState(false);
-  const [sourceDetailRef, setSourceDetailRef] = useState<import("../../../../shared/entities/types").ReferenceWithClaims | null>(null);
+  const [sourceDetailRef, setSourceDetailRef] = useState<
+    import("../../../../shared/entities/types").ReferenceWithClaims | null
+  >(null);
 
   // ── On open: load existing links immediately, don't re-scan ──────────────
   useEffect(() => {
@@ -122,13 +141,19 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
     // Filter references based on mode
     const refsToUse = linkedReferenceIds
-      ? references.filter(ref => linkedReferenceIds.has(ref.reference_content_id))
+      ? references.filter((ref) =>
+          linkedReferenceIds.has(ref.reference_content_id),
+        )
       : references;
 
     refsToUse.forEach((ref) => {
       let refClaims: any = ref.claims;
       if (typeof refClaims === "string") {
-        try { refClaims = JSON.parse(refClaims); } catch { return; }
+        try {
+          refClaims = JSON.parse(refClaims);
+        } catch {
+          return;
+        }
       }
       if (Array.isArray(refClaims)) {
         refClaims.forEach((c: any) => {
@@ -153,49 +178,74 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
     try {
       const { all, refMap } = buildReferenceClaims();
 
-      console.log(`🔍 [RelevanceScan] Loading links for task claim ${taskClaim.claim_id}`);
-      console.log(`🔍 [RelevanceScan] Built ${all.length} reference claims from ${references.length} references`);
+      console.log(
+        `🔍 [RelevanceScan] Loading links for task claim ${taskClaim.claim_id}`,
+      );
+      console.log(
+        `🔍 [RelevanceScan] Built ${all.length} reference claims from ${references.length} references`,
+      );
 
-      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
-      console.log(`🔍 [RelevanceScan] Fetched ${existingLinks.length} claim-to-claim links from backend:`, existingLinks);
+      const existingLinks = await fetchReferenceClaimTaskLinks(
+        taskClaim.claim_id,
+      );
+      console.log(
+        `🔍 [RelevanceScan] Fetched ${existingLinks.length} claim-to-claim links from backend:`,
+        existingLinks,
+      );
 
       // Also fetch document-level links (reference_claim_links)
       const docLinks = await fetchReferenceDocumentLinks(taskClaim.claim_id);
-      console.log(`🔍 [RelevanceScan] Fetched ${docLinks.length} document-level links from backend:`, docLinks);
+      console.log(
+        `🔍 [RelevanceScan] Fetched ${docLinks.length} document-level links from backend:`,
+        docLinks,
+      );
       setDocumentLinks(docLinks);
 
       // 🔧 FIX: Add linked claims that aren't in the references array
       // This ensures manually linked claims show up even if their reference is filtered out
       const allClaimsMap = new Map<number, Claim>();
-      all.forEach(c => allClaimsMap.set(c.claim_id, c));
+      all.forEach((c) => allClaimsMap.set(c.claim_id, c));
 
       // Build a mutable copy of refMap so we can add recovered claims
       const recoveredRefMap = new Map(refMap);
 
       for (const link of existingLinks) {
-        if (!allClaimsMap.has(link.reference_claim_id) && link.reference_claim_text) {
+        if (
+          !allClaimsMap.has(link.reference_claim_id) &&
+          link.reference_claim_text
+        ) {
           // This claim is linked but not in our references array - add it!
           const missingClaim: Claim = {
             claim_id: link.reference_claim_id,
             claim_text: link.reference_claim_text,
-            claim_type: 'evidence',
+            claim_type: "evidence",
             veracity_score: 0,
             confidence_level: link.confidence,
             last_verified: new Date().toISOString(),
           };
           allClaimsMap.set(link.reference_claim_id, missingClaim);
-          console.log(`🔍 [RelevanceScan] Added missing linked claim ${link.reference_claim_id} from ${link.source_name}`);
+          console.log(
+            `🔍 [RelevanceScan] Added missing linked claim ${link.reference_claim_id} from ${link.source_name}`,
+          );
         }
         // Ensure reference mapping exists for SourceCrest lookup, even if claim was already in map
-        if (link.reference_content_id && !recoveredRefMap.has(link.reference_claim_id)) {
-          recoveredRefMap.set(link.reference_claim_id, link.reference_content_id);
+        if (
+          link.reference_content_id &&
+          !recoveredRefMap.has(link.reference_claim_id)
+        ) {
+          recoveredRefMap.set(
+            link.reference_claim_id,
+            link.reference_content_id,
+          );
         }
       }
 
       setClaimReferenceMap(recoveredRefMap);
 
       const allClaims = Array.from(allClaimsMap.values());
-      console.log(`🔍 [RelevanceScan] Total claims after adding missing linked: ${allClaims.length}`);
+      console.log(
+        `🔍 [RelevanceScan] Total claims after adding missing linked: ${allClaims.length}`,
+      );
 
       if (allClaims.length === 0) {
         setTopClaims([]);
@@ -203,7 +253,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         return;
       }
 
-      const enriched = enrichClaimsWithRelevance(allClaims, taskClaim.claim_id, existingLinks);
+      const enriched = enrichClaimsWithRelevance(
+        allClaims,
+        taskClaim.claim_id,
+        existingLinks,
+      );
       const sorted = sortClaimsByRelevance(enriched);
 
       // 🎯 FILTER: Only show relevant claims
@@ -214,14 +268,17 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         if (!c.stance) return false; // No assessment at all
 
         // For AI assessments, filter out irrelevant ones
-        const isIrrelevant = c.stance === 'insufficient' &&
-                            Math.abs(c.relevanceScore) < 10 &&
-                            (c.confidence ?? 0) < 0.5;
+        const isIrrelevant =
+          c.stance === "insufficient" &&
+          Math.abs(c.relevanceScore) < 10 &&
+          (c.confidence ?? 0) < 0.5;
 
         return !isIrrelevant;
       });
 
-      console.log(`🔍 [RelevanceScan] After enriching and filtering: ${assessed.length} claims (${assessed.filter(c => c.hasLink).length} manual links, ${assessed.filter(c => !c.hasLink).length} AI assessments)`);
+      console.log(
+        `🔍 [RelevanceScan] After enriching and filtering: ${assessed.length} claims (${assessed.filter((c) => c.hasLink).length} manual links, ${assessed.filter((c) => !c.hasLink).length} AI assessments)`,
+      );
       setTopClaims(assessed);
     } catch (err) {
       console.error("[RelevanceScan] Error loading existing links:", err);
@@ -231,11 +288,13 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   };
 
   // ── Scan for NEW links only (skips already-assessed claims) ───────────────
-  const runRelevanceScan = async (mode?: 'quick' | 'deep') => {
+  const runRelevanceScan = async (mode?: "quick" | "deep") => {
     if (!taskClaim) return;
 
     const effectiveMode = mode || scanMode;
-    console.log(`🔍 [runRelevanceScan] Starting scan - mode param: ${mode}, scanMode state: ${scanMode}, effectiveMode: ${effectiveMode}`);
+    console.log(
+      `🔍 [runRelevanceScan] Starting scan - mode param: ${mode}, scanMode state: ${scanMode}, effectiveMode: ${effectiveMode}`,
+    );
 
     setIsScanning(true);
     setScanProgress({ current: 0, total: 0 });
@@ -247,55 +306,70 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       let refMap = initialBuild.refMap;
 
       // Fetch existing AI assessments from reference_claim_task_links
-      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
+      const existingLinks = await fetchReferenceClaimTaskLinks(
+        taskClaim.claim_id,
+      );
 
       // For quick mode, fetch references that have dotted lines (reference_claim_links)
       // AND include references with existing high-relevance assessments
       const linkedReferenceIds = new Set<number>();
 
-      if (effectiveMode === 'quick' && contentId) {
+      if (effectiveMode === "quick" && contentId) {
         try {
           // Get references with dotted lines using same approach as workspace
           // This fetches from reference_claim_links (document-level AI evidence links)
-          console.log(`⚡ [Quick Scan] Fetching AI evidence links for content ${contentId}`);
+          console.log(
+            `⚡ [Quick Scan] Fetching AI evidence links for content ${contentId}`,
+          );
 
           const aiEvidenceLinks = await fetchAIEvidenceLinks(contentId);
-          console.log(`⚡ [Quick Scan] Fetched ${aiEvidenceLinks.length} AI evidence links`);
+          console.log(
+            `⚡ [Quick Scan] Fetched ${aiEvidenceLinks.length} AI evidence links`,
+          );
 
           // Filter to only links for THIS task claim
           const linksForThisClaim = aiEvidenceLinks.filter(
-            (link) => link.task_claim_id === taskClaim.claim_id
+            (link) => link.task_claim_id === taskClaim.claim_id,
           );
-          console.log(`⚡ [Quick Scan] Found ${linksForThisClaim.length} dotted line links for task claim ${taskClaim.claim_id}`);
+          console.log(
+            `⚡ [Quick Scan] Found ${linksForThisClaim.length} dotted line links for task claim ${taskClaim.claim_id}`,
+          );
 
           // Extract unique reference_content_ids
           linksForThisClaim.forEach((link) => {
             linkedReferenceIds.add(link.reference_content_id);
           });
 
-          console.log(`⚡ [Quick Scan] Will scan claims from ${linkedReferenceIds.size} references with dotted-line connections`);
+          console.log(
+            `⚡ [Quick Scan] Will scan claims from ${linkedReferenceIds.size} references with dotted-line connections`,
+          );
         } catch (err) {
           console.error("[Quick Scan] Error fetching AI evidence links:", err);
         }
       }
 
       // If quick mode, rebuild with only linked references
-      if (effectiveMode === 'quick' && linkedReferenceIds.size > 0) {
+      if (effectiveMode === "quick" && linkedReferenceIds.size > 0) {
         const built = buildReferenceClaims(linkedReferenceIds);
         claims = built.all;
         refMap = built.refMap;
-        console.log(`⚡ [Quick Scan] Scanning ${claims.length} claims from ${linkedReferenceIds.size} references with dotted lines`);
-      } else if (effectiveMode === 'quick') {
+        console.log(
+          `⚡ [Quick Scan] Scanning ${claims.length} claims from ${linkedReferenceIds.size} references with dotted lines`,
+        );
+      } else if (effectiveMode === "quick") {
         toast({
           title: "No dotted line sources found",
-          description: "No sources with evidence engine links to this task claim. Try Deep Scan to search all sources.",
+          description:
+            "No sources with evidence engine links to this task claim. Try Deep Scan to search all sources.",
           status: "info",
           duration: 5000,
         });
         setIsScanning(false);
         return;
       } else {
-        console.log(`🔍 [Deep Scan] Scanning ${claims.length} claims from ${references.length} references`);
+        console.log(
+          `🔍 [Deep Scan] Scanning ${claims.length} claims from ${references.length} references`,
+        );
       }
 
       if (claims.length === 0) {
@@ -310,7 +384,9 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       }
 
       // Use existing links to skip already-assessed claims
-      const existingIds = new Set(existingLinks.map((l) => l.reference_claim_id));
+      const existingIds = new Set(
+        existingLinks.map((l) => l.reference_claim_id),
+      );
 
       const toAssess = claims
         .filter((c) => !existingIds.has(c.claim_id))
@@ -319,7 +395,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       if (toAssess.length === 0) {
         toast({
           title: "All claims already assessed",
-          description: "Nothing new to scan. All reference claims have already been evaluated.",
+          description:
+            "Nothing new to scan. All reference claims have already been evaluated.",
           status: "info",
           duration: 4000,
         });
@@ -339,7 +416,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
             claim.claim_id,
             taskClaim.claim_id,
             claim.claim_text,
-            taskClaim.claim_text
+            taskClaim.claim_text,
           );
           if (link) {
             newLinks.push(link);
@@ -353,7 +430,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
       // Merge with existing and re-display
       const allLinks = [...existingLinks, ...newLinks];
-      const enriched = enrichClaimsWithRelevance(claims, taskClaim.claim_id, allLinks);
+      const enriched = enrichClaimsWithRelevance(
+        claims,
+        taskClaim.claim_id,
+        allLinks,
+      );
       const sorted = sortClaimsByRelevance(enriched);
 
       // 🎯 FILTER: Show only relevant claims
@@ -362,9 +443,10 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         if (!c.stance) return false;
 
         // Filter out irrelevant AI assessments
-        const isIrrelevant = c.stance === 'insufficient' &&
-                            Math.abs(c.relevanceScore) < 10 &&
-                            (c.confidence ?? 0) < 0.5;
+        const isIrrelevant =
+          c.stance === "insufficient" &&
+          Math.abs(c.relevanceScore) < 10 &&
+          (c.confidence ?? 0) < 0.5;
         return !isIrrelevant;
       });
 
@@ -373,10 +455,10 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
       setTopClaims(top12);
 
-      const scanModeLabel = effectiveMode === 'quick' ? 'Quick' : 'Deep';
+      const scanModeLabel = effectiveMode === "quick" ? "Quick" : "Deep";
 
       // Build toast description
-      let toastDescription = '';
+      let toastDescription = "";
       if (newLinks.length > 0) {
         toastDescription = `Showing ${top12.length} top claims (${withLinks.length} linked, ${top12.length - withLinks.length} AI suggestions)`;
         if (skippedAsIrrelevant > 0) {
@@ -384,14 +466,18 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         }
       } else if (skippedAsIrrelevant > 0) {
         toastDescription = `Assessed ${toAssess.length} claims but all ${skippedAsIrrelevant} were deemed irrelevant (insufficient evidence or low confidence)`;
-      } else if (effectiveMode === 'quick') {
-        toastDescription = "All claims in linked references already assessed. Try Deep Scan for more.";
+      } else if (effectiveMode === "quick") {
+        toastDescription =
+          "All claims in linked references already assessed. Try Deep Scan for more.";
       } else {
         toastDescription = "All claims were already assessed";
       }
 
       toast({
-        title: newLinks.length > 0 ? `${scanModeLabel} Scan: Found ${newLinks.length} new assessments` : `${scanModeLabel} Scan: No new relevant claims`,
+        title:
+          newLinks.length > 0
+            ? `${scanModeLabel} Scan: Found ${newLinks.length} new assessments`
+            : `${scanModeLabel} Scan: No new relevant claims`,
         description: toastDescription,
         status: newLinks.length > 0 ? "success" : "info",
         duration: 5000,
@@ -406,10 +492,15 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   };
 
   const handleOpenLinkOverlay = (claim: ClaimWithRelevance) => {
-    console.log("[RelevanceScanModal] handleOpenLinkOverlay called for claim:", claim.claim_id);
+    console.log(
+      "[RelevanceScanModal] handleOpenLinkOverlay called for claim:",
+      claim.claim_id,
+    );
 
     if (!onOpenLinkOverlay) {
-      console.error("[RelevanceScanModal] ERROR: onOpenLinkOverlay callback is not provided!");
+      console.error(
+        "[RelevanceScanModal] ERROR: onOpenLinkOverlay callback is not provided!",
+      );
       toast({
         title: "Configuration Error",
         description: "Link overlay callback not configured",
@@ -422,17 +513,20 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       console.error("[RelevanceScanModal] ERROR: No task claim available!");
       return;
     }
-    const supportLevel = claim.support_level ??
-      (claim.stance === "support" ? (claim.confidence ?? 0.7)
-        : claim.stance === "refute" ? -(claim.confidence ?? 0.7)
-        : 0);
+    const supportLevel =
+      claim.support_level ??
+      (claim.stance === "support"
+        ? (claim.confidence ?? 0.7)
+        : claim.stance === "refute"
+          ? -(claim.confidence ?? 0.7)
+          : 0);
     console.log("[RelevanceScanModal] Calling onOpenLinkOverlay with:", {
       sourceClaim_id: claim.claim_id,
       sourceClaim_text: claim.claim_text.substring(0, 50),
       targetClaim_id: taskClaim.claim_id,
       targetClaim_text: taskClaim.claim_text.substring(0, 50),
       rationale: claim.rationale?.substring(0, 50),
-      supportLevel
+      supportLevel,
     });
 
     try {
@@ -440,11 +534,16 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         { claim_id: claim.claim_id, claim_text: claim.claim_text },
         taskClaim,
         claim.rationale || "",
-        supportLevel
+        supportLevel,
       );
-      console.log("[RelevanceScanModal] onOpenLinkOverlay callback completed successfully");
+      console.log(
+        "[RelevanceScanModal] onOpenLinkOverlay callback completed successfully",
+      );
     } catch (error) {
-      console.error("[RelevanceScanModal] ERROR calling onOpenLinkOverlay:", error);
+      console.error(
+        "[RelevanceScanModal] ERROR calling onOpenLinkOverlay:",
+        error,
+      );
     }
   };
 
@@ -452,7 +551,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
     if (!taskClaim) return;
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
       const response = await fetch(`${API_BASE_URL}/api/delete-claim-link`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -505,612 +605,942 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
   return (
     <>
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
-      <ModalContent
-        bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.85)" : "rgba(255, 255, 255, 0.5)"}
-        color={colorMode === "dark" ? "white" : "gray.800"}
-        maxH="90vh"
-        border="2px solid"
-        borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.4)" : "rgba(71, 85, 105, 0.15)"}
-        borderLeftRadius="24px"
-        boxShadow={colorMode === "dark"
-          ? "0 24px 64px rgba(0, 0, 0, 0.8), 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 60px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-          : "0 24px 64px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.04), 0 0 60px rgba(71, 85, 105, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.95)"
-        }
-        position="relative"
-        overflow="hidden"
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="xl"
+        scrollBehavior="inside"
       >
-        {/* Curved left edge glow */}
-        <Box
-          position="absolute"
-          left={0}
-          top={0}
-          width="32px"
-          height="100%"
-          background={colorMode === "dark"
-            ? "linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
-            : "linear-gradient(90deg, rgba(71, 85, 105, 0.15) 0%, transparent 100%)"
+        <ModalContent
+          bg={
+            colorMode === "dark"
+              ? "rgba(10, 15, 25, 0.85)"
+              : "rgba(255, 255, 255, 0.5)"
+          }
+          color={colorMode === "dark" ? "white" : "gray.800"}
+          maxH="90vh"
+          border="2px solid"
+          borderColor={
+            colorMode === "dark"
+              ? "rgba(113, 219, 255, 0.4)"
+              : "rgba(71, 85, 105, 0.15)"
           }
           borderLeftRadius="24px"
-          pointerEvents="none"
-          zIndex={0}
-        />
-        {/* Radial background glow */}
-        <Box
-          position="absolute"
-          top="-20%"
-          right="-10%"
-          width="60%"
-          height="60%"
-          bgGradient={colorMode === "dark"
-            ? "radial-gradient(circle, rgba(113, 219, 255, 0.15) 0%, transparent 70%)"
-            : "radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, transparent 70%)"
+          boxShadow={
+            colorMode === "dark"
+              ? "0 24px 64px rgba(0, 0, 0, 0.8), 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 60px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+              : "0 24px 64px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.04), 0 0 60px rgba(71, 85, 105, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.95)"
           }
-          pointerEvents="none"
-          zIndex={0}
-        />
-        <ModalHeader>
-          Case Claim Details
-          {taskClaim && (
-            <VStack align="stretch" mt={3} spacing={2}>
-              {/* 🔍 DEBUG INFO - Collapsible */}
-              <HStack
-                p={2}
-                bg={colorMode === "dark" ? "purple.900" : "purple.100"}
-                borderRadius="md"
-                fontSize="xs"
-                fontFamily="monospace"
-                justify="space-between"
-                cursor="pointer"
-                onClick={() => setDebugExpanded(!debugExpanded)}
-                _hover={{ opacity: 0.8 }}
-              >
-                <Text color={colorMode === "dark" ? "purple.200" : "purple.800"}>
-                  🔍 DEBUG {debugExpanded ? '▼' : '▶'}
+          position="relative"
+          overflow="hidden"
+        >
+          {/* Curved left edge glow */}
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="32px"
+            height="100%"
+            background={
+              colorMode === "dark"
+                ? "linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
+                : "linear-gradient(90deg, rgba(71, 85, 105, 0.15) 0%, transparent 100%)"
+            }
+            borderLeftRadius="24px"
+            pointerEvents="none"
+            zIndex={0}
+          />
+          {/* Radial background glow */}
+          <Box
+            position="absolute"
+            top="-20%"
+            right="-10%"
+            width="60%"
+            height="60%"
+            bgGradient={
+              colorMode === "dark"
+                ? "radial-gradient(circle, rgba(113, 219, 255, 0.15) 0%, transparent 70%)"
+                : "radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, transparent 70%)"
+            }
+            pointerEvents="none"
+            zIndex={0}
+          />
+          <ModalHeader>
+            Case Claim Details
+            {taskClaim && (
+              <VStack align="stretch" mt={3} spacing={2}>
+                {/* 🔍 DEBUG INFO - Collapsible */}
+                <HStack
+                  p={2}
+                  bg={colorMode === "dark" ? "purple.900" : "purple.100"}
+                  borderRadius="md"
+                  fontSize="xs"
+                  fontFamily="monospace"
+                  justify="space-between"
+                  cursor="pointer"
+                  onClick={() => setDebugExpanded(!debugExpanded)}
+                  _hover={{ opacity: 0.8 }}
+                >
+                  <Text
+                    color={colorMode === "dark" ? "purple.200" : "purple.800"}
+                  >
+                    🔍 DEBUG {debugExpanded ? "▼" : "▶"}
+                  </Text>
+                  <Text
+                    fontSize="10px"
+                    color={colorMode === "dark" ? "purple.300" : "purple.600"}
+                  >
+                    {debugExpanded ? "Click to collapse" : "Click to expand"}
+                  </Text>
+                </HStack>
+                {debugExpanded && (
+                  <Box
+                    p={2}
+                    bg={colorMode === "dark" ? "purple.900" : "purple.100"}
+                    borderRadius="md"
+                    fontSize="xs"
+                    fontFamily="monospace"
+                  >
+                    <Text
+                      color={colorMode === "dark" ? "purple.300" : "purple.700"}
+                    >
+                      Task Content ID: {contentId ?? "null"}
+                    </Text>
+                    <Text
+                      color={colorMode === "dark" ? "purple.300" : "purple.700"}
+                    >
+                      Task Claim ID: {taskClaim.claim_id}
+                    </Text>
+                    <Text
+                      color={colorMode === "dark" ? "purple.300" : "purple.700"}
+                    >
+                      Viewer ID: {viewerId ?? "null"}
+                    </Text>
+                    <Text
+                      color={colorMode === "dark" ? "purple.300" : "purple.700"}
+                    >
+                      Sources Count: {references.length}
+                    </Text>
+                  </Box>
+                )}
+
+                <Box
+                  p={4}
+                  bg={
+                    colorMode === "dark"
+                      ? "rgba(15, 25, 40, 0.7)"
+                      : "rgba(255, 255, 255, 0.8)"
+                  }
+                  borderLeftRadius="20px"
+                  borderWidth="2px"
+                  borderColor={
+                    computedScore !== null
+                      ? computedScore > 0.5
+                        ? colorMode === "dark"
+                          ? "rgba(72, 187, 120, 0.6)"
+                          : "rgba(72, 187, 120, 0.4)"
+                        : computedScore < -0.5
+                          ? colorMode === "dark"
+                            ? "rgba(245, 101, 101, 0.6)"
+                            : "rgba(245, 101, 101, 0.4)"
+                          : colorMode === "dark"
+                            ? "rgba(237, 137, 54, 0.6)"
+                            : "rgba(237, 137, 54, 0.4)"
+                      : colorMode === "dark"
+                        ? "rgba(113, 219, 255, 0.6)"
+                        : "rgba(71, 85, 105, 0.3)"
+                  }
+                  boxShadow={
+                    colorMode === "dark"
+                      ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.3)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.3)" : "rgba(237, 137, 54, 0.3)") : "rgba(113, 219, 255, 0.3)"}, inset 0 2px 0 rgba(255, 255, 255, 0.1)`
+                      : `0 12px 32px rgba(0, 0, 0, 0.08), 0 6px 16px rgba(0, 0, 0, 0.05), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.2)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.2)" : "rgba(237, 137, 54, 0.2)") : "rgba(71, 85, 105, 0.15)"}, inset 0 2px 0 rgba(255, 255, 255, 0.9)`
+                  }
+                  position="relative"
+                  overflow="hidden"
+                >
+                  {/* Curved left edge glow */}
+                  <Box
+                    position="absolute"
+                    left={0}
+                    top={0}
+                    width="28px"
+                    height="100%"
+                    background={
+                      colorMode === "dark"
+                        ? `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.4)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.4)" : "rgba(237, 137, 54, 0.4)") : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
+                        : `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.25)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.25)" : "rgba(237, 137, 54, 0.25)") : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
+                    }
+                    borderLeftRadius="20px"
+                    pointerEvents="none"
+                    zIndex={0}
+                  />
+                  <Text
+                    fontSize="sm"
+                    fontWeight="semibold"
+                    color="white"
+                    mb={2}
+                  >
+                    "{taskClaim.claim_text}"
+                  </Text>
+                  <VStack align="stretch" spacing={3}>
+                    {computedScore !== null ? (
+                      <>
+                        <VerimeterBar score={computedScore} size="md" />
+                        <HStack justify="center">
+                          <Badge
+                            colorScheme="blue"
+                            fontSize="xs"
+                            variant="outline"
+                          >
+                            {topClaims.filter((c) => c.hasLink).length} manual
+                            link
+                            {topClaims.filter((c) => c.hasLink).length !== 1
+                              ? "s"
+                              : ""}
+                          </Badge>
+                          <Text fontSize="xs" color="gray.400">
+                            •
+                          </Text>
+                          <Text fontSize="xs" color="gray.400">
+                            Computed from linked reference claims
+                          </Text>
+                        </HStack>
+                      </>
+                    ) : (
+                      <VStack spacing={2}>
+                        <Text fontSize="sm" color="gray.400" textAlign="center">
+                          No computed score yet
+                        </Text>
+                        <Text fontSize="xs" color="gray.500" textAlign="center">
+                          Link source claims below to generate Verimeter score
+                        </Text>
+                      </VStack>
+                    )}
+                  </VStack>
+                </Box>
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  color="gray.400"
+                  mt={2}
+                >
+                  Linked Source Claims:
                 </Text>
-                <Text fontSize="10px" color={colorMode === "dark" ? "purple.300" : "purple.600"}>
-                  {debugExpanded ? 'Click to collapse' : 'Click to expand'}
+              </VStack>
+            )}
+          </ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody>
+            {/* Loading existing */}
+            {isLoadingExisting && (
+              <HStack justify="center" py={6}>
+                <Spinner size="md" color="teal.400" />
+                <Text color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                  Loading previously scanned links…
                 </Text>
               </HStack>
-              {debugExpanded && (
-                <Box p={2} bg={colorMode === "dark" ? "purple.900" : "purple.100"} borderRadius="md" fontSize="xs" fontFamily="monospace">
-                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Content ID: {contentId ?? 'null'}</Text>
-                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Claim ID: {taskClaim.claim_id}</Text>
-                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Viewer ID: {viewerId ?? 'null'}</Text>
-                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Sources Count: {references.length}</Text>
+            )}
+
+            {/* Scanning progress */}
+            {isScanning && (
+              <Box mb={4}>
+                <HStack justify="space-between" mb={2}>
+                  <Text fontSize="sm" color="gray.400">
+                    {scanProgress.total === 0
+                      ? "Preparing scan…"
+                      : "Assessing new claims…"}
+                  </Text>
+                  {scanProgress.total > 0 && (
+                    <Text fontSize="sm" color="teal.300">
+                      {scanProgress.current} / {scanProgress.total}
+                    </Text>
+                  )}
+                </HStack>
+                <Progress
+                  value={
+                    scanProgress.total > 0
+                      ? (scanProgress.current / scanProgress.total) * 100
+                      : undefined
+                  }
+                  isIndeterminate={scanProgress.total === 0}
+                  colorScheme="teal"
+                  size="sm"
+                  borderRadius="md"
+                />
+              </Box>
+            )}
+
+            {/* Empty state */}
+            {!isBusy &&
+              topClaims.length === 0 &&
+              documentLinks.length === 0 && (
+                <Box textAlign="center" py={10}>
+                  <Text color="gray.400" fontSize="md" mb={2}>
+                    No scanned links yet
+                  </Text>
+                  <Text color="gray.500" fontSize="sm" mb={4}>
+                    Click "Scan for Links" below to find relevant source claims.
+                  </Text>
                 </Box>
               )}
 
-              <Box
-                p={4}
-                bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.7)" : "rgba(255, 255, 255, 0.8)"}
-                borderLeftRadius="20px"
-                borderWidth="2px"
-                borderColor={computedScore !== null
-                  ? (computedScore > 0.5
-                    ? (colorMode === "dark" ? "rgba(72, 187, 120, 0.6)" : "rgba(72, 187, 120, 0.4)")
-                    : computedScore < -0.5
-                    ? (colorMode === "dark" ? "rgba(245, 101, 101, 0.6)" : "rgba(245, 101, 101, 0.4)")
-                    : (colorMode === "dark" ? "rgba(237, 137, 54, 0.6)" : "rgba(237, 137, 54, 0.4)"))
-                  : (colorMode === "dark" ? "rgba(113, 219, 255, 0.6)" : "rgba(71, 85, 105, 0.3)")
-                }
-                boxShadow={colorMode === "dark"
-                  ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.3)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.3)" : "rgba(237, 137, 54, 0.3)") : "rgba(113, 219, 255, 0.3)"}, inset 0 2px 0 rgba(255, 255, 255, 0.1)`
-                  : `0 12px 32px rgba(0, 0, 0, 0.08), 0 6px 16px rgba(0, 0, 0, 0.05), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.2)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.2)" : "rgba(237, 137, 54, 0.2)") : "rgba(71, 85, 105, 0.15)"}, inset 0 2px 0 rgba(255, 255, 255, 0.9)`
-                }
-                position="relative"
-                overflow="hidden"
-              >
-                {/* Curved left edge glow */}
-                <Box
-                  position="absolute"
-                  left={0}
-                  top={0}
-                  width="28px"
-                  height="100%"
-                  background={colorMode === "dark"
-                    ? `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.4)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.4)" : "rgba(237, 137, 54, 0.4)") : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
-                    : `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.25)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.25)" : "rgba(237, 137, 54, 0.25)") : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
-                  }
-                  borderLeftRadius="20px"
-                  pointerEvents="none"
-                  zIndex={0}
-                />
-                <Text fontSize="sm" fontWeight="semibold" color="white" mb={2}>
-                  "{taskClaim.claim_text}"
-                </Text>
-                <VStack align="stretch" spacing={3}>
-                  {computedScore !== null ? (
-                    <>
-                      <VerimeterBar score={computedScore} size="md" />
-                      <HStack justify="center">
-                        <Badge colorScheme="blue" fontSize="xs" variant="outline">
-                          {topClaims.filter(c => c.hasLink).length} manual link{topClaims.filter(c => c.hasLink).length !== 1 ? "s" : ""}
-                        </Badge>
-                        <Text fontSize="xs" color="gray.400">•</Text>
-                        <Text fontSize="xs" color="gray.400">
-                          Computed from linked reference claims
-                        </Text>
-                      </HStack>
-                    </>
-                  ) : (
-                    <VStack spacing={2}>
-                      <Text fontSize="sm" color="gray.400" textAlign="center">
-                        No computed score yet
-                      </Text>
-                      <Text fontSize="xs" color="gray.500" textAlign="center">
-                        Link source claims below to generate Verimeter score
-                      </Text>
-                    </VStack>
-                  )}
-                </VStack>
-              </Box>
-              <Text fontSize="xs" fontWeight="semibold" color="gray.400" mt={2}>
-                Linked Source Claims:
-              </Text>
-            </VStack>
-          )}
-        </ModalHeader>
-        <ModalCloseButton />
-
-        <ModalBody>
-          {/* Loading existing */}
-          {isLoadingExisting && (
-            <HStack justify="center" py={6}>
-              <Spinner size="md" color="teal.400" />
-              <Text color={colorMode === "dark" ? "gray.400" : "gray.600"}>Loading previously scanned links…</Text>
-            </HStack>
-          )}
-
-          {/* Scanning progress */}
-          {isScanning && (
-            <Box mb={4}>
-              <HStack justify="space-between" mb={2}>
-                <Text fontSize="sm" color="gray.400">
-                  {scanProgress.total === 0 ? "Preparing scan…" : "Assessing new claims…"}
-                </Text>
-                {scanProgress.total > 0 && (
-                  <Text fontSize="sm" color="teal.300">
-                    {scanProgress.current} / {scanProgress.total}
+            {/* Document-level links (reference_claim_links) */}
+            {!isLoadingExisting && documentLinks.length > 0 && (
+              <VStack spacing={3} align="stretch" mb={4}>
+                <HStack justify="space-between" mb={1}>
+                  <Text
+                    fontSize="xs"
+                    color="gray.500"
+                    fontStyle="italic"
+                    fontWeight="semibold"
+                  >
+                    📄 {documentLinks.length} Document-Level Assessment
+                    {documentLinks.length !== 1 ? "s" : ""}
                   </Text>
-                )}
-              </HStack>
-              <Progress
-                value={scanProgress.total > 0 ? (scanProgress.current / scanProgress.total) * 100 : undefined}
-                isIndeterminate={scanProgress.total === 0}
-                colorScheme="teal"
-                size="sm"
-                borderRadius="md"
-              />
-            </Box>
-          )}
+                </HStack>
 
-          {/* Empty state */}
-          {!isBusy && topClaims.length === 0 && documentLinks.length === 0 && (
-            <Box textAlign="center" py={10}>
-              <Text color="gray.400" fontSize="md" mb={2}>No scanned links yet</Text>
-              <Text color="gray.500" fontSize="sm" mb={4}>
-                Click "Scan for Links" below to find relevant source claims.
-              </Text>
-            </Box>
-          )}
+                {documentLinks.map((docLink) => {
+                  const referenceId = Number(docLink.reference_content_id);
+                  const bearingScore =
+                    docLink.support_level === null ||
+                    docLink.support_level === undefined
+                      ? null
+                      : Number(docLink.support_level);
 
-          {/* Document-level links (reference_claim_links) */}
-          {!isLoadingExisting && documentLinks.length > 0 && (
-            <VStack spacing={3} align="stretch" mb={4}>
-              <HStack justify="space-between" mb={1}>
-                <Text fontSize="xs" color="gray.500" fontStyle="italic" fontWeight="semibold">
-                  📄 {documentLinks.length} Document-Level Assessment{documentLinks.length !== 1 ? "s" : ""}
-                </Text>
-              </HStack>
+                  const docStance =
+                    bearingScore === null
+                      ? "insufficient"
+                      : bearingScore > 0
+                        ? "support"
+                        : bearingScore < 0
+                          ? "refute"
+                          : "nuance";
+                  const reference = references.find(
+                    (r) => Number(r.reference_content_id) === referenceId,
+                  );
+                  const stanceColor = getStanceColor(docStance);
 
-              {documentLinks.map((docLink) => {
-                const referenceId = Number(docLink.reference_content_id);
-                const reference = references.find(r => Number(r.reference_content_id) === referenceId);
-                const stanceColor = getStanceColor(docLink.stance);
-
-                return (
-                  <Box
-                    key={docLink.ref_claim_link_id}
-                    p={4}
-                    bg={colorMode === "dark" ? "rgba(88, 28, 135, 0.25)" : "rgba(237, 233, 254, 0.8)"}
-                    borderLeftRadius="18px"
-                    borderWidth="2px"
-                    borderColor={`${stanceColor}.500`}
-                    borderStyle="dashed"
-                    boxShadow={colorMode === "dark"
-                      ? "0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                      : "0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04), 0 0 30px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95)"
-                    }
-                    position="relative"
-                    overflow="hidden"
-                    cursor={reference ? "pointer" : "default"}
-                    role={reference ? "button" : undefined}
-                    tabIndex={reference ? 0 : undefined}
-                    onClick={() => {
-                      if (reference) onFocusReference?.(referenceId);
-                    }}
-                    onKeyDown={(event) => {
-                      if (!reference) return;
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        onFocusReference?.(referenceId);
-                      }
-                    }}
-                    _hover={reference ? {
-                      transform: "translateY(-1px)",
-                      borderColor: `${stanceColor}.300`,
-                    } : undefined}
-                  >
-                    {/* Curved left edge glow */}
+                  return (
                     <Box
-                      position="absolute"
-                      left={0}
-                      top={0}
-                      width="24px"
-                      height="100%"
-                      background={colorMode === "dark"
-                        ? "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, transparent 100%)"
-                        : "linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, transparent 100%)"
+                      key={docLink.ref_claim_link_id}
+                      p={4}
+                      bg={
+                        colorMode === "dark"
+                          ? "rgba(88, 28, 135, 0.25)"
+                          : "rgba(237, 233, 254, 0.8)"
                       }
                       borderLeftRadius="18px"
-                      pointerEvents="none"
-                      zIndex={0}
-                    />
-                    <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
-                      <HStack spacing={2} wrap="wrap">
-                        <Badge colorScheme="purple" fontSize="xs">DOCUMENT</Badge>
-                        <Badge colorScheme={stanceColor} fontSize="xs">
-                          {getStanceLabel(docLink.stance)}
-                        </Badge>
-                        {docLink.support_level !== undefined && docLink.support_level !== null && (
-                          <Tooltip label="Support level: -100 (refutes) to +100 (supports)">
-                            <Badge colorScheme="blue" fontSize="xs" cursor="help">
-                              Level: {Math.round(docLink.support_level)}
-                            </Badge>
-                          </Tooltip>
-                        )}
-                        {docLink.confidence !== undefined && (
-                          <Tooltip label={`AI confidence: ${Math.round(docLink.confidence * 100)}%`}>
-                            <Badge colorScheme="teal" fontSize="xs" cursor="help">
-                              Confidence: {Math.round(docLink.confidence * 100)}%
-                            </Badge>
-                          </Tooltip>
-                        )}
-                      </HStack>
-                    </HStack>
-
-                    {reference && (
-                      <VStack align="start" spacing={1} mb={2}>
-                        <HStack spacing={2} align="center">
-                          <SourceCrest
-                            {...normalizeSourceProfile({
-                              publisher_name: reference.publisher_name,
-                              is_primary_source: reference.is_primary_source,
-                              media_source: reference.media_source,
-                              veracity_score: reference.publisher_veracity ?? undefined,
-                              admiralty_code: reference.admiralty_code ?? undefined,
-                            })}
-                            alignment={reference.alignment ?? null}
-                            size="sm"
-                            onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
-                          />
-                          <Text fontSize="sm" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.700"}>
-                            {reference.content_name}
-                          </Text>
-                        </HStack>
-                        {reference.url && (
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" isTruncated>
-                            {reference.url}
-                          </Text>
-                        )}
-                        <HStack spacing={1}>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Pub:</Text>
-                          <Text fontSize="2xs" color={reference.publisher_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
-                            {reference.publisher_name || "—"}
-                          </Text>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.4}>·</Text>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Auth:</Text>
-                          <Text fontSize="2xs" color={reference.author_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
-                            {reference.author_name?.trim() || "—"}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    )}
-
-                    {docLink.rationale && (
-                      <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.700"} fontStyle="italic" mb={2}>
-                        <strong>Rationale:</strong> {docLink.rationale}
-                      </Text>
-                    )}
-
-                    {docLink.evidence_text && (
-                      <Box
-                        p={2}
-                        bg={colorMode === "dark" ? "gray.800" : "gray.50"}
-                        borderRadius="md"
-                        borderLeft="3px solid"
-                        borderColor={colorMode === "dark" ? "purple.500" : "purple.400"}
-                      >
-                        <Text fontSize="xs" color={colorMode === "dark" ? "gray.300" : "gray.700"} fontStyle="italic">
-                          <strong>Evidence Snippet:</strong><br />
-                          "{docLink.evidence_text}"
-                        </Text>
-                      </Box>
-                    )}
-                  </Box>
-                );
-              })}
-            </VStack>
-          )}
-
-          {/* Results list */}
-          {!isLoadingExisting && topClaims.length > 0 && (
-            <VStack spacing={3} align="stretch">
-              <HStack justify="space-between" mb={1}>
-                <Text fontSize="xs" color="gray.500" fontStyle="italic" fontWeight="semibold">
-                  🔗 {topClaims.length} Claim-Level Link{topClaims.length !== 1 ? "s" : ""}
-                </Text>
-                {isScanning && <Spinner size="xs" color="teal.400" />}
-              </HStack>
-
-              {topClaims.map((claim, index) => {
-                const referenceId = claimReferenceMap.get(claim.claim_id);
-                const reference = references.find(r => r.reference_content_id === referenceId);
-                const stanceColor = getStanceColor(claim.stance);
-
-                return (
-                  <Box
-                    key={claim.claim_id}
-                    p={4}
-                    bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.6)" : "rgba(248, 250, 252, 0.4)"}
-                    borderLeftRadius="18px"
-                    borderWidth="2px"
-                    borderColor={`${stanceColor}.500`}
-                    boxShadow={colorMode === "dark"
-                      ? `0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)`
-                      : `0 12px 36px rgba(0, 0, 0, 0.08), 0 6px 20px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 2px 0 rgba(255, 255, 255, 0.9)`
-                    }
-                    position="relative"
-                    overflow="hidden"
-                    _hover={{
-                      transform: "translateY(-4px) translateZ(0)",
-                      boxShadow: colorMode === "dark"
-                        ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)`
-                        : `0 20px 48px rgba(0, 0, 0, 0.12), 0 10px 28px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 3px 0 rgba(255, 255, 255, 1)`,
-                    }}
-                    transition="all 0.2s ease"
-                  >
-                    {/* Curved left edge glow */}
-                    <Box
-                      position="absolute"
-                      left={0}
-                      top={0}
-                      width="24px"
-                      height="100%"
-                      background={colorMode === "dark"
-                        ? `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.4)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.4)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.4)" : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
-                        : `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.25)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.25)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.25)" : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
+                      borderWidth="2px"
+                      borderColor={`${stanceColor}.500`}
+                      borderStyle="dashed"
+                      boxShadow={
+                        colorMode === "dark"
+                          ? "0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                          : "0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04), 0 0 30px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95)"
                       }
-                      borderLeftRadius="18px"
-                      pointerEvents="none"
-                      zIndex={0}
-                    />
-                    <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
-                      <HStack spacing={2} wrap="wrap">
-                        <Badge colorScheme="blue" fontSize="xs">#{index + 1}</Badge>
-                        <Badge colorScheme={stanceColor} fontSize="xs">
-                          {getStanceLabel(claim.stance)}
-                        </Badge>
-                        <Tooltip label="Relevance score: -100 (strongly refutes) to +100 (strongly supports)">
-                          <Badge colorScheme="purple" fontSize="xs" cursor="help">
-                            Relevance: {Math.round(claim.relevanceScore)}
-                          </Badge>
-                        </Tooltip>
-                        <Tooltip label={`AI confidence in this assessment: ${Math.round((claim.confidence ?? 0) * 100)}%`}>
-                          <Badge colorScheme="teal" fontSize="xs" cursor="help">
-                            Confidence: {Math.round((claim.confidence ?? 0) * 100)}%
-                          </Badge>
-                        </Tooltip>
-                      </HStack>
-                    </HStack>
-
-                    <Text fontSize="sm" mb={2} color={colorMode === "dark" ? "gray.100" : "gray.800"}>{claim.claim_text}</Text>
-
-                    {reference && (
-                      <VStack align="start" spacing={1} mb={2}>
-                        <HStack spacing={2} align="center">
-                          <SourceCrest
-                            {...normalizeSourceProfile({
-                              publisher_name: reference.publisher_name,
-                              is_primary_source: reference.is_primary_source,
-                              media_source: reference.media_source,
-                              veracity_score: reference.publisher_veracity ?? undefined,
-                              admiralty_code: reference.admiralty_code ?? undefined,
-                            })}
-                            alignment={reference.alignment ?? null}
-                            size="sm"
-                            onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
-                          />
-                          <Text fontSize="xs" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.600"}>
-                            {reference.content_name}
-                          </Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Pub:</Text>
-                          <Text fontSize="2xs" color={reference.publisher_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
-                            {reference.publisher_name || "—"}
-                          </Text>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.4}>·</Text>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Auth:</Text>
-                          <Text fontSize="2xs" color={reference.author_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
-                            {reference.author_name?.trim() || "—"}
-                          </Text>
-                        </HStack>
-                      </VStack>
-                    )}
-
-                    {claim.rationale && (
-                      <Text fontSize="xs" color={colorMode === "dark" ? "gray.500" : "gray.600"} fontStyle="italic" mb={3}>
-                        {claim.rationale}
-                      </Text>
-                    )}
-
-                    <HStack spacing={2} mt={2} wrap="wrap" position="relative" zIndex={1}>
-                      <Button
-                        size="sm"
-                        bg={claim.hasLink ? "rgba(237, 137, 54, 0.12)" : "rgba(72, 187, 120, 0.12)"}
-                        border="1px solid"
-                        borderColor={claim.hasLink ? "rgba(237, 137, 54, 0.3)" : "rgba(72, 187, 120, 0.3)"}
-                        color={claim.hasLink ? "#ed8936" : "#48bb78"}
-                        boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-                        leftIcon={<span>{claim.hasLink ? "✏️" : "🔗"}</span>}
-                        onClick={() => handleOpenLinkOverlay(claim)}
-                        _hover={{
-                          bg: claim.hasLink ? "rgba(237, 137, 54, 0.18)" : "rgba(72, 187, 120, 0.18)",
-                          borderColor: claim.hasLink ? "rgba(237, 137, 54, 0.5)" : "rgba(72, 187, 120, 0.5)",
-                        }}
-                      >
-                        {claim.hasLink ? "Edit Link" : "Create Link"}
-                      </Button>
-                      {claim.hasLink && (
-                        <Button
-                          size="sm"
-                          bg="rgba(245, 101, 101, 0.12)"
-                          border="1px solid"
-                          borderColor="rgba(245, 101, 101, 0.3)"
-                          color="#f56565"
-                          boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-                          leftIcon={<span>🗑️</span>}
-                          onClick={async () => {
-                            if (confirm(`Delete link to "${claim.claim_text.substring(0, 50)}..."?`)) {
-                              await handleDeleteLink(claim.claim_id);
+                      position="relative"
+                      overflow="hidden"
+                      cursor={reference ? "pointer" : "default"}
+                      role={reference ? "button" : undefined}
+                      tabIndex={reference ? 0 : undefined}
+                      onClick={() => {
+                        if (reference) onFocusReference?.(referenceId);
+                      }}
+                      onKeyDown={(event) => {
+                        if (!reference) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onFocusReference?.(referenceId);
+                        }
+                      }}
+                      _hover={
+                        reference
+                          ? {
+                              transform: "translateY(-1px)",
+                              borderColor: `${stanceColor}.300`,
                             }
-                          }}
-                          _hover={{
-                            bg: "rgba(245, 101, 101, 0.18)",
-                            borderColor: "rgba(245, 101, 101, 0.5)",
-                          }}
-                        >
-                          Delete Link
-                        </Button>
+                          : undefined
+                      }
+                    >
+                      {/* Curved left edge glow */}
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top={0}
+                        width="24px"
+                        height="100%"
+                        background={
+                          colorMode === "dark"
+                            ? "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, transparent 100%)"
+                            : "linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, transparent 100%)"
+                        }
+                        borderLeftRadius="18px"
+                        pointerEvents="none"
+                        zIndex={0}
+                      />
+                      <HStack
+                        justify="space-between"
+                        mb={2}
+                        wrap="wrap"
+                        gap={1}
+                      >
+                        <HStack spacing={2} wrap="wrap">
+                          <Badge colorScheme="purple" fontSize="xs">
+                            DOCUMENT
+                          </Badge>
+                          <Badge colorScheme={stanceColor} fontSize="xs">
+                            {getStanceLabel(docStance)}
+                          </Badge>
+                          {docLink.support_level !== undefined &&
+                            docLink.support_level !== null && (
+                              <Tooltip label="Support level: -100 (refutes) to +100 (supports)">
+                                <Badge
+                                  colorScheme="blue"
+                                  fontSize="xs"
+                                  cursor="help"
+                                >
+                                  Bearing:{" "}
+                                  {Number(docLink.support_level) > 0 ? "+" : ""}
+                                  {Math.round(
+                                    Number(docLink.support_level) * 100,
+                                  )}
+                                </Badge>
+                              </Tooltip>
+                            )}
+                          {docLink.confidence !== undefined && (
+                            <Tooltip
+                              label={`AI confidence: ${Math.round(docLink.confidence * 100)}%`}
+                            >
+                              <Badge
+                                colorScheme="teal"
+                                fontSize="xs"
+                                cursor="help"
+                              >
+                                Confidence:{" "}
+                                {Math.round(docLink.confidence * 100)}%
+                              </Badge>
+                            </Tooltip>
+                          )}
+                        </HStack>
+                      </HStack>
+
+                      {reference && (
+                        <VStack align="start" spacing={1} mb={2}>
+                          <HStack spacing={2} align="center">
+                            <SourceCrest
+                              {...normalizeSourceProfile({
+                                publisher_name: reference.publisher_name,
+                                is_primary_source: reference.is_primary_source,
+                                media_source: reference.media_source,
+                                veracity_score:
+                                  reference.publisher_veracity ?? undefined,
+                                admiralty_code:
+                                  reference.admiralty_code ?? undefined,
+                              })}
+                              alignment={reference.alignment ?? null}
+                              size="sm"
+                              onClick={(e) => {
+                                e?.stopPropagation();
+                                setSourceDetailRef(reference);
+                              }}
+                            />
+                            <Text
+                              fontSize="sm"
+                              fontWeight="semibold"
+                              color={
+                                colorMode === "dark" ? "blue.300" : "blue.700"
+                              }
+                            >
+                              {reference.content_name}
+                            </Text>
+                          </HStack>
+                          {reference.url && (
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              isTruncated
+                            >
+                              {reference.url}
+                            </Text>
+                          )}
+                          <HStack spacing={1}>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.5}
+                            >
+                              Pub:
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color={
+                                reference.publisher_name
+                                  ? "var(--mr-text-muted)"
+                                  : "rgba(255,255,255,0.2)"
+                              }
+                              noOfLines={1}
+                            >
+                              {reference.publisher_name || "—"}
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.4}
+                            >
+                              ·
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.5}
+                            >
+                              Auth:
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color={
+                                reference.author_name
+                                  ? "var(--mr-text-muted)"
+                                  : "rgba(255,255,255,0.2)"
+                              }
+                              noOfLines={1}
+                            >
+                              {reference.author_name?.trim() || "—"}
+                            </Text>
+                          </HStack>
+                        </VStack>
                       )}
-                      {onSelectReferenceClaim && referenceId && (
+
+                      {docLink.rationale && (
+                        <Text
+                          fontSize="xs"
+                          color={colorMode === "dark" ? "gray.400" : "gray.700"}
+                          fontStyle="italic"
+                          mb={2}
+                        >
+                          <strong>Rationale:</strong> {docLink.rationale}
+                        </Text>
+                      )}
+
+                      {docLink.evidence_text && (
+                        <Box
+                          p={2}
+                          bg={colorMode === "dark" ? "gray.800" : "gray.50"}
+                          borderRadius="md"
+                          borderLeft="3px solid"
+                          borderColor={
+                            colorMode === "dark" ? "purple.500" : "purple.400"
+                          }
+                        >
+                          <Text
+                            fontSize="xs"
+                            color={
+                              colorMode === "dark" ? "gray.300" : "gray.700"
+                            }
+                            fontStyle="italic"
+                          >
+                            <strong>Evidence Snippet:</strong>
+                            <br />"{docLink.evidence_text}"
+                          </Text>
+                        </Box>
+                      )}
+                    </Box>
+                  );
+                })}
+              </VStack>
+            )}
+
+            {/* Results list */}
+            {!isLoadingExisting && topClaims.length > 0 && (
+              <VStack spacing={3} align="stretch">
+                <HStack justify="space-between" mb={1}>
+                  <Text
+                    fontSize="xs"
+                    color="gray.500"
+                    fontStyle="italic"
+                    fontWeight="semibold"
+                  >
+                    🔗 {topClaims.length} Claim-Level Link
+                    {topClaims.length !== 1 ? "s" : ""}
+                  </Text>
+                  {isScanning && <Spinner size="xs" color="teal.400" />}
+                </HStack>
+
+                {topClaims.map((claim, index) => {
+                  const referenceId = claimReferenceMap.get(claim.claim_id);
+                  const reference = references.find(
+                    (r) => r.reference_content_id === referenceId,
+                  );
+                  const stanceColor = getStanceColor(claim.stance);
+
+                  return (
+                    <Box
+                      key={claim.claim_id}
+                      p={4}
+                      bg={
+                        colorMode === "dark"
+                          ? "rgba(15, 25, 40, 0.6)"
+                          : "rgba(248, 250, 252, 0.4)"
+                      }
+                      borderLeftRadius="18px"
+                      borderWidth="2px"
+                      borderColor={`${stanceColor}.500`}
+                      boxShadow={
+                        colorMode === "dark"
+                          ? `0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)`
+                          : `0 12px 36px rgba(0, 0, 0, 0.08), 0 6px 20px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 2px 0 rgba(255, 255, 255, 0.9)`
+                      }
+                      position="relative"
+                      overflow="hidden"
+                      _hover={{
+                        transform: "translateY(-4px) translateZ(0)",
+                        boxShadow:
+                          colorMode === "dark"
+                            ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)`
+                            : `0 20px 48px rgba(0, 0, 0, 0.12), 0 10px 28px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 3px 0 rgba(255, 255, 255, 1)`,
+                      }}
+                      transition="all 0.2s ease"
+                    >
+                      {/* Curved left edge glow */}
+                      <Box
+                        position="absolute"
+                        left={0}
+                        top={0}
+                        width="24px"
+                        height="100%"
+                        background={
+                          colorMode === "dark"
+                            ? `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.4)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.4)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.4)" : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
+                            : `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.25)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.25)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.25)" : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
+                        }
+                        borderLeftRadius="18px"
+                        pointerEvents="none"
+                        zIndex={0}
+                      />
+                      <HStack
+                        justify="space-between"
+                        mb={2}
+                        wrap="wrap"
+                        gap={1}
+                      >
+                        <HStack spacing={2} wrap="wrap">
+                          <Badge colorScheme="blue" fontSize="xs">
+                            #{index + 1}
+                          </Badge>
+                          <Badge colorScheme={stanceColor} fontSize="xs">
+                            {getStanceLabel(claim.stance)}
+                          </Badge>
+                          <Tooltip label="Evidence bearing: -100 (strongly refutes) to +100 (strongly supports)">
+                            <Badge
+                              colorScheme="purple"
+                              fontSize="xs"
+                              cursor="help"
+                            >
+                              Bearing:{" "}
+                              {Math.round((claim.support_level ?? 0) * 100)}
+                            </Badge>
+                          </Tooltip>
+                          <Tooltip
+                            label={`AI confidence in this assessment: ${Math.round((claim.confidence ?? 0) * 100)}%`}
+                          >
+                            <Badge
+                              colorScheme="teal"
+                              fontSize="xs"
+                              cursor="help"
+                            >
+                              Confidence:{" "}
+                              {Math.round((claim.confidence ?? 0) * 100)}%
+                            </Badge>
+                          </Tooltip>
+                        </HStack>
+                      </HStack>
+
+                      <Text
+                        fontSize="sm"
+                        mb={2}
+                        color={colorMode === "dark" ? "gray.100" : "gray.800"}
+                      >
+                        {claim.claim_text}
+                      </Text>
+
+                      {reference && (
+                        <VStack align="start" spacing={1} mb={2}>
+                          <HStack spacing={2} align="center">
+                            <SourceCrest
+                              {...normalizeSourceProfile({
+                                publisher_name: reference.publisher_name,
+                                is_primary_source: reference.is_primary_source,
+                                media_source: reference.media_source,
+                                veracity_score:
+                                  reference.publisher_veracity ?? undefined,
+                                admiralty_code:
+                                  reference.admiralty_code ?? undefined,
+                              })}
+                              alignment={reference.alignment ?? null}
+                              size="sm"
+                              onClick={(e) => {
+                                e?.stopPropagation();
+                                setSourceDetailRef(reference);
+                              }}
+                            />
+                            <Text
+                              fontSize="xs"
+                              fontWeight="semibold"
+                              color={
+                                colorMode === "dark" ? "blue.300" : "blue.600"
+                              }
+                            >
+                              {reference.content_name}
+                            </Text>
+                          </HStack>
+                          <HStack spacing={1}>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.5}
+                            >
+                              Pub:
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color={
+                                reference.publisher_name
+                                  ? "var(--mr-text-muted)"
+                                  : "rgba(255,255,255,0.2)"
+                              }
+                              noOfLines={1}
+                            >
+                              {reference.publisher_name || "—"}
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.4}
+                            >
+                              ·
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color="var(--mr-text-muted)"
+                              opacity={0.5}
+                            >
+                              Auth:
+                            </Text>
+                            <Text
+                              fontSize="2xs"
+                              color={
+                                reference.author_name
+                                  ? "var(--mr-text-muted)"
+                                  : "rgba(255,255,255,0.2)"
+                              }
+                              noOfLines={1}
+                            >
+                              {reference.author_name?.trim() || "—"}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                      )}
+
+                      {claim.rationale && (
+                        <Text
+                          fontSize="xs"
+                          color={colorMode === "dark" ? "gray.500" : "gray.600"}
+                          fontStyle="italic"
+                          mb={3}
+                        >
+                          {claim.rationale}
+                        </Text>
+                      )}
+
+                      <HStack
+                        spacing={2}
+                        mt={2}
+                        wrap="wrap"
+                        position="relative"
+                        zIndex={1}
+                      >
                         <Button
                           size="sm"
-                          bg="rgba(66, 153, 225, 0.12)"
+                          bg={
+                            claim.hasLink
+                              ? "rgba(237, 137, 54, 0.12)"
+                              : "rgba(72, 187, 120, 0.12)"
+                          }
                           border="1px solid"
-                          borderColor="rgba(66, 153, 225, 0.3)"
-                          color="#4299e1"
+                          borderColor={
+                            claim.hasLink
+                              ? "rgba(237, 137, 54, 0.3)"
+                              : "rgba(72, 187, 120, 0.3)"
+                          }
+                          color={claim.hasLink ? "#ed8936" : "#48bb78"}
                           boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-                          onClick={() => onSelectReferenceClaim(claim, referenceId)}
+                          leftIcon={<span>{claim.hasLink ? "✏️" : "🔗"}</span>}
+                          onClick={() => handleOpenLinkOverlay(claim)}
                           _hover={{
-                            bg: "rgba(66, 153, 225, 0.18)",
-                            borderColor: "rgba(66, 153, 225, 0.5)",
+                            bg: claim.hasLink
+                              ? "rgba(237, 137, 54, 0.18)"
+                              : "rgba(72, 187, 120, 0.18)",
+                            borderColor: claim.hasLink
+                              ? "rgba(237, 137, 54, 0.5)"
+                              : "rgba(72, 187, 120, 0.5)",
                           }}
                         >
-                          View Source
+                          {claim.hasLink ? "Edit Link" : "Create Link"}
                         </Button>
-                      )}
-                    </HStack>
-                  </Box>
-                );
-              })}
-            </VStack>
-          )}
-        </ModalBody>
+                        {claim.hasLink && (
+                          <Button
+                            size="sm"
+                            bg="rgba(245, 101, 101, 0.12)"
+                            border="1px solid"
+                            borderColor="rgba(245, 101, 101, 0.3)"
+                            color="#f56565"
+                            boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                            leftIcon={<span>🗑️</span>}
+                            onClick={async () => {
+                              if (
+                                confirm(
+                                  `Delete link to "${claim.claim_text.substring(0, 50)}..."?`,
+                                )
+                              ) {
+                                await handleDeleteLink(claim.claim_id);
+                              }
+                            }}
+                            _hover={{
+                              bg: "rgba(245, 101, 101, 0.18)",
+                              borderColor: "rgba(245, 101, 101, 0.5)",
+                            }}
+                          >
+                            Delete Link
+                          </Button>
+                        )}
+                        {onSelectReferenceClaim && referenceId && (
+                          <Button
+                            size="sm"
+                            bg="rgba(66, 153, 225, 0.12)"
+                            border="1px solid"
+                            borderColor="rgba(66, 153, 225, 0.3)"
+                            color="#4299e1"
+                            boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                            onClick={() =>
+                              onSelectReferenceClaim(claim, referenceId)
+                            }
+                            _hover={{
+                              bg: "rgba(66, 153, 225, 0.18)",
+                              borderColor: "rgba(66, 153, 225, 0.5)",
+                            }}
+                          >
+                            View Source
+                          </Button>
+                        )}
+                      </HStack>
+                    </Box>
+                  );
+                })}
+              </VStack>
+            )}
+          </ModalBody>
 
-        <ModalFooter
-          borderTopWidth="2px"
-          borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.3)" : "rgba(71, 85, 105, 0.15)"}
-          bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.8)" : "rgba(255, 255, 255, 0.6)"}
-        >
-          <HStack spacing={3} w="100%" justify="space-between">
-            <Button
-              bg="rgba(72, 187, 120, 0.12)"
-              border="1px solid"
-              borderColor="rgba(72, 187, 120, 0.3)"
-              color="#48bb78"
-              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-              onClick={() => {
-                setScanMode('quick');
-                runRelevanceScan('quick');
-              }}
-              isLoading={isScanning}
-              loadingText="Scanning…"
-              isDisabled={isBusy}
-              size="sm"
-              leftIcon={<span>⚡</span>}
-              _hover={{
-                bg: "rgba(72, 187, 120, 0.18)",
-                borderColor: "rgba(72, 187, 120, 0.5)",
-              }}
-            >
-              Quick Scan
-            </Button>
-            <Button
-              bg="rgba(167, 139, 250, 0.12)"
-              border="1px solid"
-              borderColor="rgba(167, 139, 250, 0.3)"
-              color="#a78bfa"
-              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-              onClick={() => {
-                setScanMode('deep');
-                runRelevanceScan('deep');
-              }}
-              isLoading={isScanning}
-              loadingText="Scanning…"
-              isDisabled={isBusy}
-              size="sm"
-              leftIcon={<span>🔍</span>}
-              _hover={{
-                bg: "rgba(167, 139, 250, 0.18)",
-                borderColor: "rgba(167, 139, 250, 0.5)",
-              }}
-            >
-              Deep Scan
-            </Button>
-            <Button
-              bg="rgba(160, 174, 192, 0.12)"
-              border="1px solid"
-              borderColor="rgba(160, 174, 192, 0.3)"
-              color="#a0aec0"
-              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-              onClick={onClose}
-              size="sm"
-              _hover={{
-                bg: "rgba(160, 174, 192, 0.18)",
-                borderColor: "rgba(160, 174, 192, 0.5)",
-              }}
-            >
-              Close
-            </Button>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          <ModalFooter
+            borderTopWidth="2px"
+            borderColor={
+              colorMode === "dark"
+                ? "rgba(113, 219, 255, 0.3)"
+                : "rgba(71, 85, 105, 0.15)"
+            }
+            bg={
+              colorMode === "dark"
+                ? "rgba(10, 15, 25, 0.8)"
+                : "rgba(255, 255, 255, 0.6)"
+            }
+          >
+            <HStack spacing={3} w="100%" justify="space-between">
+              <Button
+                bg="rgba(72, 187, 120, 0.12)"
+                border="1px solid"
+                borderColor="rgba(72, 187, 120, 0.3)"
+                color="#48bb78"
+                boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                onClick={() => {
+                  setScanMode("quick");
+                  runRelevanceScan("quick");
+                }}
+                isLoading={isScanning}
+                loadingText="Scanning…"
+                isDisabled={isBusy}
+                size="sm"
+                leftIcon={<span>⚡</span>}
+                _hover={{
+                  bg: "rgba(72, 187, 120, 0.18)",
+                  borderColor: "rgba(72, 187, 120, 0.5)",
+                }}
+              >
+                Quick Scan
+              </Button>
+              <Button
+                bg="rgba(167, 139, 250, 0.12)"
+                border="1px solid"
+                borderColor="rgba(167, 139, 250, 0.3)"
+                color="#a78bfa"
+                boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                onClick={() => {
+                  setScanMode("deep");
+                  runRelevanceScan("deep");
+                }}
+                isLoading={isScanning}
+                loadingText="Scanning…"
+                isDisabled={isBusy}
+                size="sm"
+                leftIcon={<span>🔍</span>}
+                _hover={{
+                  bg: "rgba(167, 139, 250, 0.18)",
+                  borderColor: "rgba(167, 139, 250, 0.5)",
+                }}
+              >
+                Deep Scan
+              </Button>
+              <Button
+                bg="rgba(160, 174, 192, 0.12)"
+                border="1px solid"
+                borderColor="rgba(160, 174, 192, 0.3)"
+                color="#a0aec0"
+                boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                onClick={onClose}
+                size="sm"
+                _hover={{
+                  bg: "rgba(160, 174, 192, 0.18)",
+                  borderColor: "rgba(160, 174, 192, 0.5)",
+                }}
+              >
+                Close
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-    {sourceDetailRef && (() => {
-      const profile = normalizeSourceProfile({
-        publisher_name: sourceDetailRef.publisher_name,
-        is_primary_source: sourceDetailRef.is_primary_source,
-        media_source: sourceDetailRef.media_source,
-        veracity_score: sourceDetailRef.publisher_veracity ?? undefined,
-      });
-      return (
-        <SourceDetailModal
-          isOpen={!!sourceDetailRef}
-          onClose={() => setSourceDetailRef(null)}
-          publisherId={sourceDetailRef.publisher_id}
-          contentId={sourceDetailRef.reference_content_id}
-          sourceUrl={sourceDetailRef.url ?? undefined}
-          publisherName={sourceDetailRef.publisher_name ?? ""}
-          sourceType={profile.sourceType}
-          reliability={profile.reliability}
-          admiraltyCode={sourceDetailRef.admiralty_code ?? undefined}
-        />
-      );
-    })()}
+      {sourceDetailRef &&
+        (() => {
+          const profile = normalizeSourceProfile({
+            publisher_name: sourceDetailRef.publisher_name,
+            is_primary_source: sourceDetailRef.is_primary_source,
+            media_source: sourceDetailRef.media_source,
+            veracity_score: sourceDetailRef.publisher_veracity ?? undefined,
+          });
+          return (
+            <SourceDetailModal
+              isOpen={!!sourceDetailRef}
+              onClose={() => setSourceDetailRef(null)}
+              publisherId={sourceDetailRef.publisher_id}
+              contentId={sourceDetailRef.reference_content_id}
+              sourceUrl={sourceDetailRef.url ?? undefined}
+              publisherName={sourceDetailRef.publisher_name ?? ""}
+              sourceType={profile.sourceType}
+              reliability={profile.reliability}
+              admiraltyCode={sourceDetailRef.admiralty_code ?? undefined}
+            />
+          );
+        })()}
     </>
   );
 };

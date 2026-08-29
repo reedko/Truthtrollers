@@ -119,8 +119,9 @@ export async function scrapeTask(
     // fallback: get readable text from HTML
     if (!text) {
       // Detect site type for intelligent selector priority
-      const isJournalSite = url.includes('sciencedirect.com') || url.includes('elsevier.com');
-      const isSubstack = url.includes('substack.com');
+      const isJournalSite =
+        url.includes("sciencedirect.com") || url.includes("elsevier.com");
+      const isSubstack = url.includes("substack.com");
 
       // Load raw HTML and remove scripts/styles (but keep content structure)
       const $raw = cheerio.load(rawHtml);
@@ -134,31 +135,115 @@ export async function scrapeTask(
       // Each entry: { selector, useRaw, minChars, description }
       const selectorCascade = [
         // Substack-specific selectors (only tested for Substack URLs)
-        ...(isSubstack ? [
-          { selector: ".available-content .body.markup", useRaw: true, minChars: 100, desc: "Substack article body" },
-          { selector: ".available-content", useRaw: true, minChars: 100, desc: "Substack content container" },
-        ] : []),
+        ...(isSubstack
+          ? [
+              {
+                selector: ".available-content .body.markup",
+                useRaw: true,
+                minChars: 100,
+                desc: "Substack article body",
+              },
+              {
+                selector: ".available-content",
+                useRaw: true,
+                minChars: 100,
+                desc: "Substack content container",
+              },
+            ]
+          : []),
 
         // Journal-specific selectors (only tested for journal URLs)
-        ...(isJournalSite ? [
-          { selector: ".Abstracts, .Body", useRaw: true, minChars: 100, desc: "Journal abstract + body (raw)" },
-          { selector: "#abstracts, #body", useRaw: false, minChars: 100, desc: "Journal abstract + body (clean)" },
-          { selector: ".Abstracts", useRaw: false, minChars: 100, desc: "Journal abstract only" },
-          { selector: ".Body", useRaw: false, minChars: 100, desc: "Journal body only" },
-          { selector: "#body", useRaw: false, minChars: 100, desc: "Journal body ID" },
-        ] : []),
+        ...(isJournalSite
+          ? [
+              {
+                selector: ".Abstracts, .Body",
+                useRaw: true,
+                minChars: 100,
+                desc: "Journal abstract + body (raw)",
+              },
+              {
+                selector: "#abstracts, #body",
+                useRaw: false,
+                minChars: 100,
+                desc: "Journal abstract + body (clean)",
+              },
+              {
+                selector: ".Abstracts",
+                useRaw: false,
+                minChars: 100,
+                desc: "Journal abstract only",
+              },
+              {
+                selector: ".Body",
+                useRaw: false,
+                minChars: 100,
+                desc: "Journal body only",
+              },
+              {
+                selector: "#body",
+                useRaw: false,
+                minChars: 100,
+                desc: "Journal body ID",
+              },
+            ]
+          : []),
 
         // Generic article selectors (tested for all URLs)
-        { selector: "article", useRaw: false, minChars: 200, desc: "HTML5 article tag" },
-        { selector: ".article-content", useRaw: false, minChars: 200, desc: "Article content class" },
-        { selector: ".post-content", useRaw: false, minChars: 200, desc: "Post content class" },
-        { selector: ".entry-content", useRaw: false, minChars: 200, desc: "Entry content class" },
-        { selector: ".article-body", useRaw: false, minChars: 200, desc: "Article body class" },
-        { selector: ".story-body", useRaw: false, minChars: 200, desc: "Story body class" },
-        { selector: '[role="main"]', useRaw: false, minChars: 200, desc: "Main role (may include nav)" },
+        {
+          selector: "article",
+          useRaw: false,
+          minChars: 200,
+          desc: "HTML5 article tag",
+        },
+        {
+          selector: ".article-content",
+          useRaw: false,
+          minChars: 200,
+          desc: "Article content class",
+        },
+        {
+          selector: ".post-content",
+          useRaw: false,
+          minChars: 200,
+          desc: "Post content class",
+        },
+        {
+          selector: ".entry-content",
+          useRaw: false,
+          minChars: 200,
+          desc: "Entry content class",
+        },
+        {
+          selector: ".article-body",
+          useRaw: false,
+          minChars: 200,
+          desc: "Article body class",
+        },
+        {
+          selector: ".story-body",
+          useRaw: false,
+          minChars: 200,
+          desc: "Story body class",
+        },
+        {
+          selector: '[role="main"]',
+          useRaw: false,
+          minChars: 200,
+          desc: "Main role (may include nav)",
+        },
         { selector: "main", useRaw: false, minChars: 200, desc: "Main tag" },
-        { selector: ".content", useRaw: false, minChars: 200, desc: "Content class" },
-        { selector: "#content", useRaw: false, minChars: 200, desc: "Content ID" },
+        {
+          selector: ".content",
+          useRaw: false,
+          minChars: 200,
+          desc: "Content class",
+        },
+        {
+          selector: "#content",
+          useRaw: false,
+          minChars: 200,
+          desc: "Content ID",
+        },
       ];
 
       let extracted = "";
@@ -166,11 +251,15 @@ export async function scrapeTask(
         const $ = useRaw ? $raw : $clean;
         const content = $(selector).text().trim();
         const htmlType = useRaw ? "raw" : "clean";
-        logger.log(`🔍 [scrapeTask] Testing "${selector}" (${htmlType}): ${content.length} chars - ${desc}`);
+        logger.log(
+          `🔍 [scrapeTask] Testing "${selector}" (${htmlType}): ${content.length} chars - ${desc}`,
+        );
 
         if (content.length > minChars) {
           extracted = content;
-          logger.log(`📝 [scrapeTask] ✓ Selected "${selector}" (${htmlType}): ${content.length} chars`);
+          logger.log(
+            `📝 [scrapeTask] ✓ Selected "${selector}" (${htmlType}): ${content.length} chars`,
+          );
           break;
         }
       }
@@ -184,14 +273,18 @@ export async function scrapeTask(
       }
 
       if (extracted.length > 60000) {
-        logger.log(`⚠️ [scrapeTask] Text truncated from ${extracted.length} to 60000 chars`);
+        logger.log(
+          `⚠️ [scrapeTask] Text truncated from ${extracted.length} to 60000 chars`,
+        );
         extracted = extracted.slice(0, 60000);
       }
 
       text = extracted;
     }
 
-    logger.log(`📝 [scrapeTask] Final extracted text: ${text.length} chars, first 200: "${text.substring(0, 200).replace(/\s+/g, ' ')}"`);
+    logger.log(
+      `📝 [scrapeTask] Final extracted text: ${text.length} chars, first 200: "${text.substring(0, 200).replace(/\s+/g, " ")}"`,
+    );
 
     // ─────────────────────────────────────────────
     // 3. EXTRACT METADATA: title, authors, publisher

@@ -983,7 +983,11 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             "background-fit": "contain",
             "background-clip": "none",
             "background-fill": "solid",
-            "background-color": "rgba(0,0,0,0)",
+            "background-color": "transparent",
+            // Cytoscape ignores the alpha channel baked into background-color
+            // and only respects this separate opacity property - without it
+            // the "transparent" rectangle renders as opaque black.
+            "background-opacity": 0,
             "border-width": 0,
             "font-size": "18px",
             "font-weight": 700,

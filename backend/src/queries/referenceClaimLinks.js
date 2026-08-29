@@ -6,11 +6,14 @@ export async function insertReferenceClaimLink(query, row) {
     reference_content_id,
     stance,
     score = null,
+    confidence = null,
+    support_level = null,
     rationale = null,
     evidence_text = null,
     evidence_offsets = null,
     created_by_ai = 1,
     verified_by_user_id = null,
+    scrape_status = "full",
   } = row;
 
   if (!claim_id || !reference_content_id || !stance) {
@@ -19,21 +22,37 @@ export async function insertReferenceClaimLink(query, row) {
   }
 
   const sql = `
-    INSERT INTO reference_claim_links
-      (claim_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+  INSERT INTO reference_claim_links
+  (
+    claim_id,
+    reference_content_id,
+    stance,
+    score,
+    confidence,
+    support_level,
+    rationale,
+    evidence_text,
+    evidence_offsets,
+    created_by_ai,
+    verified_by_user_id,
+    scrape_status
+  )
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`;
 
   const params = [
     claim_id,
     reference_content_id,
     stance,
     score,
+    confidence,
+    support_level,
     rationale,
     evidence_text,
     evidence_offsets,
     created_by_ai,
     verified_by_user_id,
+    scrape_status,
   ];
 
   try {
@@ -53,31 +72,42 @@ export async function insertReferenceClaimLinksBulk(query, items = []) {
   }
 
   console.log(
-    `[insertReferenceClaimLinksBulk] Preparing to insert ${items.length} items`
+    `[insertReferenceClaimLinksBulk] Preparing to insert ${items.length} items`,
   );
 
-  const sql = `
-    INSERT INTO reference_claim_links
-      (claim_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
-    VALUES ?
-  `;
+  const sql = `INSERT INTO reference_claim_links
+(
+  claim_id,
+  reference_content_id,
+  stance,
+  score,
+  confidence,
+  support_level,
+  rationale,
+  evidence_text,
+  evidence_offsets,
+  created_by_ai,
+  verified_by_user_id,
+  scrape_status
+)
+VALUES ?`;
 
   const values = items.map((row) => [
     row.claim_id,
     row.reference_content_id,
     row.stance,
     row.score ?? null,
+    row.confidence ?? null,
+    row.support_level ?? null,
     row.rationale ?? null,
     row.evidence_text ?? null,
     row.evidence_offsets ?? null,
     row.created_by_ai ?? 1,
     row.verified_by_user_id ?? null,
+    row.scrape_status ?? "full",
   ]);
 
-  console.log(
-    "[insertReferenceClaimLinksBulk] First row values:",
-    values[0]
-  );
+  console.log("[insertReferenceClaimLinksBulk] First row values:", values[0]);
 
   try {
     const result = await query(sql, [values]);
@@ -85,10 +115,10 @@ export async function insertReferenceClaimLinksBulk(query, items = []) {
     const firstId = result.insertId;
     const insertedIds = Array.from(
       { length: result.affectedRows },
-      (_, i) => firstId + i
+      (_, i) => firstId + i,
     );
     console.log(
-      `[insertReferenceClaimLinksBulk] Successfully inserted ${result.affectedRows} rows`
+      `[insertReferenceClaimLinksBulk] Successfully inserted ${result.affectedRows} rows`,
     );
     return insertedIds;
   } catch (err) {

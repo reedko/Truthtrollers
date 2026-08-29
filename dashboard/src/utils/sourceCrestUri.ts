@@ -17,13 +17,16 @@ import {
   type SourceAlignment,
 } from "./sourceCrestVisual";
 
-let uidCounter = 0;
-
 function buildSvg(admiraltyCode: string | undefined, sizePx: number, alignment: SourceAlignment | null): string {
   const { letter, number } = parseAdmiraltyCode(admiraltyCode);
   const c = ADMIRALTY_COLORS[letter] ?? ADMIRALTY_COLORS["Ø"];
   const h = Math.round(sizePx * 1.25);
-  const uid = `scu-${uidCounter++}`;
+  // Fixed id: each data URI is a standalone SVG document, so its url(#...)
+  // refs only need to be unique within that one document - a per-call
+  // counter here made the returned string change on every invocation, which
+  // broke Cytoscape's background-image caching (it never saw a stable value
+  // to finish loading, so the shield never painted).
+  const uid = "scu";
 
   const hasSash = !!alignment;
   const riskScore = clampAlignmentRiskScore(alignment?.riskScore);

@@ -7,18 +7,9 @@ import React, {
 } from "react";
 import { Box } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
+import type { WorkspaceClaimLink } from "./evidenceLinkPresentation";
 
-export interface ClaimLink {
-  id?: string;
-  claim_link_id?: number; // for future use
-  claimId: number; // target/task claim
-  referenceId: number; // reference content id
-  sourceClaimId: number; // 👈 new
-  relation: "support" | "refute" | "nuance";
-  confidence: number;
-  notes?: string;
-  verimeter_score?: number;
-}
+export type ClaimLink = WorkspaceClaimLink;
 
 interface RelationshipMapProps {
   contentId: number;
@@ -29,9 +20,9 @@ interface RelationshipMapProps {
   height: number;
   leftX: number;
   rightX: number;
-  onLineClick?: (link: ClaimLink) => void;
-  onLineHover?: (link: ClaimLink) => void;
-  claimLinks: ClaimLink[];
+  onLineClick?: (link: WorkspaceClaimLink) => void;
+  onLineHover?: (link: WorkspaceClaimLink) => void;
+  claimLinks: WorkspaceClaimLink[];
   isModalOpen?: boolean;
 }
 

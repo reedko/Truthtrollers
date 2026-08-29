@@ -1756,7 +1756,12 @@ async function collectDocxImages(modules) {
     item?.enabled !== false &&
     !item?.hidden &&
     item?.id !== "publisher_admiralty_crests" &&
-    item?.data?.snapshot_source === "workspace_dom_capture"
+    // Either a manually-captured Workspace/KnowGraph screenshot, or an
+    // auto-generated visual asset (verimeter/source-landscape/claim-link
+    // SVGs from generateVisualAssetForModule) - both are real, renderable
+    // images by the time the module reaches export.
+    (item?.data?.snapshot_source === "workspace_dom_capture" ||
+      !!(item?.asset?.image_url || item?.asset?.public_image_url))
   )) {
     const localPath = localAssetPathFromUrl(module.asset?.public_image_url || module.asset?.image_url);
     if (!localPath) continue;

@@ -74,4 +74,7 @@ backend/assets/images/tutorials/*
 backend/temp/
 backend/temp-out/
 backend/logs/
+backend/scripts/Razor-claims-evaluations/
+backend/scripts/referenceSemanticInputDiagnostic-results/
+backend/scripts/referenceSemanticInputDiagnostic.last-run.txt
 *.log
