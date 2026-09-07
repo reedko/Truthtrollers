@@ -188,7 +188,7 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
                   <Alert status="info">
                     <AlertIcon />
-                    Create a new TruthTrollers discussion thread. You can link it
+                    Create a new VeriStrata discussion thread. You can link it
                     to a task or content after creation.
                   </Alert>
                 </VStack>
@@ -208,7 +208,7 @@ const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
                   <Alert status="info">
                     <AlertIcon />
-                    Import an existing X/Twitter thread to discuss it in TruthTrollers.
+                    Import an existing X/Twitter thread to discuss it in VeriStrata.
                     Requires X account connection.
                   </Alert>
                 </VStack>

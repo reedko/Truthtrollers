@@ -547,7 +547,7 @@ const SocialAdminPanel: React.FC = () => {
                       🚀 Connect Your X Account Now
                     </Button>
                     <Text fontSize="sm" color="gray.600" textAlign="center">
-                      You'll be redirected to X to authorize TruthTrollers
+                      You'll be redirected to X to authorize VeriStrata
                     </Text>
                   </VStack>
                 </Box>

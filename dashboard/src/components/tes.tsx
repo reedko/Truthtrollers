@@ -551,7 +551,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   : 0;
               const path =
                 {
-                  0: `ttlogo11.png`,
+                  0: `brand/logo.png`,
                   1: `authors/author_id_${id.replace("autho-", "")}.png`,
                   2: `content/content_id_${id.replace("conte-", "")}.png`,
                   3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,

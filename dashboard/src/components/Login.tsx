@@ -202,7 +202,7 @@ const Login: React.FC = () => {
       >
         <RouterLink to="/">
           <Image
-            src={`${API_BASE_URL}/assets/ttlogo11.png`}
+            src={`${API_BASE_URL}/assets/images/brand/logo.png`}
             boxSize="120px"
             objectFit="contain"
             mx="auto"

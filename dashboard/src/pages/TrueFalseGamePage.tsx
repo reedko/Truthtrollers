@@ -105,7 +105,7 @@ const TrueFalseQuizGame: React.FC = () => {
           </Heading>
           <Text color="#f1f5f9" mt={2}>
             Decide whether each claim is TRUE or FALSE based on what you know.
-            Your answers will be compared to the TruthTrollers rating database.
+            Your answers will be compared to the VeriStrata rating database.
           </Text>
         </VStack>
       </Box>

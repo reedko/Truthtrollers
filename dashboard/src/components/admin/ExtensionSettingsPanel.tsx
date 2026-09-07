@@ -222,7 +222,7 @@ export default function ExtensionSettingsPanel() {
                 <Text fontSize="sm" color="gray.300">
                   Scores are calculated only from human user evaluations and evidence
                   links. This represents the crowd-sourced verification efforts of the
-                  TruthTrollers community.
+                  VeriStrata community.
                 </Text>
               </Box>
 

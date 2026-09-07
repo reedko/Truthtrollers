@@ -9,6 +9,7 @@ import TaskCard from "./TaskCard";
 import TaskBar from "./TaskBar";
 import ReactDOM from "react-dom/client";
 import VisionTheme from "../components/themes/VisionTheme";
+import { getBrandFontFaceCss } from "./themes/brandTokens";
 import browser from "webextension-polyfill";
 
 // Create an Emotion cache that injects styles into our popup container
@@ -77,7 +78,7 @@ function initPopup() {
   let popupRoot = shadowRoot.getElementById("tt-popup-root") as HTMLElement | null;
   if (!popupRoot) {
     const styles = document.createElement("style");
-    styles.textContent = `:host { all: initial; }\n${popupCss}\n${minorityReportCss}\n${consensusCss}`;
+    styles.textContent = `:host { all: initial; }\n${getBrandFontFaceCss()}\n${popupCss}\n${minorityReportCss}\n${consensusCss}`;
     shadowRoot.appendChild(styles);
     popupRoot = document.createElement("div");
     popupRoot.id = "tt-popup-root";

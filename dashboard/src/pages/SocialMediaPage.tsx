@@ -103,7 +103,7 @@ const SocialMediaPage: React.FC = () => {
           <Box>
             <AlertTitle>What is this?</AlertTitle>
             <AlertDescription>
-              This feature uses AI to convert TruthTrollers analysis into structured,
+              This feature uses AI to convert VeriStrata analysis into structured,
               evidence-based discussion units that can be posted to X/Twitter as threaded
               replies. Each unit includes claims, supporting evidence, counter evidence,
               and summaries with source citations.
@@ -143,7 +143,7 @@ const SocialMediaPage: React.FC = () => {
                     Connect X Account
                   </Button>
                   <Text fontSize="sm" color="gray.600">
-                    You'll be redirected to X to authorize TruthTrollers
+                    You'll be redirected to X to authorize VeriStrata
                   </Text>
                 </VStack>
               )

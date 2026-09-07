@@ -80,7 +80,7 @@ const LandingPage: React.FC = () => {
             {/* Logo */}
             <HStack spacing={4}>
               <Image
-                src={`${API_BASE_URL}/assets/ttlogo11.png`}
+                src={`${API_BASE_URL}/assets/images/brand/logo.png`}
                 boxSize="120px"
                 objectFit="contain"
               />
@@ -90,7 +90,7 @@ const LandingPage: React.FC = () => {
                 bgClip="text"
                 fontWeight="extrabold"
               >
-                TruthTrollers
+                VeriStrata
               </Heading>
             </HStack>
 
@@ -191,7 +191,7 @@ const LandingPage: React.FC = () => {
                 fontSize="xl"
                 color={colorMode === "dark" ? "gray.300" : "gray.600"}
               >
-                TruthTrollers is a collaborative platform for investigating
+                VeriStrata is a collaborative platform for investigating
                 claims, analyzing evidence, and building a shared understanding
                 of reality.
               </Text>
@@ -224,7 +224,7 @@ const LandingPage: React.FC = () => {
             <Box>
               <Image
                 src={`${API_BASE_URL}/assets/nebula.png`}
-                alt="TruthTrollers Platform"
+                alt="VeriStrata Platform"
                 borderRadius="2xl"
                 boxShadow="2xl"
               />
@@ -366,13 +366,13 @@ const LandingPage: React.FC = () => {
       >
         <Container maxW="1400px">
           <VStack align="flex-start" spacing={6} maxW="800px" mx="auto">
-              <Heading size="2xl">About TruthTrollers</Heading>
+              <Heading size="2xl">About VeriStrata</Heading>
               <Text
                 fontSize="lg"
                 color={colorMode === "dark" ? "gray.300" : "gray.600"}
               >
                 In an age of information overload and misinformation,
-                TruthTrollers provides the tools and community you need to
+                VeriStrata provides the tools and community you need to
                 navigate complex topics and uncover the truth.
               </Text>
               <Text
@@ -431,7 +431,7 @@ const LandingPage: React.FC = () => {
               color={colorMode === "dark" ? "gray.300" : "gray.600"}
               maxW="800px"
             >
-              TruthTrollers is more than a platform—it's a movement towards a
+              VeriStrata is more than a platform—it's a movement towards a
               more informed, critical-thinking society.
             </Text>
             <Button
@@ -464,7 +464,7 @@ const LandingPage: React.FC = () => {
             gap={4}
           >
             <Text color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-              © 2026 TruthTrollers. All rights reserved.
+              © 2026 VeriStrata. All rights reserved.
             </Text>
             <HStack spacing={6}>
               <Link

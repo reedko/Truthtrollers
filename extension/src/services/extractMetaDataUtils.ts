@@ -188,7 +188,7 @@ export const fetchPageContent = async (
 
     if (!extensionId) {
       throw new Error(
-        "Extension ID not found. Make sure the Truthtrollers extension is installed and running."
+        "Extension ID not found. Make sure the VeriStrata extension is installed and running."
       );
     }
 

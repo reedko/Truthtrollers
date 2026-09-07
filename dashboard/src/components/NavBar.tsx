@@ -190,7 +190,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           <HStack spacing={2} align="center">
             <Box h="50px">
               <Image
-                src={`${API_BASE_URL}/assets/ttlogo11.png`}
+                src={`${API_BASE_URL}/assets/images/brand/logo.png`}
                 boxSize="50px"
                 objectFit="contain"
               />

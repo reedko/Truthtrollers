@@ -19,6 +19,7 @@ import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
 import ClaimPairsDetail from "./ClaimPairsDetail";
+import BrandLockup from "./BrandLockup";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
 import {
@@ -68,8 +69,7 @@ const TaskCard: React.FC = () => {
   const { loading, error, scrapeTask } = useTaskScraper();
   const [visible, setVisible] = useState(false);
 
-  // blob URLs we render (logo / meter / content thumb)
-  const [logoBlob, setLogoBlob] = useState<string>("");
+  // blob URLs we render (meter / content thumb)
   const [meterBlob, setMeterBlob] = useState<string>("");
   const [thumbBlob, setThumbBlob] = useState<string>("");
 
@@ -206,15 +206,13 @@ const TaskCard: React.FC = () => {
     };
   }, [task?.content_id, setTask]);
 
-  // Load static UI assets (logo, meter) from bundled extension assets - INSTANT!
+  // Load static UI assets (meter) from bundled extension assets - INSTANT!
   useEffect(() => {
     try {
       // Use browser.runtime.getURL for bundled assets - no network fetch needed
-      const logo = browser.runtime.getURL("assets/images/miniLogo.png");
       const meter = browser.runtime.getURL("assets/images/meter3.png");
-      setLogoBlob(logo);
       setMeterBlob(meter);
-      // These aren't blob URLs, so no need to track for revocation
+      // Not a blob URL, so no need to track for revocation
     } catch (e) {
       console.warn("Static asset load failed:", e);
     }
@@ -271,7 +269,6 @@ const TaskCard: React.FC = () => {
   // Render with BLOB URLs (no page → localhost/network fetch)
   const imageUrl = thumbBlob || "";
   const meter = meterBlob || "";
-  const logo = logoBlob || "";
   const verimeterScore = Number(task?.verimeter_score ?? 0);
   const scoreMode = String((task as any)?.verimeter_score_mode || "").toLowerCase();
   const isAiEstimate = scoreMode === "ai" || task?.progress !== "Completed";
@@ -332,24 +329,14 @@ const TaskCard: React.FC = () => {
             background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
             pointerEvents="none"
           />
-          <HStack
-            spacing={2}
-            position="relative"
-            zIndex={1}
-            justify="space-between"
-            align="center"
-          >
-            <Box flexShrink={0}>{logo && resizeImage(40, logo)}</Box>
-            <Text
-              color="#00a2ff"
-              fontWeight="400"
-              letterSpacing="2px"
-              textTransform="uppercase"
-              fontSize="lg"
-              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-            >
-              TruthTrollers
-            </Text>
+          <HStack spacing={2} position="relative" zIndex={1} align="center" justify="flex-start" width="100%">
+            <BrandLockup
+              size="compact"
+              surface="dark"
+              showTagline
+              gap="22px"
+              centerText
+            />
           </HStack>
         </Box>
 
@@ -589,7 +576,7 @@ const TaskCard: React.FC = () => {
                   fontWeight="600"
                   fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                 >
-                  Add to TruthTrollers?
+                  Add to VeriStrata?
                 </Text>
               </VStack>
             </Box>

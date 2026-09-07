@@ -201,7 +201,7 @@ const TTLiveFeedItemCard: React.FC<FeedItemProps> = ({ item, onUpdate }) => {
             <VStack align="stretch" spacing={2}>
               <HStack justify="space-between">
                 <Text fontSize="xs" fontWeight="bold" className="mr-text-primary">
-                  TRUTHTROLLERS ANALYSIS
+                  VERISTRATA ANALYSIS
                 </Text>
                 {item.tt_metadata.is_monitored && (
                   <Badge colorScheme="green" fontSize="xs">

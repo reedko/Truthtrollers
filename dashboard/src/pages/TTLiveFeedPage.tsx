@@ -156,7 +156,7 @@ const TTLiveFeedPage: React.FC = () => {
         if (data.possible_mismatch) {
           toast({
             title: 'Username Mismatch Notice',
-            description: `Connected as @${data.x_username}. This doesn't match your Truthtrollers account (${data.truthtrollers_email}), but you can still use TTLive.`,
+            description: `Connected as @${data.x_username}. This doesn't match your VeriStrata account (${data.truthtrollers_email}), but you can still use TTLive.`,
             status: 'info',
             duration: 8000,
             isClosable: true,
@@ -367,7 +367,7 @@ const TTLiveFeedPage: React.FC = () => {
                 <VStack align="start" spacing={2} fontSize="sm">
                   <Text fontWeight="bold">Important - Connecting YOUR X Account:</Text>
                   <Text>
-                    You're logged into Truthtrollers as: <strong>{authStatus?.truthtrollers_email}</strong>
+                    You're logged into VeriStrata as: <strong>{authStatus?.truthtrollers_email}</strong>
                   </Text>
                   <Text>
                     Make sure to connect YOUR matching X account, not someone else's!

@@ -322,6 +322,23 @@ MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
 
 echo "✅ Bearing-pipeline prompts and search config applied and verified"
 
+echo "🧹 Applying delete-content procedure/schema cleanup..."
+
+DELETE_CONTENT_MIGRATION_FILE="$BACKEND_PATH/migrations/2026-08-30-remove-abandoned-evaluation-target-delete-dependencies.sql"
+
+if [ ! -f "\$DELETE_CONTENT_MIGRATION_FILE" ]; then
+  echo "❌ Missing migration: \$DELETE_CONTENT_MIGRATION_FILE"
+  exit 1
+fi
+
+MYSQL_PWD="\${DB_PASSWORD:-}" mysql \
+  -h "\$DB_HOST" \
+  -u "\$DB_USER" \
+  "\$DB_DATABASE" \
+  < "\$DELETE_CONTENT_MIGRATION_FILE"
+
+echo "✅ Delete-content procedure/schema cleanup applied"
+
 pm2 flush
 pm2 restart truthtrollers --update-env
 

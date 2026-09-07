@@ -172,3 +172,118 @@ export async function sendPasswordChangedEmail(email, username) {
     return { success: false, error: error.message };
   }
 }
+
+const NOTIFY_TO = process.env.INVESTOR_NOTIFY_EMAIL || 'reedko@gmail.com';
+
+function describeInvitation(invitation) {
+  const who = invitation.recipient_name
+    ? `${invitation.recipient_name} (${invitation.recipient_email})`
+    : invitation.recipient_email;
+  return who;
+}
+
+/**
+ * Instant notification the moment an investor invitation link is redeemed.
+ * @param {{recipient_name: ?string, recipient_email: string}} invitation
+ * @param {?string} ip - client IP captured synchronously (geo resolves later, async)
+ */
+export async function sendInvestorLinkOpenedEmail(invitation, ip) {
+  const who = describeInvitation(invitation);
+  const ipLine = ip ? `<p>From IP: <code>${ip}</code></p>` : '';
+  const ipText = ip ? `\nFrom IP: ${ip}` : '';
+  const mailOptions = {
+    from: `"VeriStrata Investor Portal" <${process.env.SMTP_USER}>`,
+    to: NOTIFY_TO,
+    subject: `Investor link opened — ${who}`,
+    html: `<p>The invitation link issued for <strong>${who}</strong> was just opened.</p>
+      ${ipLine}
+      <p style="color:#667;font-size:13px">Possession of the link grants access — this confirms the link was used, not that ${invitation.recipient_email} personally opened it.</p>`,
+    text: `The invitation link issued for ${who} was just opened.${ipText}\n\nPossession of the link grants access — this confirms the link was used, not that ${invitation.recipient_email} personally opened it.`,
+  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Investor link-opened notification sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send investor link-opened notification:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Summary email after a session goes idle for the configured window.
+ *
+ * Events arrive per un-summarized batch, not per full session — a reader who
+ * keeps a page open across more than one idle-check cycle can have their
+ * "opened" event land in an earlier batch than the "dwell" (read-time) or
+ * "downloaded" events for the same document. So this aggregates by
+ * document_id across the whole batch rather than assuming open/dwell/download
+ * for a doc always arrive together, and dedupes repeated events (nginx's
+ * auth_request check can log the same hit more than once per navigation).
+ * @param {{recipient_name: ?string, recipient_email: string}} invitation
+ * @param {Array<{event_type: string, document_id: ?string, duration_seconds: ?number, created_at: string|Date}>} events
+ */
+export async function sendInvestorActivitySummaryEmail(invitation, events) {
+  const who = describeInvitation(invitation);
+
+  const dwellByDoc = new Map();
+  const openedDocs = new Set();
+  const downloadedDocs = new Set();
+  const docOrder = [];
+  let portalOpened = false;
+
+  const noteDoc = (docId) => {
+    if (!docOrder.includes(docId)) docOrder.push(docId);
+  };
+
+  for (const e of events) {
+    if (e.event_type === 'portal_opened') {
+      portalOpened = true;
+    } else if (e.event_type === 'document_opened' && e.document_id) {
+      noteDoc(e.document_id);
+      openedDocs.add(e.document_id);
+    } else if (e.event_type === 'document_downloaded' && e.document_id) {
+      noteDoc(e.document_id);
+      downloadedDocs.add(e.document_id);
+    } else if (e.event_type === 'document_dwell' && e.document_id) {
+      noteDoc(e.document_id);
+      dwellByDoc.set(e.document_id, (dwellByDoc.get(e.document_id) || 0) + (e.duration_seconds || 0));
+    }
+  }
+
+  const lines = [];
+  if (portalOpened) lines.push('Opened the investor portal home page');
+  for (const docId of docOrder) {
+    const secs = dwellByDoc.get(docId);
+    if (openedDocs.has(docId)) {
+      lines.push(secs ? `Read "${docId}" page for ${secs} sec` : `Opened "${docId}" page`);
+    } else if (secs) {
+      lines.push(`Spent ${secs} sec on "${docId}" page`);
+    }
+    if (downloadedDocs.has(docId)) {
+      lines.push(`Downloaded "${docId}" PDF`);
+    }
+  }
+  if (lines.length === 0) lines.push('Opened the link; no further activity recorded.');
+
+  const listHtml = lines.map((l) => `<li>${l}</li>`).join('');
+  const listText = lines.map((l) => `- ${l}`).join('\n');
+
+  const mailOptions = {
+    from: `"VeriStrata Investor Portal" <${process.env.SMTP_USER}>`,
+    to: NOTIFY_TO,
+    subject: `Activity summary — link issued for ${who}`,
+    html: `<p>Activity through the link issued for <strong>${who}</strong>:</p>
+      <ul>${listHtml}</ul>
+      <p style="color:#667;font-size:13px">An opened page or PDF is not proof it was read — this reflects link/session activity only.</p>`,
+    text: `Activity through the link issued for ${who}:\n\n${listText}\n\nAn opened page or PDF is not proof it was read — this reflects link/session activity only.`,
+  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Investor activity summary sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send investor activity summary:', error);
+    return { success: false, error: error.message };
+  }
+}

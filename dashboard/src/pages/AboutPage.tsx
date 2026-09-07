@@ -79,7 +79,7 @@ const AboutPage: React.FC = () => {
             {/* Logo */}
             <HStack spacing={4}>
               <Image
-                src={`${API_BASE_URL}/assets/ttlogo11.png`}
+                src={`${API_BASE_URL}/assets/images/brand/logo.png`}
                 boxSize="120px"
                 objectFit="contain"
               />
@@ -89,7 +89,7 @@ const AboutPage: React.FC = () => {
                 bgClip="text"
                 fontWeight="extrabold"
               >
-                TruthTrollers
+                VeriStrata
               </Heading>
             </HStack>
 

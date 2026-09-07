@@ -64,6 +64,9 @@ import analyzeContentRoute from "./src/routes/analyzeContent.js";
 import createAuthRouter from "./src/routes/auth/index.js";
 import createUsersRouter from "./src/routes/users/index.js";
 import createWhitelistRouter from "./src/routes/whitelist.routes.js";
+import createInvestorAccessRouter from "./src/routes/investor-access.routes.js";
+import createInvestorAdminRouter from "./src/routes/investor-admin.routes.js";
+import { startInvestorActivityDigest } from "./src/jobs/investorActivityDigest.js";
 import createContentRouter from "./src/routes/content/index.js";
 import createAuthorsRouter from "./src/routes/authors/index.js";
 import createPublishersRouter from "./src/routes/publishers/index.js";
@@ -170,6 +173,11 @@ const allowedOrigins = [
   "http://truthtrollers.com",
   "https://www.truthtrollers.com",
   "http://www.truthtrollers.com",
+  "https://veristrata.ai",
+  "http://veristrata.ai",
+  "https://www.veristrata.ai",
+  "http://www.veristrata.ai",
+  "https://investors.veristrata.ai",
   "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf",
 ];
 
@@ -222,7 +230,9 @@ app.use(
 app.use((req, res, next) => {
   // Skip logging for image API requests to reduce console spam
   if (!req.path.startsWith("/api/image/")) {
-    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || "none"} | IP: ${req.headers["x-forwarded-for"] || req.socket.remoteAddress}\n`;
+    // Investor portal invitation/session tokens must never hit disk logs.
+    const loggedPath = req.path.startsWith("/access/") ? "/access/[REDACTED]" : req.path;
+    const logMsg = `[${new Date().toISOString()}] ${req.method} ${loggedPath} | Origin: ${req.headers.origin || "none"} | IP: ${req.headers["x-forwarded-for"] || req.socket.remoteAddress}\n`;
     process.stderr.write(logMsg);
   }
   next();
@@ -257,7 +267,9 @@ app.use((req, res, next) => {
     req.path === "/health" ||
     req.path === "/proxy" ||
     req.path === "/" ||
-    req.path.startsWith("/socket.io")
+    req.path.startsWith("/socket.io") ||
+    req.path.startsWith("/access/") || // investor portal invitation links: /access/:token
+    req.path.startsWith("/docs/") // investor portal packet PDFs: /docs/:filename
   ) {
     return next();
   }
@@ -298,6 +310,9 @@ let redisClient = null;
 app.use("/", createAuthRouter({ query, pool })); // Auth routes: /api/register, /api/login, etc.
 app.use("/", createUsersRouter({ query, pool })); // User routes: /api/all-users, /api/change-email, etc.
 app.use("/", createWhitelistRouter({ query, pool })); // Whitelist routes: /api/whitelist-request, /api/whitelist-check, etc.
+app.use("/", createInvestorAccessRouter({ query, pool })); // Investor portal recipient routes: /access/:token, /api/investor-access/check
+app.use("/", createInvestorAdminRouter({ query, pool })); // Investor invitation admin (super_admin only): /api/admin/investor-invitations
+startInvestorActivityDigest({ query });
 app.use("/", createContentRouter({ query, pool, redisClient })); // Content routes: /api/content, /api/tasks, /api/lookup-by-hash, etc.
 app.use("/", createAuthorsRouter({ query, pool })); // Authors routes: /api/authors, /api/content/:id/authors, etc.
 app.use("/", createPublishersRouter({ query, pool })); // Publishers routes: /api/publishers, /api/content/:id/publishers, etc.

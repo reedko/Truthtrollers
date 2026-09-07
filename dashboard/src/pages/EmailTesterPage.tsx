@@ -217,7 +217,7 @@ const EmailTesterPage: React.FC = () => {
             <Text>• Check spam folder if email doesn't arrive within 1 minute</Text>
             <Text>• Reset email links will have test tokens (won't work for actual reset)</Text>
             <Text>• Confirmation emails show current timestamp</Text>
-            <Text>• All emails are branded with Truthtrollers styling</Text>
+            <Text>• All emails are branded with VeriStrata styling</Text>
           </VStack>
         </Box>
       </VStack>

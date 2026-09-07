@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Truthtrollers Extension",
+  "name": "VeriStrata Extension",
   "version": "1.0",
   "description": "Checks to see if content is in database",
   "permissions": ["tabs", "activeTab", "scripting", "webNavigation", "storage"],
@@ -36,6 +36,7 @@
       "resources": [
         "assets/images/*",
         "assets/images/content/*",
+        "assets/fonts/*",
         "assets/icons/icon-16.png",
         "assets/icons/icon-48.png",
         "assets/icons/icon-128.png",
@@ -52,7 +53,10 @@
       "http://localhost/*",
       "http://localhost:5173/*",
       "https://localhost:5173/*",
-      "https://truthtrollers.com/*"
+      "https://truthtrollers.com/*",
+      "https://www.truthtrollers.com/*",
+      "https://veristrata.ai/*",
+      "https://www.veristrata.ai/*"
     ]
   }
 }

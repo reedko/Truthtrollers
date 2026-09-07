@@ -32,7 +32,7 @@ export default function PWAInstallBanner() {
           <Text fontSize="xl">📲</Text>
           <Box>
             <Text color="white" fontSize="sm" fontWeight="bold">
-              Install Truthtrollers
+              Install VeriStrata
             </Text>
             <Text color="gray.400" fontSize="xs">
               Add to your home screen for quick access

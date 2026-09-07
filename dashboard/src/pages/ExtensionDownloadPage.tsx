@@ -25,7 +25,7 @@ const ExtensionDownloadPage: React.FC = () => {
   return (
     <Box maxW="900px" mx="auto" py={6}>
       <Heading size="lg" mb={2}>
-        TruthTrollers Browser Extension
+        VeriStrata Browser Extension
       </Heading>
       <Text color="gray.300" mb={6}>
         Download the extension and follow the steps below to install it in your
@@ -68,7 +68,7 @@ const ExtensionDownloadPage: React.FC = () => {
         <OrderedList spacing={2}>
           <ListItem>
             <b>Download and UNZIP:</b> Extract the ZIP file to a permanent folder on your computer
-            (e.g., <Code>~/Documents/TruthTrollers/extension</Code>).
+            (e.g., <Code>~/Documents/VeriStrata/extension</Code>).
             <Alert status="info" mt={2} fontSize="sm">
               <AlertIcon />
               Don't delete this folder after installation — the browser loads the extension from this location.
@@ -87,7 +87,7 @@ const ExtensionDownloadPage: React.FC = () => {
           </ListItem>
           <ListItem>
             <b>Pin the icon:</b> click the <b>Extensions</b> (puzzle) button in
-            the toolbar → find <b>TruthTrollers</b> → click the <b>pin</b> icon.
+            the toolbar → find <b>VeriStrata</b> → click the <b>pin</b> icon.
             (Edge: “Show in toolbar”.)
           </ListItem>
           <ListItem>
@@ -119,7 +119,7 @@ const ExtensionDownloadPage: React.FC = () => {
           </ListItem>
           <ListItem>
             <b>Pin the icon:</b> click the <b>Extensions</b> (puzzle) button →
-            the <b>gear</b> next to <b>TruthTrollers</b> → <b>Pin to Toolbar</b>
+            the <b>gear</b> next to <b>VeriStrata</b> → <b>Pin to Toolbar</b>
             . (Or right-click the toolbar → <b>Customize Toolbar…</b> and drag
             the icon in.)
           </ListItem>

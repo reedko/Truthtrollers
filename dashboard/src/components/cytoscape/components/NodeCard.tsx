@@ -336,7 +336,7 @@ export const NodeCard: React.FC<NodeCardProps> = ({
     const publisherId = data.publisher_id || id.replace("publi-", "");
     thumbnailUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
   } else {
-    thumbnailUrl = `${API_BASE_URL}/assets/images/ttlogo11.png`;
+    thumbnailUrl = `${API_BASE_URL}/assets/images/brand/logo.png`;
   }
 
   // Special handling for unified claim cards

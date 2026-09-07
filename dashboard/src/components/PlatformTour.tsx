@@ -51,7 +51,7 @@ const STEPS: TourStep[] = [
   // ── Dashboard ────────────────────────────────────────────────────────────────
   {
     page: "dashboard",
-    title: "Welcome to TruthTrollers! 👋",
+    title: "Welcome to VeriStrata! 👋",
     content:
       "This is your mission control. Your job is to evaluate claims, rate evidence, and help keep the internet a bit more honest. Let's take a quick tour so you know where everything is.",
     primaryLabel: "Let's go →",
@@ -74,7 +74,7 @@ const STEPS: TourStep[] = [
     page: "extension",
     title: "Extension Installation Guide 🧩",
     content:
-      "The TruthTrollers browser extension lets you capture web content directly from any page.\n\nWe'll walk through:\n1. Downloading the ZIP\n2. Unzipping to a permanent folder\n3. Loading it in your browser\n\nLet's get started!",
+      "The VeriStrata browser extension lets you capture web content directly from any page.\n\nWe'll walk through:\n1. Downloading the ZIP\n2. Unzipping to a permanent folder\n3. Loading it in your browser\n\nLet's get started!",
     primaryLabel: "Let's do it! →",
     secondaryLabel: "Skip to dashboard",
   },
@@ -90,7 +90,7 @@ const STEPS: TourStep[] = [
     page: "extension",
     title: "Step 2 — Unzip the File 📂",
     content:
-      "1. Go to your Downloads folder\n2. Find 'truthtrollers_extension.zip'\n3. Double-click to unzip it (creates 'truthtrollers_extension' folder)\n4. Move that folder somewhere permanent like:\n   • ~/Documents/TruthTrollers/extension\n   • Desktop/TruthTrollers/extension\n\n⚠️ Don't delete this folder — the browser loads from it!",
+      "1. Go to your Downloads folder\n2. Find 'truthtrollers_extension.zip'\n3. Double-click to unzip it (creates 'truthtrollers_extension' folder)\n4. Move that folder somewhere permanent like:\n   • ~/Documents/VeriStrata/extension\n   • Desktop/VeriStrata/extension\n\n⚠️ Don't delete this folder — the browser loads from it!",
     primaryLabel: "Done unzipping →",
   },
   {
@@ -120,14 +120,14 @@ const STEPS: TourStep[] = [
     page: "extension",
     title: "Step 6 — Pin the Extension 📌",
     content:
-      "You should now see 'TruthTrollers Extension' in your extensions list!\n\nTo make it easy to access:\n\n• Click the puzzle piece icon 🧩 in your browser toolbar\n• Find 'TruthTrollers Extension'\n• Click the pin icon 📌 next to it\n\nNow the TruthTrollers icon will always be visible in your toolbar!",
+      "You should now see 'VeriStrata Extension' in your extensions list!\n\nTo make it easy to access:\n\n• Click the puzzle piece icon 🧩 in your browser toolbar\n• Find 'VeriStrata Extension'\n• Click the pin icon 📌 next to it\n\nNow the VeriStrata icon will always be visible in your toolbar!",
     primaryLabel: "I pinned it! →",
   },
   {
     page: "extension",
     title: "Extension Installed! 🎉",
     content:
-      "Congratulations! The TruthTrollers extension is now installed and ready to use.\n\n✅ Extension loaded\n✅ Icon pinned to toolbar\n\nClick the TruthTrollers icon on any web page to:\n• Capture content\n• Send it to your dashboard\n• Analyze claims and find evidence\n\nReady to start fact-checking the web!",
+      "Congratulations! The VeriStrata extension is now installed and ready to use.\n\n✅ Extension loaded\n✅ Icon pinned to toolbar\n\nClick the VeriStrata icon on any web page to:\n• Capture content\n• Send it to your dashboard\n• Analyze claims and find evidence\n\nReady to start fact-checking the web!",
     primaryLabel: "Finish tour",
     specialAction: "end",
   },

@@ -162,7 +162,7 @@ const WhitelistRequestModal: React.FC<WhitelistRequestModalProps> = ({
             ) : (
               <VStack spacing={4}>
                 <Text color="#b4c9e0" fontSize="sm" mb={2}>
-                  TruthTrollers is currently in private beta. Enter your email
+                  VeriStrata is currently in private beta. Enter your email
                   to request access and we'll get back to you soon!
                 </Text>
 
@@ -217,7 +217,7 @@ const WhitelistRequestModal: React.FC<WhitelistRequestModalProps> = ({
                   <Textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="Tell us about your interest in TruthTrollers..."
+                    placeholder="Tell us about your interest in VeriStrata..."
                     rows={4}
                     bg="rgba(0, 0, 0, 0.3)"
                     border="1px solid rgba(0, 162, 255, 0.3)"

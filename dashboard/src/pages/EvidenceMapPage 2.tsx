@@ -627,7 +627,7 @@ export default function EvidenceMapPage() {
             Note: Evidence map reflects AI-assessed and manually linked evidence. Links are continually updated as new sources are added.
           </Text>
           <Text fontSize="10px" color="var(--mr-text-muted)" opacity={0.4}>
-            TruthTrollers Evidence Map
+            VeriStrata Evidence Map
           </Text>
         </HStack>
       </Box>

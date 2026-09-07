@@ -684,7 +684,7 @@ const LeftPanel = ({ metrics, colorMode }: any) => (
             color="cyan.300"
             mb={2}
           >
-            TruthTrollers • Semantic Network
+            VeriStrata • Semantic Network
           </Text>
           <Heading size="lg" mb={2}>
             Knowledge Graph

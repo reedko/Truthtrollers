@@ -1,5 +1,6 @@
 // src/theme.ts
 import { extendTheme } from "@chakra-ui/react";
+import { brandFonts, brandColors } from "./brandTokens";
 const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 const theme = extendTheme({
@@ -10,7 +11,9 @@ const theme = extendTheme({
   },
   cssVarPrefix: 'tt',
   fonts: {
-    heading: "Futura, 'Century Gothic', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif",
+    // Existing popup UI (TaskCard/TaskBar/etc.) still hardcodes Futura inline;
+    // the VeriStrata brand lockup (BrandLockup.tsx) uses brandFonts directly.
+    heading: brandFonts.heading,
     body: "Futura, 'Century Gothic', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif",
   },
   styles: {
@@ -28,6 +31,7 @@ const theme = extendTheme({
       500: "#06b6d4",
       900: "#0e7490",
     },
+    veristrata: brandColors,
   },
   semanticTokens: {
     colors: {
