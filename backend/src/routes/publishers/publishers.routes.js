@@ -126,6 +126,16 @@ function isGenericSocialPublisher(publisher) {
   );
 }
 
+function isWeakDomainPublisher(publisher, sourceDomain) {
+  const name = String(publisher?.publisher_name || "").trim().toLowerCase();
+  const domain = String(sourceDomain || publisher?.domain || "").trim().toLowerCase();
+  return Boolean(domain) && (
+    name === domain ||
+    name === `www.${domain}` ||
+    /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/i.test(name)
+  );
+}
+
 export default function createPublishersRoutes({ query, pool }) {
   const router = Router();
 
@@ -1067,7 +1077,10 @@ export default function createPublishersRoutes({ query, pool }) {
           sourceDomain = null;
         }
 
-        if (sourceDomain) {
+        // This branch upgrades weak placeholders such as "itu.int". A named
+        // entity is already stronger than a domain-only guess; replacing it
+        // with another record on the same host caused PBS → NewsHour swaps.
+        if (sourceDomain && isWeakDomainPublisher(publisher, sourceDomain)) {
           const knownPublishers = await query(
             `SELECT DISTINCT
      p.publisher_id,
@@ -1154,6 +1167,10 @@ export default function createPublishersRoutes({ query, pool }) {
                 `"${publisher.publisher_name}" (${publisher.publisher_id})`,
             );
           }
+        } else if (sourceDomain) {
+          logger.log(
+            `[SourceCrest refresh] Keeping named publisher "${publisher.publisher_name}" for ${sourceDomain}; domain-placeholder upgrade not applicable`,
+          );
         }
       }
       const enrichResult = await enrichPublisherIfNeeded({

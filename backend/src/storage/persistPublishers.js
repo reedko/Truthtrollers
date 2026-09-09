@@ -22,6 +22,25 @@ function confidenceLabel(value) {
 }
 
 const VENUE_TYPES = new Set(["journal", "conference", "book", "report_series", "repository", "other"]);
+let publisherRoleSchemaSupported;
+
+async function supportsPublisherRoleSchema(query) {
+  if (typeof publisherRoleSchemaSupported === "boolean") {
+    return publisherRoleSchemaSupported;
+  }
+  const rows = await query(
+    `SELECT COUNT(*) AS column_count
+       FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'content_publishers'
+        AND COLUMN_NAME IN (
+          'publisher_role', 'is_primary', 'context_id',
+          'identity_confidence', 'extraction_method', 'evidence_json'
+        )`,
+  );
+  publisherRoleSchemaSupported = Number(rows?.[0]?.column_count) === 6;
+  return publisherRoleSchemaSupported;
+}
 
 export function normalizeVenueType(value) {
   if (value == null || String(value).trim() === "") return null;
@@ -137,6 +156,13 @@ export async function linkPublisherRole(query, contentId, {
   replaceRole = false,
 } = {}) {
   if (!contentId || !publisherId) return null;
+  if (!(await supportsPublisherRoleSchema(query))) {
+    await query(
+      "INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)",
+      [contentId, publisherId],
+    );
+    return publisherId;
+  }
   try {
     if (replaceRole) {
       await query(
@@ -516,16 +542,19 @@ export async function persistSourceIdentity(query, contentId, identity, options 
 export async function persistPublishers(query, contentId, publisher = null, options = {}) {
   const identity = publisher?.version === SOURCE_IDENTITY_VERSION ? publisher : publisher?.identity;
   if (identity?.version === SOURCE_IDENTITY_VERSION) {
-    try {
-      return await persistSourceIdentity(query, contentId, identity, options);
-    } catch (error) {
-      if (!["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) throw error;
-      const fallbackName = identity.entities?.publishing_organization?.name
-        || identity.entities?.publication_venue?.name
-        || Object.values(identity.entities || {}).find((entity) => entity?.name)?.name;
-      logger.warn(`Normalized publisher schema is not available; using legacy write for content ${contentId}.`);
-      publisher = { publisher_name: fallbackName };
+    const normalizedSchemaAvailable = await supportsPublisherRoleSchema(query);
+    if (normalizedSchemaAvailable) {
+      try {
+        return await persistSourceIdentity(query, contentId, identity, options);
+      } catch (error) {
+        if (!["ER_NO_SUCH_TABLE", "ER_BAD_FIELD_ERROR"].includes(error?.code)) throw error;
+      }
     }
+    const fallbackName = identity.entities?.publishing_organization?.name
+      || identity.entities?.publication_venue?.name
+      || Object.values(identity.entities || {}).find((entity) => entity?.name)?.name;
+    logger.warn(`Normalized publisher schema is not available; using legacy write for content ${contentId}.`);
+    publisher = { publisher_name: fallbackName };
   }
 
   const legacy = normalizedLegacyPublisher(publisher);

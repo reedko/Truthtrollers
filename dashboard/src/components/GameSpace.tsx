@@ -1770,10 +1770,10 @@ const GameSpace: React.FC<GameSpaceProps> = ({
 
   // Track mouse/touch position globally when dragging
   useEffect(() => {
+    if (!draggingClaim) return;
+
     const handleMove = (clientX: number, clientY: number) => {
       setMousePosition({ x: clientX, y: clientY });
-
-      if (!draggingClaim) return;
 
       // Detect dragging direction from start position
       const dragDistance = clientX - dragStartPosition.x;
@@ -1820,7 +1820,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         }
 
         setIsOverTaskClaim(isOver);
-      } else if (draggingClaim && selectedTaskClaimIndex !== null) {
+      } else if (selectedTaskClaimIndex !== null) {
         // Log if ref is missing during drag
         console.log(
           "[Task Claim Detection] WARNING: taskClaimRef.current is null!",

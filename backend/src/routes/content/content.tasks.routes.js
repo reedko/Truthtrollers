@@ -667,7 +667,7 @@ router.post("/api/submit-text", async (req, res) => {
     const { processTaskClaims } = await import("../../core/processTaskClaims.js");
     const { runEvidenceEngine } = await import("../../core/runEvidenceEngine.js");
     const { matchClaimsToTaskClaims } = await import("../../core/matchClaims.js");
-    const { persistAIResults } = await import("../../storage/persistAIResults.js");
+    const { processEvidenceBearingResults } = await import("../../core/processEvidenceBearingResults.js");
     const { openAiLLM } = await import("../../core/openAiLLM.js");
     const { persistClaims } = await import("../../storage/persistClaims.js");
 
@@ -680,20 +680,27 @@ router.post("/api/submit-text", async (req, res) => {
       const claimIds = taskClaims.map((c) => c.id);
 
       send("evidence", "Running evidence engine…", 60);
-      const { aiReferences, failedCandidates, claimConfidenceMap } = await runEvidenceEngine({
+      const { aiReferences, failedCandidates, bearingResults } = await runEvidenceEngine({
         taskContentId,
         claimIds,
         claims: taskClaims,
         readableText: text,
       });
 
-      if (aiReferences && aiReferences.length > 0) {
-        logger.log(`✅ [/api/submit-text] Evidence engine found ${aiReferences.length} references`);
-        send("evidence", `Found ${aiReferences.length} reference${aiReferences.length !== 1 ? "s" : ""}`, 70);
+      const { retainedAiReferences } = await processEvidenceBearingResults({
+        query,
+        taskContentId,
+        taskClaims,
+        claimIds,
+        aiReferences,
+        bearingResults,
+      });
 
-        await persistAIResults(query, { contentId: taskContentId, evidenceRefs: aiReferences, claimIds, claimConfidenceMap });
+      if (retainedAiReferences.length > 0) {
+        logger.log(`✅ [/api/submit-text] Evidence engine retained ${retainedAiReferences.length} references after bearing`);
+        send("evidence", `Retained ${retainedAiReferences.length} reference${retainedAiReferences.length !== 1 ? "s" : ""}`, 70);
 
-        const refsToProcess = aiReferences.filter((ref) => ref.referenceContentId);
+        const refsToProcess = retainedAiReferences.filter((ref) => ref.referenceContentId);
         send("references", `Processing ${refsToProcess.length} references…`, 75);
 
         let refsDone = 0;

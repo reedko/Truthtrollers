@@ -3,27 +3,27 @@
 
 /**
  * Extract the best thumbnail image from HTML
- * Priority: og:image > largest img with width/height > first processable img > author avatar (for Substack)
+ * Priority: social metadata > largest img with width/height > first processable img > author avatar (for Substack)
  */
 export function getBestImage($, baseUrl) {
   const isSubstack = baseUrl.includes('substack.com');
 
-  // 1. Try og:image first
-  let ogImage = $('meta[property="og:image"]').attr("content");
-  if (ogImage) {
-    ogImage = resolveUrl(ogImage, baseUrl);
-    if (isProcessableImage(ogImage)) {
-      return ogImage;
-    }
-  }
-
-  // 2. Try twitter:image
-  let twitterImage = $('meta[name="twitter:image"]').attr("content");
-  if (twitterImage) {
-    twitterImage = resolveUrl(twitterImage, baseUrl);
-    if (isProcessableImage(twitterImage)) {
-      return twitterImage;
-    }
+  // 1. Prefer explicit social-preview metadata. Sites use several equivalent keys.
+  const metadataSelectors = [
+    'meta[property="og:image:secure_url"]',
+    'meta[property="og:image:url"]',
+    'meta[property="og:image"]',
+    'meta[name="twitter:image"]',
+    'meta[name="twitter:image:src"]',
+    'meta[property="twitter:image"]',
+    'link[rel="image_src"]',
+  ];
+  for (const selector of metadataSelectors) {
+    const raw = selector.startsWith('link')
+      ? $(selector).first().attr('href')
+      : $(selector).first().attr('content');
+    const resolved = resolveUrl(raw, baseUrl);
+    if (isProcessableImage(resolved)) return resolved;
   }
 
   // 3. Find largest image with explicit dimensions
@@ -31,7 +31,7 @@ export function getBestImage($, baseUrl) {
   let chosenImage = null;
 
   $("img").each((_, img) => {
-    let src = $(img).attr("src") || "";
+    let src = getImageSource($, img);
     const width = parseInt($(img).attr("width") || "0", 10);
     const height = parseInt($(img).attr("height") || "0", 10);
     const area = width * height;
@@ -50,7 +50,7 @@ export function getBestImage($, baseUrl) {
   // 4. Fallback: first processable image
   let firstImage = null;
   $("img").each((_, img) => {
-    let src = $(img).attr("src") || "";
+    let src = getImageSource($, img);
     if (src) {
       src = resolveUrl(src, baseUrl);
       if (isProcessableImage(src)) {
@@ -87,25 +87,55 @@ export function getBestImage($, baseUrl) {
 }
 
 /**
+ * Select the first usable image URL supplied by a search provider.
+ * Tavily can return image strings or { url, description } objects.
+ */
+export function getBestImageFromCandidates(candidates, baseUrl) {
+  if (!Array.isArray(candidates)) return null;
+
+  for (const candidate of candidates) {
+    const raw = typeof candidate === "string" ? candidate : candidate?.url;
+    const resolved = resolveUrl(raw, baseUrl);
+    if (isProcessableImage(resolved)) return resolved;
+  }
+
+  return null;
+}
+
+/**
  * Resolve relative URLs to absolute
  */
 function resolveUrl(urlStr, baseUrl) {
   try {
     if (!urlStr) return "";
-    // Already absolute
-    if (urlStr.startsWith("http://") || urlStr.startsWith("https://")) {
-      return urlStr;
-    }
-    // Protocol-relative
-    if (urlStr.startsWith("//")) {
-      return `https:${urlStr}`;
-    }
-    // Relative to base
-    const resolved = new URL(urlStr, baseUrl);
+    const cleaned = String(urlStr).trim();
+    // Reject metadata containing more than one URL, a pattern seen in malformed og:image values.
+    if ((cleaned.match(/https?:\/\//gi) || []).length > 1) return "";
+    const resolved = new URL(cleaned, baseUrl);
+    if (!['http:', 'https:'].includes(resolved.protocol)) return "";
     return resolved.href;
   } catch (err) {
     return "";
   }
+}
+
+function getImageSource($, img) {
+  const element = $(img);
+  const src = element.attr('src') || '';
+  if (src && !src.startsWith('data:') && !src.startsWith('blob:')) return src;
+
+  const lazySource =
+    element.attr('data-src') ||
+    element.attr('data-lazy-src') ||
+    element.attr('data-original');
+  if (lazySource) return lazySource;
+
+  const srcset = element.attr('srcset') || element.attr('data-srcset') || '';
+  const candidates = srcset
+    .split(',')
+    .map((candidate) => candidate.trim().split(/\s+/, 1)[0])
+    .filter(Boolean);
+  return candidates.at(-1) || '';
 }
 
 /**
@@ -130,18 +160,24 @@ function isProcessableImage(src) {
     "avatar",
     "badge",
     "button",
+    "us_flag",
+    "noscript",
+    "gbc-footer",
+    "action-bookmark",
+    "/search.svg",
+    "bluesky_",
+    "nyc_white",
   ];
 
   for (const pattern of badPatterns) {
     if (lowerSrc.includes(pattern)) return false;
   }
 
-  // Must be image extension
-  if (
-    !lowerSrc.match(/\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i)
-  ) {
+  // Modern image CDNs commonly omit a filename extension. The downloader verifies
+  // the response Content-Type before handing bytes to Sharp.
+  try {
+    return ['http:', 'https:'].includes(new URL(src).protocol);
+  } catch {
     return false;
   }
-
-  return true;
 }

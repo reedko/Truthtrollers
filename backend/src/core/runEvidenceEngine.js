@@ -32,7 +32,10 @@ import { extractAuthors } from "../utils/extractAuthors.js";
 import { extractPublisher } from "../utils/extractPublisher.js";
 import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
-import { getBestImage } from "../utils/getBestImage.js";
+import {
+  getBestImage,
+  getBestImageFromCandidates,
+} from "../utils/getBestImage.js";
 import { buildEvidenceClaimContext } from "../utils/normalizeEvidenceClaim.js";
 import logger from "../utils/logger.js";
 import * as cheerio from "cheerio";
@@ -673,6 +676,7 @@ export async function runEvidenceEngine({
               authors,
               publisher,
               thumbnail,
+              thumbnailFallback,
               cleanText,
               citationCount = 0;
 
@@ -704,6 +708,7 @@ export async function runEvidenceEngine({
               authors = pdfAuthors ? [pdfAuthors] : [];
               publisher = null; // PDFs don't have publishers in same way
               thumbnail = ""; // PDFs don't have thumbnails from evidence engine
+              thumbnailFallback = "";
               cleanText = pdfExtractedText?.slice(0, 60000) || "";
 
               // Extract inline citations from PDF text
@@ -733,7 +738,21 @@ export async function runEvidenceEngine({
                 cand.title || (await getMainHeadline($)) || "AI Reference";
               authors = await extractAuthors($);
               publisher = await extractPublisher($, cand.url);
-              thumbnail = getBestImage($, cand.url) || "";
+              const tavilyThumbnail = getBestImageFromCandidates(
+                cand.images,
+                cand.url,
+              );
+              const pageThumbnail = getBestImage($, cand.url) || "";
+              thumbnail = tavilyThumbnail || pageThumbnail;
+              thumbnailFallback =
+                tavilyThumbnail && pageThumbnail !== tavilyThumbnail
+                  ? pageThumbnail
+                  : "";
+              if (tavilyThumbnail) {
+                logger.log(
+                  `🖼️  [Evidence] Using Tavily result image for ${cand.url}`,
+                );
+              }
 
               // ─────────────────────────────────────────────
               // 4. EXTRACT CLEAN TEXT (using Readability)
@@ -811,6 +830,7 @@ export async function runEvidenceEngine({
                 content_type: "reference",
                 taskContentId,
                 thumbnail,
+                thumbnailFallback,
                 details: `Failed to scrape: ${cleanText.length} chars`,
               });
 
@@ -894,6 +914,7 @@ export async function runEvidenceEngine({
               content_type: "reference",
               taskContentId,
               thumbnail,
+              thumbnailFallback,
               details: cleanText.slice(0, 500),
             });
 
@@ -932,10 +953,7 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             await persistAuthors(query, referenceContentId, authors);
             if (publisher?.name && publisher.name !== "Unknown Publisher") {
-              // extractPublisher returns { name } but persistPublishers expects { publisher_name }
-              await persistPublishers(query, referenceContentId, {
-                publisher_name: publisher.name,
-              });
+              await persistPublishers(query, referenceContentId, publisher);
             }
 
             const publisherLink = await ensureReferencePublisherLink({
@@ -1012,6 +1030,11 @@ export async function runEvidenceEngine({
               `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`,
             );
 
+            const tavilyThumbnail = getBestImageFromCandidates(
+              cand.images,
+              cand.url,
+            );
+
             // ─────────────────────────────────────────────
             // Create stub content row for failed reference
             // ─────────────────────────────────────────────
@@ -1023,7 +1046,7 @@ export async function runEvidenceEngine({
               subtopics: [],
               content_type: "reference",
               taskContentId,
-              thumbnail: "",
+              thumbnail: tavilyThumbnail || "",
               details: `Failed to fetch: ${err.message}`,
             });
 
@@ -1065,7 +1088,7 @@ export async function runEvidenceEngine({
               title: cand.title || "Failed Reference",
               authors: [],
               publisher: null,
-              thumbnail: "",
+              thumbnail: tavilyThumbnail || "",
               cleanText: "", // Empty - needs manual scrape
               snippet: cand.snippet || "", // Save search engine snippet
               quality, // Store quality
@@ -1099,7 +1122,7 @@ export async function runEvidenceEngine({
     },
     {
       // Constructor config is now empty - all settings come from database via runOptions
-      maxParallelClaims: Infinity, // Process all claims in parallel
+      maxParallelClaims: 4,
     },
   );
 

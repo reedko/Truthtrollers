@@ -437,6 +437,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
                   avoid: opt.avoidDomains,
                   searchDepth: "advanced",
                   includeRawContent: false,
+                  includeImages: true,
                 });
                 if (web?.length) sub.push(...web);
               })()

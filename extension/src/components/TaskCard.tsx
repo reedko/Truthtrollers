@@ -254,6 +254,11 @@ const TaskCard: React.FC = () => {
       return;
     }
     if (currentUrl) {
+      // Close the popup immediately — the scrape runs server-side and can
+      // take a while. Progress shows as an ellipsis badge on the toolbar
+      // icon instead; the card reappears when the user reopens it.
+      const popupHost = document.getElementById("tt-popup-host");
+      if (popupHost) popupHost.style.display = "none";
       scrapeTask(currentUrl);
     } else {
       console.error("No URL provided.");

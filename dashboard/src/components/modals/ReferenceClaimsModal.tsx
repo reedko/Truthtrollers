@@ -56,8 +56,9 @@ const ReferenceClaimsModal: React.FC<Props> = ({
   // Tooltip follows cursor while dragging
   const tipRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
+    if (!draggingClaim) return;
     const move = (e: MouseEvent) => {
-      if (tipRef.current && draggingClaim) {
+      if (tipRef.current) {
         tipRef.current.style.left = `${e.clientX + 10}px`;
         tipRef.current.style.top = `${e.clientY + 10}px`;
       }

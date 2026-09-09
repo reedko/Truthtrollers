@@ -62,6 +62,9 @@ export const useTaskScraper = () => {
       setError("An error occurred while scraping.");
     } finally {
       setLoading(false);
+      // Safety net: guarantees the toolbar badge clears even if something
+      // above threw before the normal "scrapeCompleted" message was sent.
+      browser.runtime.sendMessage({ action: "scrapingFinished" }).catch(() => {});
     }
   };
 

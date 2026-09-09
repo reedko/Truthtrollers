@@ -7,7 +7,7 @@ import createCache from "@emotion/cache";
 import React, { useEffect, useState } from "react";
 import TaskCard from "./TaskCard";
 import TaskBar from "./TaskBar";
-import ReactDOM from "react-dom/client";
+import ReactDOM, { type Root } from "react-dom/client";
 import VisionTheme from "../components/themes/VisionTheme";
 import { getBrandFontFaceCss } from "./themes/brandTokens";
 import browser from "webextension-polyfill";
@@ -109,7 +109,15 @@ function initPopup() {
   // instead of into the page's <head> - this prevents CSS bleeding
   const emotionCache = createEmotionCache(shadowRoot);
 
-  const root = ReactDOM.createRoot(popupRoot);
+  // popup.js can be injected more than once for the same tab (background.js
+  // fires this from several independent listeners). Each injection is a
+  // fresh script execution, so module-level state doesn't survive between
+  // them — the root must be cached on the persistent DOM node instead, or
+  // a duplicate injection creates a second React tree with fresh (reset)
+  // component state on top of the first one.
+  const rootHost = popupRoot as HTMLElement & { __veristrataReactRoot?: Root };
+  const root = rootHost.__veristrataReactRoot ?? ReactDOM.createRoot(popupRoot);
+  rootHost.__veristrataReactRoot = root;
   root.render(<Popup emotionCache={emotionCache} />);
 }
 

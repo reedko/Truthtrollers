@@ -456,9 +456,26 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         startedAt: Date.now(),
       });
 
+      // Progress lives on the toolbar icon while the job runs server-side —
+      // the popup already closed itself when the user clicked Add.
+      browser.action.setBadgeText({ text: "...", tabId }).catch(() => {});
+      browser.action
+        .setBadgeBackgroundColor({ color: "#00A2FF", tabId })
+        .catch(() => {});
+
       console.log(
         `📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`,
       );
+      return;
+    }
+
+    // [4b] scrapingFinished — safety net so the toolbar badge always clears,
+    // even if an error above skipped the normal scrapeCompleted message.
+    if (message.action === "scrapingFinished") {
+      const tabId = sender.tab?.id;
+      if (tabId) {
+        browser.action.setBadgeText({ text: "", tabId }).catch(() => {});
+      }
       return;
     }
 
@@ -531,8 +548,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
           if (tab?.url && tab.url.startsWith(viewerPrefix)) {
             // 🧠 We're on viewer.html → do NOT inject. Just tell it to refresh.
+            // suppressShow: refresh state, but don't pop the card back up —
+            // the user closed it when the scrape started; let them reopen
+            // it via the toolbar icon once the badge clears.
             try {
-              await checkContentAndUpdatePopup(tabId, url, true);
+              await checkContentAndUpdatePopup(tabId, url, false, true);
               console.log("🟣 checkContentAndUpdatePopup ran for viewer.html");
             } catch (e) {
               console.warn(
@@ -553,9 +573,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
               );
             }
           } else {
-            // 🌐 Normal page → keep your existing flow
+            // 🌐 Normal page → refresh state without auto-showing the popup
             console.log("📌 Updating popup on normal page:", url);
-            await checkContentAndUpdatePopup(tabId, url, true);
+            await checkContentAndUpdatePopup(tabId, url, false, true);
           }
         }
       } catch (err) {
@@ -563,6 +583,10 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         // Make sure we clean up even on error
         if (tabId && activeScrapes.has(tabId)) {
           activeScrapes.delete(tabId);
+        }
+      } finally {
+        if (tabId) {
+          browser.action.setBadgeText({ text: "", tabId }).catch(() => {});
         }
       }
       return;
@@ -1279,9 +1303,14 @@ async function getReadOnlyDemoJwt() {
   return token;
 }
 // ✅ Check if URL is in database & update popup
-async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
+async function checkContentAndUpdatePopup(
+  tabId,
+  url,
+  forceVisible,
+  suppressShow = false,
+) {
   console.log(
-    `🔍 [checkContent] Called with URL: ${url}, forceVisible: ${forceVisible}`,
+    `🔍 [checkContent] Called with URL: ${url}, forceVisible: ${forceVisible}, suppressShow: ${suppressShow}`,
   );
 
   if (isDashboardUrl(url)) {
@@ -1673,7 +1702,10 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
 
     // ✅ Show popup automatically if content is completed
     // ✅ Force show popup if the user clicked the extension icon
-    if (isDetected || forceVisible) {
+    // ✅ Unless the caller explicitly wants to refresh state without
+    //    popping the card back up (e.g. right after a scrape finishes —
+    //    the toolbar badge communicates progress instead, see scrapeCompleted)
+    if (!suppressShow && (isDetected || forceVisible)) {
       showTaskCard(tabId, isDetected, forceVisible);
     }
   } catch (error) {
@@ -1725,7 +1757,31 @@ async function showTaskCardx(tabId, isDetected, forceVisible) {
     console.error("❌ Error injecting task card:", err);
   }
 }
-async function showTaskCard(tabId, isDetected, forceVisible) {
+// checkContentAndUpdatePopup() runs from several independent listeners
+// (tabs.onUpdated, tabs.onActivated, action.onClicked, the "scrapeCompleted"
+// message handler) that can fire within milliseconds of each other for the
+// same tab. showTaskCard()'s "is the popup already rendered?" check is an
+// async round trip, so two overlapping calls can both see "not rendered yet"
+// and both inject popup.js, mounting a second React tree with fresh state
+// over the first (button un-greys, looks like the click did nothing). Queue
+// calls per tab so they run strictly one at a time.
+const showTaskCardQueues = new Map();
+
+function showTaskCard(tabId, isDetected, forceVisible) {
+  const previous = showTaskCardQueues.get(tabId) || Promise.resolve();
+  const next = previous
+    .catch(() => {})
+    .then(() => showTaskCardInternal(tabId, isDetected, forceVisible));
+  showTaskCardQueues.set(tabId, next);
+  next.finally(() => {
+    if (showTaskCardQueues.get(tabId) === next) {
+      showTaskCardQueues.delete(tabId);
+    }
+  });
+  return next;
+}
+
+async function showTaskCardInternal(tabId, isDetected, forceVisible) {
   try {
     // Check if popup already exists AND has been fully rendered with React content
     const [{ result: popupFullyRendered }] =

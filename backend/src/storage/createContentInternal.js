@@ -17,7 +17,10 @@ import sharp from "sharp";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { fetchImageWithPuppeteer } from "../utils/fetchImageWithPuppeteer.js";
+import {
+  runWithThumbnailDownloadSlot,
+  THUMBNAIL_DOWNLOAD_TIMEOUT_MS,
+} from "../utils/thumbnailDownloadLimiter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +38,7 @@ const __dirname = dirname(__filename);
  *   users,
  *   details,
  *   thumbnail,         // remote image URL
+ *   thumbnailFallback, // optional page-derived image URL
  *   assigned,
  *   progress,
  *   iconThumbnailUrl,
@@ -55,6 +59,7 @@ export async function createContentInternal(query, payload) {
     users = "",
     details = "",
     thumbnail,
+    thumbnailFallback,
     assigned = "unassigned",
     progress = "Unassigned",
     iconThumbnailUrl = "",
@@ -72,8 +77,11 @@ export async function createContentInternal(query, payload) {
     throw new Error("createContentInternal: content_name and url are required");
   }
 
-  // Clamp to DB column limit (stored procedure param is VARCHAR(512))
-  const safeName = content_name.length > 500 ? content_name.substring(0, 497) + "…" : content_name;
+  // InsertContentAndTopics declares contentName as VARCHAR(255).
+  const safeName =
+    content_name.length > 255
+      ? `${content_name.substring(0, 254)}…`
+      : content_name;
 
   // 1) Insert via stored procedure InsertContentAndTopics
   const callQuery = `
@@ -148,7 +156,7 @@ export async function createContentInternal(query, payload) {
   }
 
   // 3b) If no thumbnail URL provided, or content already existed with one, skip image fetch
-  if (!thumbnail || isExisting) {
+  if ((!thumbnail && !thumbnailFallback) || isExisting) {
     if (isExisting) {
       logger.log("⏭ createContentInternal: content already exists, skipping thumbnail re-download.");
     }
@@ -160,46 +168,120 @@ export async function createContentInternal(query, payload) {
   const imagePath = `assets/images/content/${imageFilename}`;
   logger.log("🖼 createContentInternal: imagePath =", imagePath);
 
+  const thumbnailUrls = [];
+  for (const rawCandidate of [thumbnail, thumbnailFallback]) {
+    if (!rawCandidate) continue;
+    try {
+      const rawThumbnail = String(rawCandidate).trim();
+      if ((rawThumbnail.match(/https?:\/\//gi) || []).length > 1) {
+        throw new Error("multiple URLs supplied");
+      }
+      const candidateUrl = new URL(rawThumbnail);
+      if (!["http:", "https:"].includes(candidateUrl.protocol)) {
+        throw new Error(`unsupported protocol ${candidateUrl.protocol}`);
+      }
+      if (!thumbnailUrls.some((entry) => entry.href === candidateUrl.href)) {
+        thumbnailUrls.push(candidateUrl);
+      }
+    } catch (err) {
+      logger.warn(
+        `⚠️ createContentInternal: rejecting invalid thumbnail candidate contentId=${contentId} thumbnail=${JSON.stringify(rawCandidate)} reason=${err.message}`,
+      );
+    }
+  }
+
+  if (thumbnailUrls.length === 0) return contentId;
+
   let buffer;
-  let usedPuppeteer = false;
+  let thumbnailUrl = null;
+  const queuedAt = Date.now();
+  let downloadStartedAt = null;
+  let downloadFinishedAt = null;
 
   try {
-    // Axios instance that allows self-signed certs (same as your route)
-    const axiosInstance = axios.create({
-      httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-    });
+    buffer = await runWithThumbnailDownloadSlot(async () => {
+      downloadStartedAt = Date.now();
 
-    const response = await axiosInstance.get(thumbnail, {
-      responseType: "arraybuffer",
-      timeout: 10000, // 10 second timeout to prevent hangs
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Referer: url,
-        Accept:
-          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-      },
-      validateStatus: (status) => status >= 200 && status < 300,
-    });
+      // Axios instance that allows self-signed certs (same as your route)
+      const axiosInstance = axios.create({
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      });
+      let lastError;
+      for (let index = 0; index < thumbnailUrls.length; index += 1) {
+        const candidateUrl = thumbnailUrls[index];
+        const hardDeadlineSignal = AbortSignal.timeout(
+          THUMBNAIL_DOWNLOAD_TIMEOUT_MS,
+        );
 
-    buffer = Buffer.from(response.data, "binary");
+        try {
+          const response = await axiosInstance.get(candidateUrl.href, {
+            responseType: "arraybuffer",
+            timeout: THUMBNAIL_DOWNLOAD_TIMEOUT_MS,
+            signal: hardDeadlineSignal,
+            maxContentLength: 20 * 1024 * 1024,
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+              Referer: url,
+              Accept:
+                "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+            },
+            validateStatus: (status) => status >= 200 && status < 300,
+          });
+
+          const contentType = String(response.headers?.["content-type"] || "")
+            .split(";", 1)[0]
+            .trim()
+            .toLowerCase();
+          if (!contentType.startsWith("image/")) {
+            throw new Error(
+              `response was not an image (${contentType || "missing content-type"})`,
+            );
+          }
+
+          const candidateBuffer = Buffer.from(response.data, "binary");
+          const metadata = await sharp(candidateBuffer).metadata();
+          const width = Number(metadata.width || 0);
+          const height = Number(metadata.height || 0);
+          const aspectRatio = width && height
+            ? Math.max(width / height, height / width)
+            : Infinity;
+          if (width < 120 || height < 120 || aspectRatio > 4) {
+            throw new Error(
+              `implausible thumbnail dimensions ${width || "?"}x${height || "?"}`,
+            );
+          }
+
+          thumbnailUrl = candidateUrl;
+          return candidateBuffer;
+        } catch (error) {
+          lastError = hardDeadlineSignal.aborted
+            ? new Error(
+                `thumbnail exceeded ${THUMBNAIL_DOWNLOAD_TIMEOUT_MS}ms hard deadline`,
+                { cause: error },
+              )
+            : error;
+          if (index + 1 < thumbnailUrls.length) {
+            logger.warn(
+              `⚠️ createContentInternal: thumbnail candidate rejected; trying page fallback contentId=${contentId} thumbnail=${candidateUrl.href} reason=${lastError.message}`,
+            );
+          }
+        }
+      }
+
+      throw lastError || new Error("no usable thumbnail candidate");
+    });
+    downloadFinishedAt = Date.now();
   } catch (axiosError) {
+    const failedAt = Date.now();
+    const queueWaitMs =
+      downloadStartedAt === null ? failedAt - queuedAt : downloadStartedAt - queuedAt;
+    const downloadMs =
+      downloadStartedAt === null ? 0 : failedAt - downloadStartedAt;
     logger.warn(
-      "⚠️ createContentInternal: Axios failed, trying Puppeteer...",
-      axiosError.message,
+      `⚠️ createContentInternal: thumbnail download failed; continuing without thumbnail contentId=${contentId} candidates=${thumbnailUrls.map((entry) => entry.href).join(",")} queueWaitMs=${queueWaitMs} downloadMs=${downloadMs} reason=${axiosError.message}`,
     );
-    try {
-      const puppeteerBuffer = await fetchImageWithPuppeteer(thumbnail);
-      buffer = puppeteerBuffer;
-      usedPuppeteer = true;
-    } catch (puppeteerError) {
-      logger.error(
-        "❌ createContentInternal: Puppeteer also failed:",
-        puppeteerError.message || puppeteerError,
-      );
-      // At this point, we keep the content row but skip the thumbnail
-      return contentId;
-    }
+    return contentId;
   }
 
   try {
@@ -214,15 +296,12 @@ export async function createContentInternal(query, payload) {
     const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
     await query(updateQuery, [imagePath, contentId]);
 
-    logger.log("✅ createContentInternal: thumbnail saved", {
-      contentId,
-      imagePath,
-      usedPuppeteer,
-    });
+    logger.log(
+      `✅ createContentInternal: thumbnail saved contentId=${contentId} imagePath=${imagePath} method=axios queueWaitMs=${downloadStartedAt - queuedAt} downloadMs=${downloadFinishedAt - downloadStartedAt} source=${thumbnailUrl.href}`,
+    );
   } catch (err) {
     logger.error(
-      "❌ createContentInternal: Error processing image or updating DB:",
-      err,
+      `❌ createContentInternal: error processing thumbnail contentId=${contentId} thumbnail=${thumbnailUrl.href} reason=${err.message}`,
     );
     // Still return contentId – content exists, just no thumbnail
   }

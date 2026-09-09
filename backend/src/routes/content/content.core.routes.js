@@ -14,12 +14,6 @@ const __dirname = dirname(__filename);
 export default function ({ query, pool }) {
   const router = Router();
 
-  // TODO: Import or define fetchImageWithPuppeteer
-  // This function is used in addContent route but not defined in original server.js
-  async function fetchImageWithPuppeteer(_url) {
-    throw new Error("fetchImageWithPuppeteer not implemented");
-  }
-
   /**
    * GET /api/content
    * Get paginated list of content/tasks
@@ -578,17 +572,38 @@ WHERE t.content_id = ?
     const imagePath = `assets/images/content/${imageFilename}`;
     logger.log("IMAGEFILENAME:", imagePath);
 
-    let buffer;
-    let usedPuppeteer = false;
+    let thumbnailUrl;
+    try {
+      const rawThumbnail = String(thumbnail || "").trim();
+      if ((rawThumbnail.match(/https?:\/\//gi) || []).length > 1) {
+        throw new Error("multiple URLs supplied");
+      }
+      thumbnailUrl = new URL(rawThumbnail);
+      if (!["http:", "https:"].includes(thumbnailUrl.protocol)) {
+        throw new Error(`unsupported protocol ${thumbnailUrl.protocol}`);
+      }
+    } catch (err) {
+      logger.warn(
+        `⚠️ [addContent] skipping invalid thumbnail contentId=${contentId} thumbnail=${JSON.stringify(thumbnail)} reason=${err.message}`,
+      );
+      return res.status(200).send({
+        message: "Task added successfully without a thumbnail",
+        taskId: contentId,
+        imagePath: null,
+      });
+    }
 
+    let buffer;
     try {
       // Step 2: Download and resize the image
       const axiosInstance = axios.create({
         httpsAgent: new https.Agent({ rejectUnauthorized: false }), // ✅ Allow self-signed certificates
       });
 
-      const response = await axiosInstance.get(thumbnail, {
+      const response = await axiosInstance.get(thumbnailUrl.href, {
         responseType: "arraybuffer",
+        timeout: 4000,
+        maxContentLength: 20 * 1024 * 1024,
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -602,20 +617,26 @@ WHERE t.content_id = ?
         },
       });
 
+      const contentType = String(response.headers?.["content-type"] || "")
+        .split(";", 1)[0]
+        .trim()
+        .toLowerCase();
+      if (!contentType.startsWith("image/")) {
+        throw new Error(
+          `thumbnail response was not an image (${contentType || "missing content-type"})`,
+        );
+      }
+
       buffer = Buffer.from(response.data, "binary");
     } catch (axiosError) {
-      logger.warn("⚠️ Axios failed, trying Puppeteer...", axiosError.message);
-      try {
-        const puppeteerBuffer = await fetchImageWithPuppeteer(thumbnail);
-        buffer = puppeteerBuffer;
-        usedPuppeteer = true;
-      } catch (puppeteerError) {
-        logger.error(
-          "❌ Puppeteer also failed:",
-          puppeteerError.message || puppeteerError,
-        );
-        return res.status(500).send("Failed to fetch image with both methods");
-      }
+      logger.warn(
+        `⚠️ [addContent] thumbnail download failed contentId=${contentId} thumbnail=${thumbnailUrl.href} reason=${axiosError.message}`,
+      );
+      return res.status(200).send({
+        message: "Task added successfully without a thumbnail",
+        taskId: contentId,
+        imagePath: null,
+      });
     }
 
     try {
@@ -636,7 +657,7 @@ WHERE t.content_id = ?
         message: "Task added successfully, and thumbnail saved",
         taskId: contentId,
         imagePath,
-        usedPuppeteer,
+        usedPuppeteer: false,
       });
     } catch (err) {
       logger.error("Error processing image or updating DB:", err);

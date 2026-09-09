@@ -21,6 +21,10 @@ const ADVOCACY_RE = /\b(advocacy|advocate|policy recommendations|regulatory poli
 const TELECOM_RE = /\b(5g|6g|wireless|mobile broadband|telecommunications|telecom|network equipment|device manufacturers|wireless carriers|spectrum|cellular)\b/i;
 const HEALTH_TOPIC_RE = /\b(health|safety|radiation|rf|radiofrequency|electromagnetic|emf|exposure|cancer|public health)\b/i;
 const PROVENANCE_RE = /\b(published by|owned by|operated by|a project of|a program of|sponsored by|funded by|reprinted from|originally published by|republished from|source:|via:|from:)\b/i;
+const NONPROFIT_RE = /\b(non[- ]?profit|not[- ]for[- ]profit|501\s*\(c\)\s*\(3\)|501c3|public charity|charitable organization|tax[- ]exempt organization|nonprofit subsidiary)\b/i;
+// A membership organization can be public media or civic/nonprofit, not only
+// a trade body. Require explicit industry/commercial-member language for IND.
+const EXPLICIT_INDUSTRY_RE = /\b(trade association|industry association|industry trade organization|industry trade association|industry consortium|industry coalition|industry alliance|trade alliance|member companies|wireless carriers|device manufacturers|network equipment providers|advance the industry)\b/i;
 // Require explicit public-authority language. Generic mentions of "government"
 // (for example, an advocacy group's government-affairs page) are not enough.
 const GOVERNMENT_RE = /\b(federal office|federal department|ministry of|government ministry|government department|government agency|national public health (?:office|agency)|public authority|statutory public body)\b/i;
@@ -33,6 +37,7 @@ const ALIGNMENT_MARKERS = {
   partisan_organization: { marker: "PART", label: "Partisan aligned" },
   state_controlled_media: { marker: "STATE", label: "State controlled" },
   sponsored_content: { marker: "SPON", label: "Sponsored content" },
+  nonprofit_organization: { marker: "NPO", label: "Nonprofit organization" },
 };
 
 function normalizeDomain(url) {
@@ -206,6 +211,8 @@ export function classifyOrganizationStatusFromPages({
   const evidence = [];
 
   const tradeSignal = TRADE_RE.test(allText);
+  const explicitIndustrySignal = EXPLICIT_INDUSTRY_RE.test(allText);
+  const nonprofitSignal = NONPROFIT_RE.test(allText);
   const memberSignal = MEMBER_RE.test(allText);
   const boardSignal = BOARD_RE.test(allText);
   const advocacySignal = ADVOCACY_RE.test(allText);
@@ -230,16 +237,17 @@ export function classifyOrganizationStatusFromPages({
   const healthTopic = HEALTH_TOPIC_RE.test(String(sourceUrl || "")) || HEALTH_TOPIC_RE.test(allText.slice(0, 3000));
 
   for (const page of pages) {
-    addEvidence(evidence, "publisher_type", "industry_trade_association", page, TRADE_RE, 0.84);
+    addEvidence(evidence, "publisher_type", "industry_trade_association", page, EXPLICIT_INDUSTRY_RE, 0.84);
     addEvidence(evidence, "membership_disclosed", true, page, MEMBER_RE, 0.82);
     addEvidence(evidence, "board_members_disclosed", true, page, BOARD_RE, 0.82);
     addEvidence(evidence, "advocacy_role", true, page, ADVOCACY_RE, 0.72);
     addEvidence(evidence, "sector", "telecommunications / wireless", page, TELECOM_RE, 0.8);
     addEvidence(evidence, "provenance", "publisher_lineage_or_sponsorship_language", page, PROVENANCE_RE, 0.68);
     addEvidence(evidence, "publisher_type", "government_organization", page, GOVERNMENT_RE, 0.94);
+    addEvidence(evidence, "publisher_type", "nonprofit_organization", page, NONPROFIT_RE, 0.94);
   }
 
-  const isIndustryGroup = tradeSignal && (memberSignal || boardSignal);
+  const isIndustryGroup = tradeSignal && explicitIndustrySignal && (memberSignal || boardSignal);
   const isGovernmentSource = governmentSignal && !isIndustryGroup;
   // Advocacy is a real, pertinent fact about a source -- not a red flag by
   // itself, but a reader should be able to see it at a glance the same way
@@ -248,13 +256,16 @@ export function classifyOrganizationStatusFromPages({
   // silently shift a rating the way the government/industry classifications
   // deliberately do.
   const isAdvocacyOrg = advocacySignal && !isIndustryGroup && !isGovernmentSource;
+  const isNonprofitOrg = nonprofitSignal && !isIndustryGroup && !isGovernmentSource && !isAdvocacyOrg;
   const publisherType = isIndustryGroup
     ? "industry_trade_association"
     : isGovernmentSource
       ? "government_organization"
       : isAdvocacyOrg
         ? "advocacy_organization"
-        : null;
+        : isNonprofitOrg
+          ? "nonprofit_organization"
+          : null;
   const sector = telecomSignal ? "telecommunications / wireless" : null;
   const riskFlags = [];
   if (isIndustryGroup) riskFlags.push("material_industry_interest");
@@ -280,11 +291,13 @@ export function classifyOrganizationStatusFromPages({
         ? "industry aligned"
         : isAdvocacyOrg
           ? "advocacy / stated position"
+          : isNonprofitOrg
+            ? "nonprofit / public-interest organization"
           : null,
     advocacy_role: advocacySignal,
     membership_disclosed: memberSignal,
     board_members_disclosed: boardSignal,
-    identity_confidence: isGovernmentSource ? 0.95 : isIndustryGroup ? 0.9 : isAdvocacyOrg ? 0.75 : evidence.length ? 0.65 : 0.2,
+    identity_confidence: isGovernmentSource ? 0.95 : isIndustryGroup ? 0.9 : isNonprofitOrg ? 0.9 : isAdvocacyOrg ? 0.75 : evidence.length ? 0.65 : 0.2,
     domain_expertise_score: telecomSignal ? 0.85 : null,
     conflict_of_interest_score: isIndustryGroup ? 0.8 : 0,
     independence_score: isGovernmentSource ? 0.8 : isIndustryGroup ? 0.45 : null,
@@ -299,6 +312,8 @@ export function classifyOrganizationStatusFromPages({
         ? "Industry-aligned source; compare claims affecting member interests against independent sources."
         : isAdvocacyOrg
           ? "Advocacy source with a stated position on this topic; useful for that position, but claims should be corroborated against independent sources."
+          : isNonprofitOrg
+            ? "Nonprofit organizational status is verified from the publisher's own disclosure. This is identity context, not a reliability rating."
           : null,
     evidence,
   };

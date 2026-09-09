@@ -6,22 +6,22 @@ import { jsonrepair } from "jsonrepair";
 /**
  * Parses or repairs a JSON string, returning an object.
  * @param {string} input - The raw JSON string (possibly malformed).
- * @returns {any} The parsed object, or throws if irreparable.
+ * @param {{ onRepair?: (directError: Error) => void }} [options]
+ * @returns {any} The parsed value, or throws if irreparable.
  */
-export function parseOrRepairJSON(input) {
+export function parseOrRepairJSON(input, { onRepair } = {}) {
   // 1) First, try direct parse
   try {
     return JSON.parse(input);
   } catch (directErr) {
-    console.warn("Direct JSON.parse failed, attempting jsonrepair...");
+    onRepair?.(directErr);
 
     // 2) Attempt to repair common bracket/comma issues
     try {
       const repaired = jsonrepair(input);
       return JSON.parse(repaired);
     } catch (repairErr) {
-      console.error("jsonrepair also failed:", repairErr);
-      throw new Error("Irreparable JSON");
+      throw new Error("Irreparable JSON", { cause: repairErr });
     }
   }
 }

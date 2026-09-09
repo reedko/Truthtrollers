@@ -3,10 +3,97 @@
 import dotenv from "dotenv";
 import https from "https";
 import logger from "../utils/logger.js";
+import { parseOrRepairJSON } from "../utils/repairJson.js";
 
 dotenv.config();
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+const INVALID_JSON_CODE = "OPENAI_INVALID_JSON";
+
+function invalidJsonError(message, cause) {
+  const error = new Error(message, cause ? { cause } : undefined);
+  error.code = INVALID_JSON_CODE;
+  return error;
+}
+
+/**
+ * Parse an OpenAI JSON-mode response envelope and repair common formatting
+ * defects in the assistant's JSON. Incomplete model output is retried instead
+ * of repaired because jsonrepair can turn a truncated "{" into a valid but
+ * meaningless empty object.
+ */
+export function parseOpenAiJsonModeResponse(text, api) {
+  let envelope;
+
+  try {
+    envelope = JSON.parse(text);
+  } catch (error) {
+    throw invalidJsonError("OpenAI returned an invalid JSON response envelope", error);
+  }
+
+  let content;
+
+  if (api === "responses") {
+    if (envelope.status === "incomplete" || envelope.incomplete_details) {
+      const reason = envelope.incomplete_details?.reason || "unknown reason";
+      throw invalidJsonError(`Responses API output was incomplete: ${reason}`);
+    }
+
+    if (envelope.status === "failed") {
+      throw invalidJsonError("Responses API reported a failed response");
+    }
+
+    content = (envelope.output || [])
+      .flatMap((item) => item.content || [])
+      .filter((item) => item.type === "output_text")
+      .map((item) => item.text || "")
+      .join("");
+  } else {
+    const choice = envelope.choices?.[0];
+
+    if (choice?.finish_reason === "length") {
+      throw invalidJsonError("Chat Completions output was truncated at the token limit");
+    }
+
+    content = choice?.message?.content;
+  }
+
+  if (!content?.trim()) {
+    throw invalidJsonError("OpenAI returned no JSON content");
+  }
+
+  let repaired = false;
+  let parsed;
+
+  try {
+    parsed = parseOrRepairJSON(content, {
+      onRepair: () => {
+        repaired = true;
+      },
+    });
+  } catch (error) {
+    throw invalidJsonError("OpenAI returned irreparable JSON content", error);
+  }
+
+  // JSON mode callers expect an object or array, never a repaired bare string.
+  if (parsed === null || typeof parsed !== "object") {
+    throw invalidJsonError("OpenAI JSON content repaired to a non-object value");
+  }
+
+  const repairedToEmptyContainer =
+    repaired &&
+    (Array.isArray(parsed)
+      ? parsed.length === 0
+      : Object.keys(parsed).length === 0);
+
+  if (repairedToEmptyContainer) {
+    throw invalidJsonError(
+      "OpenAI JSON content was truncated and only repaired to an empty container",
+    );
+  }
+
+  return { parsed, repaired, content };
+}
 
 // Create persistent HTTPS agent with connection pooling for OpenAI API
 // This reuses TCP connections instead of creating new ones for each request
@@ -245,34 +332,26 @@ export const openAiLLM = {
           throw new Error(`OpenAI server error ${resp.status}`);
         }
 
-        let parsed;
-
         try {
-          const json = JSON.parse(text);
+          const result = parseOpenAiJsonModeResponse(text, api);
 
-          if (api === "responses") {
-            const content = (json.output || [])
-              .flatMap((item) => item.content || [])
-              .filter((item) => item.type === "output_text")
-              .map((item) => item.text || "")
-              .join("");
-
-            if (!content.trim()) {
-              throw new Error("Responses API returned no output_text");
-            }
-
-            parsed = JSON.parse(content);
-          } else {
-            const content = json.choices?.[0]?.message?.content ?? "{}";
-
-            parsed = JSON.parse(content);
+          if (result.repaired) {
+            logger.warn("[openAiLLM] Repaired malformed JSON-mode content", {
+              api,
+              preview: result.content.slice(0, 300),
+            });
           }
-        } catch (e) {
-          logger.error("[openAiLLM] failed to parse JSON-mode response:", text);
-          throw new Error("Failed to parse JSON from OpenAI: " + e.message);
-        }
 
-        return parsed;
+          return result.parsed;
+        } catch (e) {
+          logger.error("[openAiLLM] Failed to parse JSON-mode response", {
+            api,
+            code: e.code,
+            message: e.message,
+            preview: text.slice(0, 500),
+          });
+          throw e;
+        }
       } catch (error) {
         lastError = error;
 
@@ -281,6 +360,7 @@ export const openAiLLM = {
           error.message?.includes("fetch failed") ||
           error.message?.includes("ECONNRESET") ||
           error.message?.includes("other side closed");
+        const isInvalidJson = error.code === INVALID_JSON_CODE;
 
         logger.warn(
           `[openAiLLM] Attempt ${attempt}/${maxRetries} failed:`,
@@ -288,12 +368,15 @@ export const openAiLLM = {
             ? "Timeout"
             : isNetworkError
               ? "Network error"
+              : isInvalidJson
+                ? `Invalid JSON: ${error.message}`
               : error.message,
         );
 
         if (
           !isTimeout &&
           !isNetworkError &&
+          !isInvalidJson &&
           !error.message?.includes("server error")
         ) {
           throw error;

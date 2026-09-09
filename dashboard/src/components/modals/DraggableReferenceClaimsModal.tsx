@@ -62,8 +62,9 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   // Tooltip for dragging claims
   const tipRef = useRef<HTMLDivElement | null>(null);
   React.useEffect(() => {
+    if (!draggingClaim) return;
     const move = (e: MouseEvent) => {
-      if (tipRef.current && draggingClaim) {
+      if (tipRef.current) {
         // keep your horizontal nudge if you want; it doesn't affect the link bug
         tipRef.current.style.left = `${e.clientX + 10}px`;
         tipRef.current.style.top = `${e.clientY + 10}px`;

@@ -19,7 +19,11 @@ import {
   normalizeFacebookProvenance,
 } from "../utils/facebookProvenance.js";
 
-const SOURCE_ATTR_RE = /\b(source|via|originally published|originally at|reprinted from|cross[- ]?posted from|from the)\b/i;
+const SOURCE_ATTR_RE = /\b(source|via|originally published|originally appeared|originally at|first published|reprinted from|republished from|cross[- ]?posted from|as (?:seen|published|featured) (?:in|on|at)|from the)\b/i;
+// Starting recursive resolution on every occurrence of the ordinary word
+// "source" would make arbitrary citations eligible. Entry from a normal
+// article scrape therefore requires an explicit publication-attribution phrase.
+const RECURSIVE_ENTRY_ATTR_RE = /\b(?:originally (?:published|appeared|at)|first published|reprinted from|republished from|cross[- ]?posted from|as (?:seen|published|featured) (?:in|on|at)|(?:source|via)\s*:)/i;
 const MAX_CHAIN_DEPTH = 3;
 // Generic/garbage publisher names — includes old media_source platform values and generic web terms
 const JUNK_PUBLISHER_RE = /^(unknown( publisher)?|web|website|home|index|default|page|site|blog|news|online|internet|portal|network|media|publications?|facebook|youtube|twitter|instagram|tiktok|reddit|linkedin|pinterest|snapchat|telegram|x\.com|recaptcha|just a moment|cloudflare|attention required|one more step|checking your browser|access denied|bot protected)$/i;
@@ -83,6 +87,8 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
   const isPublisherProxy = publisher?.role === "journal" || publisher?.confidence === "proxy";
   const isCuratedUrlPublisher = publisher?.confidence === "curated";
   const isSocialPublisher = ["social_container", "social_container_placeholder", "direct_social_publisher"].includes(publisher?.role);
+  const isAttributedPublisher = publisher?.confidence === "recursive_attribution_chain"
+    || Boolean(publisher?.identity?.context?.publication_relationship);
 
   // Prefer an already-known canonical publisher record before considering a
   // domain-derived record linked to older scrapes.
@@ -114,7 +120,7 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
     }
   }
 
-  if (!publisherId && urlDomain && !isPublisherProxy && !isCuratedUrlPublisher && !isSocialPublisher) {
+  if (!publisherId && urlDomain && !isPublisherProxy && !isCuratedUrlPublisher && !isSocialPublisher && !isAttributedPublisher) {
     const domainResults = await query(
       `SELECT
          p.publisher_id,
@@ -142,9 +148,9 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
         publisherName = existingName;
       }
     }
-  } else if (isPublisherProxy) {
+  } else if (isPublisherProxy || isAttributedPublisher) {
     logger.log(
-      `🧾 [scrapeReference] Linking scholarly source proxy "${publisherName}" directly; not reusing prior publisher for ${urlDomain}`
+      `🧾 [scrapeReference] Linking ${isAttributedPublisher ? "attributed original publisher" : "scholarly source proxy"} "${publisherName}" directly; not reusing prior publisher for ${urlDomain}`
     );
   }
 
@@ -207,12 +213,14 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
  *   3. Check canonical URL on a different domain → recurse.
  *   4. Check source-attribution elements → recurse.
  */
-export async function resolvePublisherChain(url, depth, dbQuery) {
+export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedHtml = null) {
   if (depth >= MAX_CHAIN_DEPTH) return null;
 
   // ── 1. DB short-circuit ──────────────────────────────────────────────────
   // Look up publisher via the proper publishers table (not legacy media_source)
-  if (dbQuery) {
+  // Inspect extension-provided HTML before consulting an older DB link. This
+  // keeps a stale wrapper publisher from short-circuiting the attribution walk.
+  if (dbQuery && !prefetchedHtml) {
     try {
       const rows = await dbQuery(
         `SELECT c.content_id, p.publisher_name
@@ -230,7 +238,7 @@ export async function resolvePublisherChain(url, depth, dbQuery) {
         // "Children's Health Defense", for example.
         if (name && !JUNK_PUBLISHER_RE.test(name) && !isDomainLikePublisherName(name) && name.length > 2) {
           logger.log(`📦 [chain:${depth}] Already in DB: "${name}" for ${url}`);
-          return { name, content_id: rows[0].content_id };
+          return { name, content_id: rows[0].content_id, resolvedUrl: url };
         }
       }
     } catch {}
@@ -238,28 +246,37 @@ export async function resolvePublisherChain(url, depth, dbQuery) {
 
   // ── 2. Fetch & parse ─────────────────────────────────────────────────────
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(url, {
-      signal: ctrl.signal,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TruthTrollers/1.0)' },
-    });
-    clearTimeout(timer);
-    logger.log(`🔗 [chain:${depth}] fetch ${url} → ${res.status}`);
-    if (!res.ok) {
-      // On 403/404 for a subpage, try the root domain — it often has og:site_name
-      if (res.status === 403 || res.status === 404 || res.status === 401) {
-        const origin = new URL(url).origin;
-        const urlNoSlash = url.replace(/\/$/, '');
-        if (origin !== urlNoSlash) {
-          logger.log(`🔗 [chain:${depth}] ${res.status} on subpage → trying root ${origin}`);
-          return resolvePublisherChain(origin, depth, dbQuery);
-        }
+    let html = prefetchedHtml;
+    if (!html) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      let res;
+      try {
+        res = await fetch(url, {
+          signal: ctrl.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TruthTrollers/1.0)' },
+        });
+      } finally {
+        clearTimeout(timer);
       }
-      return null;
+      logger.log(`🔗 [chain:${depth}] fetch ${url} → ${res.status}`);
+      if (!res.ok) {
+        // On 403/404 for a subpage, try the root domain — it often has og:site_name
+        if (res.status === 403 || res.status === 404 || res.status === 401) {
+          const origin = new URL(url).origin;
+          const urlNoSlash = url.replace(/\/$/, '');
+          if (origin !== urlNoSlash) {
+            logger.log(`🔗 [chain:${depth}] ${res.status} on subpage → trying root ${origin}`);
+            return resolvePublisherChain(origin, depth, dbQuery);
+          }
+        }
+        return null;
+      }
+      html = await res.text();
+    } else {
+      logger.log(`🔗 [chain:${depth}] using prefetched extension HTML for ${url}`);
     }
 
-    const html = await res.text();
     const $ = cheerio.load(html);
     const curHost = new URL(url).hostname.replace(/^www\./, '');
 
@@ -360,7 +377,7 @@ export async function resolvePublisherChain(url, depth, dbQuery) {
     }
 
     logger.log(`🔗 [chain:${depth}] Returning pub: "${pub?.name || 'none'}"`);
-    return pub?.name ? pub : null;
+    return pub?.name ? { ...pub, resolvedUrl: url } : null;
   } catch (e) {
     logger.log(`⚠️  [chain:${depth}] fetch failed: ${e.message}`);
     return null;
@@ -468,6 +485,52 @@ export async function scrapeReference(query, {
             const name = choosePdfPublisher({}, lines);
             return name ? { name } : repositoryPublisherFromUrl(url);
           })());
+
+    // The recursive attribution walker already handles wrapper blogs and
+    // multi-hop "source/via/originally published" chains. Normal article
+    // scrapes had stopped calling it while the Facebook path below still did.
+    // Start it with the extension HTML so bot-protected wrappers can be
+    // inspected without a redundant server-side fetch.
+    if (!isFacebookUrl && raw_html && $) {
+      const $article = $('article, [role="main"], .post-content, .entry-content, .post-body, .article-body, main, #content, #main').first();
+      const attributionText = ($article.length ? $article : $('body')).text();
+      if (RECURSIVE_ENTRY_ATTR_RE.test(attributionText)) {
+        const resolved = await resolvePublisherChain(url, 0, query, raw_html);
+        if (resolved?.name && !JUNK_PUBLISHER_RE.test(resolved.name)) {
+          const wrapperIdentity = publisher?.identity || null;
+          if (wrapperIdentity && resolved.name.toLowerCase() !== String(publisher?.name || '').toLowerCase()) {
+            wrapperIdentity.entities = {
+              ...wrapperIdentity.entities,
+              original_publisher: {
+                name: resolved.name,
+                entity_type: "organization",
+                method: "recursive_attribution_chain",
+                confidence: 0.96,
+                evidence: resolved.resolvedUrl || resolved.name,
+              },
+            };
+            wrapperIdentity.context = {
+              ...wrapperIdentity.context,
+              linked_url: resolved.resolvedUrl || null,
+              linked_publisher_observed: resolved.name,
+              publication_relationship: {
+                type: "republished",
+                originalUrl: resolved.resolvedUrl || null,
+                evidenceText: "Resolved through recursive source attribution",
+                detectionMethod: "recursive_attribution_chain",
+              },
+            };
+          }
+          publisher = {
+            ...resolved,
+            role: "publisher",
+            confidence: "recursive_attribution_chain",
+            ...(wrapperIdentity ? { identity: wrapperIdentity } : {}),
+          };
+          logger.log(`🧬 [scrapeReference] Recursive provenance resolved publisher → "${resolved.name}"`);
+        }
+      }
+    }
 
     if (publisher?.confidence === "extension_metadata") {
       logger.log(`🏷️  [scrapeReference] Using extension publisher metadata: "${publisher.name}"`);
@@ -707,6 +770,10 @@ export async function scrapeReference(query, {
           logger.warn(`⚠️  [scrapeReference] No linked publisher for ${url} — skipping enrichment`);
           return;
         }
+        // Provider and own-site checks must follow the publisher we resolved,
+        // not the wrapper URL. Otherwise PolitiFact would be checked against
+        // pbs.org and inherit PBS's organizational signals.
+        const ratedSourceUrl = publisher?.resolvedUrl || url;
 
         // ── 3. Enrich publisher — AllSides, Ad Fontes, Wikipedia ─────────────
         //    Force re-enrichment if no admiralty code exists yet — ensures content
@@ -716,7 +783,7 @@ export async function scrapeReference(query, {
           publisherId: publisherLink.publisherId,
           publisherName: publisherLink.publisherName,
           domain: null,
-          sourceUrl: url,
+          sourceUrl: ratedSourceUrl,
           force: forcePublisherEnrichment || publisherLink.needsAdmiralty,
           context: "case_content",
         });
@@ -741,13 +808,13 @@ export async function scrapeReference(query, {
         // ── 5. Provider lookup for admiralty signals ─────────────────────────
         const { lookupPublisherAllProviders } = await import("../../services/sourceProviders/sourceProviderRegistry.js");
         const providerResults = await lookupPublisherAllProviders({
-          sourceUrl: url,
+          sourceUrl: ratedSourceUrl,
           publisherName: publisherLink.publisherName,
         });
 
         // ── 6. Evaluate and store admiralty code ─────────────────────────────
         const evaluation = await evaluateAdmiraltyCode({
-          sourceUrl: url,
+          sourceUrl: ratedSourceUrl,
           publisherName: publisherLink.publisherName,
           sourceIdentity: {
             sourceType:      dbSourceType || undefined,
@@ -760,7 +827,7 @@ export async function scrapeReference(query, {
         await storeEvaluation(query, {
           targetType: "content",
           targetId:   referenceContentId,
-          sourceUrl:  url,
+          sourceUrl:  ratedSourceUrl,
           publisherId: publisherLink.publisherId,
           evaluation,
         });

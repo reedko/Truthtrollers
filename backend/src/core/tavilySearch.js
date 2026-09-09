@@ -37,6 +37,7 @@ function createTavilyAdapter(apiKey) {
     avoid = [],
     includeRawContent = false,
     searchDepth = null,
+    includeImages = false,
   }) => {
     if (!query || !query.trim()) return [];
 
@@ -53,6 +54,7 @@ function createTavilyAdapter(apiKey) {
       max_results: topK,
       search_depth: searchDepth || (includeRawContent ? "advanced" : "basic"),
       include_raw_content: includeRawContent,
+      include_images: includeImages,
     };
     logger.log(
       `🔬 [Tavily] query="${query}" search_depth=${body.search_depth} include_raw_content=${body.include_raw_content} max_results=${body.max_results}`,
@@ -97,6 +99,13 @@ function createTavilyAdapter(apiKey) {
           title: r.title,
           snippet: r.content || r.snippet || "",
           rawContent: r.raw_content || null,
+          images: includeImages
+            ? (Array.isArray(r.images) ? r.images : [])
+                .map((image) =>
+                  typeof image === "string" ? image : image?.url,
+                )
+                .filter(Boolean)
+            : [],
           domain,
           publishedAt: r.published_date || null,
           score: typeof r.score === "number" ? r.score : 1 / (idx + 1), // crude fallback
