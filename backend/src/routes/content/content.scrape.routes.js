@@ -1000,12 +1000,11 @@ export default function createContentScrapeRoutes({ query }) {
     try {
       const {
         url,
-        taskContentId,
         raw_text,
         raw_html,
         title,
         authors,
-        claimIds,
+        claimIds: requestedClaimIds,
         stance,
         quality,
         summary,
@@ -1013,6 +1012,7 @@ export default function createContentScrapeRoutes({ query }) {
         location,
         force,
       } = req.body;
+      let taskContentId = req.body.taskContentId;
 
       if (!url) {
         return res.status(400).json({
@@ -1020,6 +1020,14 @@ export default function createContentScrapeRoutes({ query }) {
           error: "Missing required field: url",
         });
       }
+
+      const suppliedClaimIds = Array.isArray(requestedClaimIds)
+        ? [
+            ...new Set(
+              requestedClaimIds.map(Number).filter(Number.isInteger),
+            ),
+          ]
+        : [];
 
       logger.log(
         `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ""}: ${url}`,
@@ -1041,12 +1049,15 @@ export default function createContentScrapeRoutes({ query }) {
       if (existing.length > 0) {
         existingContentId = existing[0].content_id;
         existingContentName = existing[0].content_name;
+        const requestedTaskContentId = taskContentId;
+        const isSelfRetry =
+          Number(requestedTaskContentId) === Number(existingContentId);
         logger.log(
           `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existingContentName}")`,
         );
 
         // Ensure content_relations link exists (if taskContentId provided)
-        if (taskContentId) {
+        if (taskContentId && !isSelfRetry) {
           const relationCheck = await query(
             `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
             [taskContentId, existingContentId],
@@ -1065,11 +1076,21 @@ export default function createContentScrapeRoutes({ query }) {
               `✓ [/api/scrape-reference] Content_relations already exists: task ${taskContentId} → reference ${existingContentId}`,
             );
           }
+        } else if (isSelfRetry) {
+          logger.log(
+            `⏭️  [/api/scrape-reference] Skipping self-relation for retry scrape on content_id=${existingContentId}`,
+          );
         }
 
         // 🔄 RETRY SCRAPE: If we have raw_html/raw_text, DON'T return early
         // Instead, continue to claim extraction and evidence engine
-        isRetryScrape = !!(raw_html || raw_text) && taskContentId;
+        isRetryScrape =
+          !!(raw_html || raw_text) && Boolean(requestedTaskContentId);
+
+        // The source-detail publisher refresh historically reuses the current
+        // reference id as a retry signal. Preserve the retry while preventing
+        // downstream storage and claim logic from treating it as a parent task.
+        if (isSelfRetry) taskContentId = null;
 
         if (isRetryScrape) {
           logger.log(
@@ -1214,6 +1235,18 @@ export default function createContentScrapeRoutes({ query }) {
 
       const { referenceContentId, text } = scrapeResult;
 
+      let contentRelationId = null;
+      if (taskContentId) {
+        const relationRows = await query(
+          `SELECT content_relation_id
+             FROM content_relations
+            WHERE content_id = ? AND reference_content_id = ?
+            LIMIT 1`,
+          [taskContentId, referenceContentId],
+        );
+        contentRelationId = relationRows[0]?.content_relation_id ?? null;
+      }
+
       // Persist publisher + authors extracted during scrape (these are missing from
       // scrapeReference itself — it only writes media_source to the content row)
       const refPublisherName = scrapeResult.publisher?.name;
@@ -1275,35 +1308,46 @@ export default function createContentScrapeRoutes({ query }) {
         existingClaimCount = existingClaimsCheck[0]?.cnt ?? 0;
       }
 
-      let taskClaimsContext = null;
-      if (claimIds && Array.isArray(claimIds) && claimIds.length > 0) {
-        const claimRows = await query(
-          `SELECT claim_text FROM claims WHERE claim_id IN (?)`,
-          [claimIds],
-        );
-        taskClaimsContext = claimRows.map((row) => row.claim_text);
-        logger.log(
-          `  ✅ [2/5] Using ${taskClaimsContext.length} specific claims for context (${Date.now() - startTime}ms)`,
-        );
-      } else if (taskContentId) {
-        const taskClaimRows = await query(
-          `SELECT c.claim_text
+      let taskClaimRows = [];
+      if (taskContentId) {
+        taskClaimRows = await query(
+          `SELECT c.claim_id, c.claim_text
            FROM content_claims cc
            JOIN claims c ON cc.claim_id = c.claim_id
            WHERE cc.content_id = ?
-           AND cc.relationship_type IN ('task', 'content')`,
+             AND cc.relationship_type IN ('task', 'content')
+           ORDER BY cc.claim_order, c.claim_id`,
           [taskContentId],
         );
-        if (taskClaimRows.length > 0) {
-          taskClaimsContext = taskClaimRows.map((row) => row.claim_text);
-          logger.log(
-            `  ✅ [2/5] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context (${Date.now() - startTime}ms)`,
-          );
-        } else {
-          logger.log(
-            `  ⚠️  [2/5] No task claims found for content_id=${taskContentId}`,
+
+        if (suppliedClaimIds.length > 0) {
+          const suppliedSet = new Set(suppliedClaimIds);
+          taskClaimRows = taskClaimRows.filter((row) =>
+            suppliedSet.has(Number(row.claim_id)),
           );
         }
+      } else if (suppliedClaimIds.length > 0) {
+        taskClaimRows = await query(
+          `SELECT claim_id, claim_text
+             FROM claims
+            WHERE claim_id IN (?)`,
+          [suppliedClaimIds],
+        );
+      }
+
+      const claimIds = taskClaimRows.map((row) => Number(row.claim_id));
+      const taskClaimsContext = taskClaimRows.length
+        ? taskClaimRows.map((row) => row.claim_text)
+        : null;
+
+      if (taskClaimsContext) {
+        logger.log(
+          `  ✅ [2/5] Using ${taskClaimsContext.length} task claims for content_id=${taskContentId || "N/A"} (${Date.now() - startTime}ms)`,
+        );
+      } else {
+        logger.log(
+          `  ⚠️  [2/5] No task claims resolved for content_id=${taskContentId || "N/A"}`,
+        );
       }
 
       let refClaims = [];
@@ -1311,12 +1355,21 @@ export default function createContentScrapeRoutes({ query }) {
         logger.log(
           `  ⏭️  [3/5] Skipping claim extraction — ${existingClaimCount} claims already exist for ref ${referenceContentId} (pass force=true to re-extract)`,
         );
-        // Return existing claim IDs
+        // Return existing claim IDs and text so retry matching has the same
+        // semantic input as a fresh extraction.
         const existingRows = await query(
-          `SELECT claim_id FROM content_claims WHERE content_id = ? AND relationship_type = 'reference'`,
+          `SELECT c.claim_id, c.claim_text
+             FROM content_claims cc
+             JOIN claims c ON cc.claim_id = c.claim_id
+            WHERE cc.content_id = ?
+              AND cc.relationship_type = 'reference'
+            ORDER BY cc.claim_order, c.claim_id`,
           [referenceContentId],
         );
-        refClaims = existingRows.map((r) => ({ id: r.claim_id }));
+        refClaims = existingRows.map((r) => ({
+          id: r.claim_id,
+          text: r.claim_text,
+        }));
       } else {
         logger.log(
           `  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`,
@@ -1335,6 +1388,7 @@ export default function createContentScrapeRoutes({ query }) {
       }
 
       const refClaimIds = refClaims.map((c) => c.id);
+      let claimMatches = [];
 
       // PROACTIVE DETECTION: Warn if manual scrape extracted no claims
       if (refClaimIds.length === 0) {
@@ -1346,22 +1400,12 @@ export default function createContentScrapeRoutes({ query }) {
         logger.warn(
           `   Task claims context: ${taskClaimsContext ? taskClaimsContext.length : 0} claims`,
         );
-      } else if (taskContentId && claimIds && claimIds.length > 0) {
+      } else if (taskContentId && claimIds.length > 0) {
         // Auto-generate claim_links for manual scrapes with task context
         try {
           logger.log(
             `  ⏱️  [4/5] Matching reference claims to task claims via AI...`,
           );
-          // Fetch task claims
-          const taskClaimRows = await query(
-            `SELECT c.claim_id, c.claim_text
-               FROM content_claims cc
-               JOIN claims c ON cc.claim_id = c.claim_id
-               WHERE cc.content_id = ?
-               AND cc.relationship_type IN ('task', 'content')`,
-            [taskContentId],
-          );
-
           if (taskClaimRows.length > 0) {
             const taskClaimsForMatching = taskClaimRows.map((row) => ({
               id: row.claim_id,
@@ -1371,16 +1415,44 @@ export default function createContentScrapeRoutes({ query }) {
             logger.log(
               `  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`,
             );
-            const claimMatches = await matchClaimsToTaskClaims({
+            const rawClaimMatches = await matchClaimsToTaskClaims({
               referenceClaims: refClaims,
               taskClaims: taskClaimsForMatching,
               llm: openAiLLM,
             });
+
+            // An insufficient result is not a bearing. Keep one strongest result
+            // for each assertion/case-claim pair so retries cannot multiply links.
+            const strongestMatchesByPair = new Map();
+            for (const match of rawClaimMatches) {
+              if (match.stance === "insufficient") continue;
+              const key = `${match.referenceClaimId}:${match.taskClaimId}`;
+              const strength =
+                Math.abs(Number(match.supportLevel) || 0) *
+                (Number(match.confidence) || 0);
+              const previous = strongestMatchesByPair.get(key);
+              if (!previous || strength > previous.strength) {
+                strongestMatchesByPair.set(key, { match, strength });
+              }
+            }
+            claimMatches = [...strongestMatchesByPair.values()].map(
+              ({ match }) => match,
+            );
             logger.log(
               `  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`,
             );
 
-            // Insert into reference_claim_task_links (AI-suggested links)
+            if (contentRelationId) {
+              await query(
+                `DELETE FROM reference_claim_task_links
+                  WHERE content_relation_id = ?
+                    AND created_by_ai = 1
+                    AND verified_by_user_id IS NULL`,
+                [contentRelationId],
+              );
+            }
+
+            // Insert relation-scoped AI-suggested assertion links.
             for (const match of claimMatches) {
               // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
               let mappedStance = match.stance;
@@ -1388,13 +1460,21 @@ export default function createContentScrapeRoutes({ query }) {
               else if (match.stance === "refutes") mappedStance = "refute";
               else if (match.stance === "related") mappedStance = "nuance";
 
-              await query(
+              const insertResult = await query(
                 `INSERT INTO reference_claim_task_links
-                 (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                 (reference_claim_id, task_claim_id, content_relation_id, stance,
+                  score, confidence, support_level, rationale, quote, created_by_ai)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+                 ON DUPLICATE KEY UPDATE
+                   stance = VALUES(stance),
+                   score = VALUES(score),
+                   confidence = VALUES(confidence),
+                   support_level = VALUES(support_level),
+                   rationale = VALUES(rationale)`,
                 [
                   match.referenceClaimId,
                   match.taskClaimId,
+                  contentRelationId,
                   mappedStance,
                   Math.round((match.veracityScore || 0.5) * 100),
                   match.confidence,
@@ -1407,7 +1487,7 @@ export default function createContentScrapeRoutes({ query }) {
 
             if (claimMatches.length > 0) {
               logger.log(
-                `✅ [/api/scrape-reference] Created ${claimMatches.length} claim_links for manual scrape ${referenceContentId}`,
+                `✅ [/api/scrape-reference] Created ${claimMatches.length} assertion links for manual scrape ${referenceContentId}`,
               );
             }
           }
@@ -1424,7 +1504,7 @@ export default function createContentScrapeRoutes({ query }) {
       // (in case this is a re-scrape of a previously failed reference)
       // Extract actual quotes from full text and validate stance
       // -----------------------------------------------------------------
-      if (taskContentId && text) {
+      if (taskContentId && text && claimIds.length > 0) {
         // Get existing snippet_only/failed links for this reference
         const existingLinks = await query(
           `SELECT rcl.ref_claim_link_id, rcl.claim_id, rcl.stance as old_stance,
@@ -1434,8 +1514,9 @@ export default function createContentScrapeRoutes({ query }) {
            JOIN content_claims cc ON rcl.claim_id = cc.claim_id
            JOIN claims c ON cc.claim_id = c.claim_id
            WHERE rcl.reference_content_id = ?
-           AND rcl.scrape_status IN ('snippet_only', 'failed')`,
-          [referenceContentId],
+             AND COALESCE(rcl.task_claim_id, rcl.claim_id) IN (?)
+             AND rcl.scrape_status IN ('snippet_only', 'failed')`,
+          [referenceContentId, claimIds],
         );
 
         if (existingLinks.length > 0) {
@@ -1511,18 +1592,89 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
       // 3. Create reference_claim_links (link to TASK claims)
       // -----------------------------------------------------------------
-      if (Array.isArray(claimIds) && claimIds.length > 0) {
-        const referenceClaimLinksToInsert = claimIds.map((taskClaimId) => ({
+      let referenceClaimLinksToInsert = [];
+      if (claimMatches.length > 0) {
+        // A document bearing is the strongest assertion bearing for each task
+        // claim. This keeps the card/statistics layer faithful to the evidence
+        // assertions instead of copying the discovery request's broad stance.
+        const strongestByTaskClaim = new Map();
+        for (const match of claimMatches) {
+          const strength =
+            Math.abs(Number(match.supportLevel) || 0) *
+            (Number(match.confidence) || 0);
+          const previous = strongestByTaskClaim.get(Number(match.taskClaimId));
+          if (!previous || strength > previous.strength) {
+            strongestByTaskClaim.set(Number(match.taskClaimId), {
+              match,
+              strength,
+            });
+          }
+        }
+
+        referenceClaimLinksToInsert = [...strongestByTaskClaim.values()].map(
+          ({ match }) => ({
+            claim_id: match.taskClaimId,
+            task_claim_id: match.taskClaimId,
+            content_relation_id: contentRelationId,
+            reference_content_id: referenceContentId,
+            stance:
+              match.stance === "supports"
+                ? "support"
+                : match.stance === "refutes"
+                  ? "refute"
+                  : match.stance === "related"
+                    ? "nuance"
+                    : match.stance,
+            score: Math.round((match.veracityScore || 0.5) * 100),
+            confidence: match.confidence ?? null,
+            support_level: match.supportLevel ?? null,
+            rationale: match.rationale || null,
+            evidence_text:
+              refClaims.find(
+                (claim) => Number(claim.id) === Number(match.referenceClaimId),
+              )?.text || null,
+            evidence_offsets: null,
+            created_by_ai: 1,
+            verified_by_user_id: null,
+            scrape_status: "full",
+          }),
+        );
+      } else if (suppliedClaimIds.length > 0) {
+        // Preserve the discovery-stage document bearing only when no extracted
+        // assertion produced a bearing.
+        referenceClaimLinksToInsert = suppliedClaimIds.map((taskClaimId) => ({
           claim_id: taskClaimId,
+          task_claim_id: taskClaimId,
+          content_relation_id: contentRelationId,
           reference_content_id: referenceContentId,
           stance: stance || "insufficient",
           score: quality ? Math.round(quality * 100) : 0,
+          confidence: quality ?? null,
+          support_level:
+            stance === "support"
+              ? quality ?? 0
+              : stance === "refute"
+                ? -(quality ?? 0)
+                : 0,
           rationale: summary || null,
           evidence_text: quote || null,
           evidence_offsets: location ? JSON.stringify(location) : null,
           created_by_ai: 1,
           verified_by_user_id: null,
+          scrape_status: "full",
         }));
+      }
+
+      if (referenceClaimLinksToInsert.length > 0) {
+        if (contentRelationId) {
+          await query(
+            `DELETE FROM reference_claim_links
+              WHERE content_relation_id = ?
+                AND created_by_ai = 1
+                AND verified_by_user_id IS NULL`,
+            [contentRelationId],
+          );
+        }
 
         const { insertReferenceClaimLinksBulk } =
           await import("../../queries/referenceClaimLinks.js");
@@ -1545,7 +1697,8 @@ export default function createContentScrapeRoutes({ query }) {
         success: true,
         contentId: referenceContentId,
         claimsExtracted: refClaimIds.length,
-        taskClaimLinksCreated: claimIds?.length || 0,
+        taskClaimLinksCreated: claimMatches.length,
+        documentLinksCreated: referenceClaimLinksToInsert.length,
         references: {
           dom: [],
           ai: [], // References don't create sub-references

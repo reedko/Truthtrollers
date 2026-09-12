@@ -26,7 +26,7 @@ import { FiMap } from "react-icons/fi";
 import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
 import CytoscapeMolecule from "./CytoscapeMolecule";
-import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
+import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModal";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import {
@@ -219,7 +219,7 @@ export default function MobileWorkspaceShell({
     }
   };
 
-  // From ReferenceClaimsModal: user taps "Link" next to a ref-claim
+  // From the reference detail modal: user taps "Link" next to a ref-claim
   const startLinkFromRefClaim = (
     claim: Pick<Claim, "claim_id" | "claim_text">
   ) => {
@@ -435,7 +435,10 @@ export default function MobileWorkspaceShell({
       </Modal>
 
       {/* Reference details */}
-      <ReferenceClaimsModal
+      <DraggableReferenceClaimsModal
+        rootContentId={contentId}
+        claimLinks={claimLinks}
+        taskClaims={claims}
         isOpen={refModalOpen}
         onClose={() => {
           setRefModalOpen(false);
@@ -445,8 +448,6 @@ export default function MobileWorkspaceShell({
         setDraggingClaim={() => {}}
         draggingClaim={null}
         onVerifyClaim={() => {}}
-        // NEW: begin link flow from a ref-claim
-        // @ts-ignore prop we add in the modal
         onStartLink={startLinkFromRefClaim}
       />
 

@@ -34,6 +34,12 @@ scoreTransform controls how evidence about the object claim should affect the ar
 Use invert when the article presents a claim mainly as an opponent/ad/source claim that the article is trying to discredit.
 Use none for attribution-only, neutral reporting, or background that does not carry the argument.`;
 
+const ARGUMENT_ORIENTATION_GUARD = `CRITICAL ARTICLE-ORIENTATION RULES:
+- "reported_neutral" means the article genuinely presents the substantive proposition without using it for or against its thesis. The grammar "X says Y" does not by itself make Y neutral.
+- When an article quotes an advertisement, authority, opponent, or source claim as an example of a position the article disputes, map the substantive proposition as articleStance "rejects", argumentFunction "opposing_claim_to_refute", and scoreTransform "invert".
+- Determine stance toward the object claim from the article thesis, surrounding framing, and claim hierarchy—not from the attribution wrapper alone.
+- Attribution may be neutral while the attributed substantive proposition is opposed. Do not let neutral attribution erase the substantive proposition's inverted article impact.`;
+
 const FALLBACK_USER = `Analyze this article excerpt and extracted claims.
 
 ARTICLE EXCERPT:
@@ -206,6 +212,13 @@ export async function mapArgumentFunctions({
     text: claim.text,
     role: claim.role || null,
     relationshipType: claim.relationshipType || null,
+    parentClaimId: claim.parentId || claim.parentClaimId || null,
+    parentClaimText:
+      claims.find(
+        (candidate) =>
+          Number(candidate.id) ===
+          Number(claim.parentId || claim.parentClaimId),
+      )?.text || null,
     objectText: claim.objectText || null,
   }));
   const user = fillTemplate(userPrompt.user || FALLBACK_USER, {
@@ -217,7 +230,7 @@ export async function mapArgumentFunctions({
   let response;
   try {
     response = await openAiLLM.generate({
-      system: systemPrompt.system || FALLBACK_SYSTEM,
+      system: `${systemPrompt.system || FALLBACK_SYSTEM}\n\n${ARGUMENT_ORIENTATION_GUARD}`,
       user,
       schemaHint: "",
       temperature: 0,

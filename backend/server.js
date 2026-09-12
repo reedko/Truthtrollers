@@ -97,6 +97,7 @@ import createEvaluationRouter from "./src/routes/evaluation/evaluation.routes.js
 import createContentRatingRouter from "./src/routes/evaluation/content-rating.routes.js";
 import createDiscussionSystemRouter from "./src/routes/discussion/index.js";
 import createTTLiveSystemRouter from "./src/routes/ttlive/index.js";
+import createProvenanceRouter from "./src/modules/provenance/index.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -338,6 +339,7 @@ app.use("/", createEvaluationRouter({ query, pool })); // Evaluation routes: /ap
 app.use("/", createContentRatingRouter({ query, pool })); // Content rating routes: /api/content-rating/* (evidence chain evaluation)
 app.use("/", createDiscussionSystemRouter({ query, pool })); // Discussion units & X/Twitter posting: /api/discussion/*, /api/x-auth/*
 app.use("/", createTTLiveSystemRouter({ query, pool })); // TruthTrollers Live Feed: /api/ttlive/*
+app.use("/", createProvenanceRouter({ query })); // Feature-flagged Layer 3 provenance seam
 
 // Source provider diagnostics — dev/admin only
 if (

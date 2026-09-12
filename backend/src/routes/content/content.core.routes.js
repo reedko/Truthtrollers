@@ -185,14 +185,43 @@ WHERE t.content_id = ?
       `🔍 [/api/check-content] Checking URL: ${url}, userId: ${userId || "none"}`,
     );
 
-    const sql = "SELECT * FROM content WHERE url = ?";
+    // A content row's role is contextual. Match the graph queries' established
+    // rule instead of trusting the legacy content.content_type value:
+    // outgoing relations make it a task; incoming relations make it a reference.
+    // A row can have both roles, and a standalone row remains task-compatible.
+    const sql = `
+      SELECT
+        c.*,
+        EXISTS (
+          SELECT 1
+          FROM content_relations outgoing
+          WHERE outgoing.content_id = c.content_id
+        ) AS has_outgoing_relations,
+        EXISTS (
+          SELECT 1
+          FROM content_relations incoming
+          WHERE incoming.reference_content_id = c.content_id
+        ) AS has_incoming_relations
+      FROM content c
+      WHERE c.url = ?
+      LIMIT 1
+    `;
     pool.query(sql, [url], async (err, results) => {
       if (err) {
         logger.error(`❌ [/api/check-content] Database error:`, err);
         return res.status(500).send({ error: "Database error" }); // Don't leak error details
       }
       if (results.length > 0) {
-        const task = results[0];
+        const {
+          has_outgoing_relations: hasOutgoingRelationsValue,
+          has_incoming_relations: hasIncomingRelationsValue,
+          ...task
+        } = results[0];
+        const hasOutgoingRelations = Boolean(Number(hasOutgoingRelationsValue));
+        const hasIncomingRelations = Boolean(Number(hasIncomingRelationsValue));
+        const isTaskContext = hasOutgoingRelations || !hasIncomingRelations;
+        const isReferenceContext = hasIncomingRelations;
+        const contextRole = isTaskContext ? "task" : "reference";
 
         // Check if user has completed this task
         let isCompleted = false;
@@ -232,9 +261,16 @@ WHERE t.content_id = ?
         }
 
         logger.log(
-          `✅ [/api/check-content] Found content: content_id=${task.content_id}, content_name="${task.content_name?.substring(0, 50)}...", progress="${task.progress}", isCompleted=${isCompleted}`,
+          `✅ [/api/check-content] Found content: content_id=${task.content_id}, contextRole=${contextRole}, isTaskContext=${isTaskContext}, isReferenceContext=${isReferenceContext}, content_name="${task.content_name?.substring(0, 50)}...", progress="${task.progress}", isCompleted=${isCompleted}`,
         );
-        res.send({ exists: true, task: task, isCompleted });
+        res.send({
+          exists: true,
+          task,
+          isCompleted,
+          contextRole,
+          isTaskContext,
+          isReferenceContext,
+        });
       } else {
         logger.log(`❌ [/api/check-content] No content found for URL: ${url}`);
         res.send({ exists: false });

@@ -8,7 +8,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SEED_PATH = path.join(__dirname, "../../../../data/seeds/allsides.json");
+const SEED_PATH = path.join(__dirname, "../../../data/seeds/allsides.json");
 const TIMEOUT_MS = 8000;
 
 // Bias label → numeric score for interop with existing publisher_ratings

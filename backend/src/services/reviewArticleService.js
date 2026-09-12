@@ -966,11 +966,12 @@ function visualAssetForModule(module) {
 async function generateVisualAssetForModule(module, articleId, publicBaseUrl) {
   if (module.type !== "visual") return module;
   if (module.asset?.image_url && module.data?.snapshot_source === "workspace_dom_capture") return module;
-  if (module.id === "evidence_map_image" || module.id === "knowledge_graph_image") return module;
   const svgById = {
     verimeter_graphic: verimeterGraphicSvg,
     source_landscape_graphic: sourceLandscapeSvg,
     claim_link_mini_graphics: claimLinkMiniSvg,
+    evidence_map_image: evidenceMapSvg,
+    knowledge_graph_image: knowledgeGraphSvg,
   };
   const makeSvg = svgById[module.id];
   if (!makeSvg) return module;

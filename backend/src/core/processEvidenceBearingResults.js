@@ -145,6 +145,40 @@ ON DUPLICATE KEY UPDATE
     ),
   );
 
+  // A normalized assertion can be attached to more than one acquired document.
+  // persistClaims intentionally reuses that assertion's claim ID, so keep only
+  // one AI bearing for the resulting assertion/task pair. Prefer the strongest
+  // bearing, with the oldest row as a stable tie-breaker.
+  const duplicatePruneResult = await query(
+    `DELETE duplicate_link
+       FROM reference_claim_task_links duplicate_link
+       JOIN reference_claim_task_links preferred_link
+         ON preferred_link.reference_claim_id = duplicate_link.reference_claim_id
+        AND preferred_link.task_claim_id = duplicate_link.task_claim_id
+        AND preferred_link.created_by_ai = 1
+       JOIN content_claims task_cc
+         ON task_cc.claim_id = duplicate_link.task_claim_id
+      WHERE task_cc.content_id = ?
+        AND duplicate_link.created_by_ai = 1
+        AND (
+          COALESCE(ABS(preferred_link.support_level), -1) >
+            COALESCE(ABS(duplicate_link.support_level), -1)
+          OR (
+            COALESCE(ABS(preferred_link.support_level), -1) =
+              COALESCE(ABS(duplicate_link.support_level), -1)
+            AND preferred_link.reference_claim_task_links_id <
+              duplicate_link.reference_claim_task_links_id
+          )
+        )`,
+    [taskContentId],
+  );
+  const duplicateLinksPruned = Number(duplicatePruneResult?.affectedRows || 0);
+  if (duplicateLinksPruned > 0) {
+    logger.log(
+      `✂️ [BearingPrune] Removed ${duplicateLinksPruned} duplicate assertion/task bearings`,
+    );
+  }
+
   const retainedBearingResults = [];
 
   for (const doc of bearingResults) {

@@ -289,6 +289,22 @@
     "url": "https://mediabiasfactcheck.com/politifact/"
   },
   {
+    "name": "Children's Health Defense",
+    "domain": "childrenshealthdefense.org",
+    "bias": "Right Conspiracy-Pseudoscience",
+    "factual_reporting": "Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/childrens-health-defense/"
+  },
+  {
+    "name": "The Defender",
+    "domain": "childrenshealthdefense.org",
+    "bias": "Right Conspiracy-Pseudoscience",
+    "factual_reporting": "Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/the-defender-childrens-health-defense-credibility/"
+  },
+  {
     "name": "FactCheck.org",
     "domain": "factcheck.org",
     "bias": "Least Biased",

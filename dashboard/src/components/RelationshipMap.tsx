@@ -299,4 +299,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   );
 };
 
-export default RelationshipMap;
+// Memoized: this component rebuilds an SVG line for every claim link, which
+// gets expensive on documents with 100+ links. Without this, any unrelated
+// Workspace re-render (e.g. hovering a claim) forces a full rebuild.
+export default React.memo(RelationshipMap);

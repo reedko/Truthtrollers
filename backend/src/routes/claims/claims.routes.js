@@ -947,6 +947,7 @@ WHERE cc_task.content_id = ?
       const contentId = req.params.contentId;
       const viewerId = req.query.viewerId;
       const scope = req.query.scope || "user"; // 'user' | 'all' | 'admin'
+      const includeAi = req.query.includeAi === "true";
 
       let userFilter = "";
       const params = [contentId];
@@ -966,7 +967,7 @@ WHERE cc_task.content_id = ?
         }
       }
 
-      const sql = `
+      let sql = `
     SELECT
       CONCAT(cl.claim_link_id, cr.reference_content_id) AS id,
       cl.claim_link_id AS claim_link_id,
@@ -990,6 +991,68 @@ WHERE cc_task.content_id = ?
       ${scope !== "admin" ? "AND cl.disabled = false" : ""}
       ${userFilter}
   `;
+
+      if (includeAi) {
+        sql += `
+    UNION ALL
+    SELECT DISTINCT
+      CONCAT('rctl_', rctl.reference_claim_task_links_id) AS id,
+      rctl.reference_claim_task_links_id AS claim_link_id,
+      cc_task.content_id AS task_content_id,
+      rctl.task_claim_id AS left_claim_id,
+      rctl.reference_claim_id AS source_claim_id,
+      cc_ref.content_id AS right_reference_id,
+      CASE rctl.stance
+        WHEN 'support' THEN 'supports'
+        WHEN 'refute' THEN 'refutes'
+        WHEN 'nuance' THEN 'related'
+        ELSE rctl.stance
+      END AS relationship,
+      rctl.confidence,
+      rctl.rationale AS notes,
+      rctl.created_by_ai,
+      ${scope === "admin" ? "rctl.verified_by_user_id AS created_by_user_id," : ""}
+      ${scope === "admin" ? "0 AS is_disabled," : ""}
+      rctl.created_at
+    FROM reference_claim_task_links rctl
+    JOIN content_claims cc_task ON rctl.task_claim_id = cc_task.claim_id
+    JOIN content_relations cr
+      ON cr.content_id = cc_task.content_id
+     AND cr.content_relation_id = COALESCE(
+       rctl.content_relation_id,
+       (
+         SELECT MIN(cr2.content_relation_id)
+         FROM content_claims cc_ref2
+         JOIN content_relations cr2
+           ON cr2.content_id = cc_task.content_id
+          AND cr2.reference_content_id = cc_ref2.content_id
+         WHERE cc_ref2.claim_id = rctl.reference_claim_id
+       )
+     )
+    JOIN content_claims cc_ref
+      ON cc_ref.claim_id = rctl.reference_claim_id
+     AND cc_ref.content_id = cr.reference_content_id
+    WHERE cc_task.content_id = ?
+      AND rctl.created_by_ai = 1
+      AND rctl.stance IN ('support', 'refute', 'nuance')
+      AND NOT EXISTS (
+        SELECT 1
+        FROM reference_claim_task_links preferred
+        WHERE preferred.reference_claim_id = rctl.reference_claim_id
+          AND preferred.task_claim_id = rctl.task_claim_id
+          AND preferred.created_by_ai = 1
+          AND preferred.stance IN ('support', 'refute', 'nuance')
+          AND (
+            COALESCE(ABS(preferred.support_level), -1) > COALESCE(ABS(rctl.support_level), -1)
+            OR (
+              COALESCE(ABS(preferred.support_level), -1) = COALESCE(ABS(rctl.support_level), -1)
+              AND preferred.reference_claim_task_links_id < rctl.reference_claim_task_links_id
+            )
+          )
+      )
+        `;
+        params.push(contentId);
+      }
 
       try {
         const claimsWithReferences = await query(sql, params);
@@ -1239,6 +1302,9 @@ WHERE cc_task.content_id = ?
         FROM reference_claim_links rcl
         JOIN claims c ON rcl.claim_id = c.claim_id
         JOIN content_claims cc ON c.claim_id = cc.claim_id
+        JOIN content_relations cr
+          ON cr.content_id = cc.content_id
+         AND cr.reference_content_id = rcl.reference_content_id
         JOIN content ref ON rcl.reference_content_id = ref.content_id
         WHERE cc.content_id = ?
         ORDER BY rcl.support_level DESC

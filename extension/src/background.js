@@ -134,7 +134,10 @@ async function syncTaskStateForUrl(url, tabId = null) {
       });
 
       const data = await resp.json();
-      if (data.exists) {
+      // Older servers do not return isTaskContext, so only an explicit false
+      // suppresses task handling. Reference-only content must not be loaded as
+      // the current task merely because its URL exists in content.
+      if (data.exists && data.isTaskContext !== false) {
         isDetected = true;
         isCompleted = true; // Simplified: if it exists in DB, it's been processed
         task = data.task;
@@ -1381,6 +1384,7 @@ async function checkContentAndUpdatePopup(
     }
 
     let data = null;
+    let lastLookupResult = null;
     let matchedUrl = actualUrl;
 
     // Try each URL until we find a match
@@ -1410,18 +1414,26 @@ async function checkContentAndUpdatePopup(
       console.log(
         `🔍 [checkContent] Database response for ${checkUrl}: exists=${result.exists}`,
       );
-      if (result.exists) {
+      lastLookupResult = result;
+      if (result.exists && result.isTaskContext !== false) {
         data = result;
         matchedUrl = checkUrl;
         console.log(`✅ [checkContent] Found task at URL: ${checkUrl}`);
         break;
+      } else if (result.exists) {
+        console.log(
+          `ℹ️ [checkContent] URL exists as reference-only content; not loading it as a task: ${checkUrl}`,
+        );
       } else {
         console.log(`❌ [checkContent] No task found for URL: ${checkUrl}`);
       }
     }
 
-    // If no match found, use the last response
-    if (!data) {
+    // Reuse a completed lookup when possible. The fallback request is retained
+    // for cases where every attempted response failed JSON parsing.
+    if (!data && lastLookupResult) {
+      data = lastLookupResult;
+    } else if (!data) {
       const response = await fetch(`${BASE_URL}/api/check-content`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1444,9 +1456,10 @@ async function checkContentAndUpdatePopup(
       matchedUrl = actualUrl;
     }
 
-    const isDetected = data.exists;
-    const isCompleted = data.exists && data.isCompleted;
-    const task = data.exists ? data.task : null;
+    const isTaskContext = data.exists && data.isTaskContext !== false;
+    const isDetected = isTaskContext;
+    const isCompleted = isTaskContext && data.isCompleted;
+    const task = isTaskContext ? data.task : null;
     const store = useTaskStore.getState();
 
     if (data.exists) {

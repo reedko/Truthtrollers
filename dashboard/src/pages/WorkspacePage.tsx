@@ -172,7 +172,9 @@ const WorkspacePage = () => {
   useEffect(() => {
     if (taskId && !hasCheckedUserLinks) {
       fetchClaimsAndLinkedReferencesForTask(taskId, viewerId, viewScope).then((links) => {
-        const count = links.length;
+        const count = links.filter(
+          (link) => link.created_by_ai !== true && link.created_by_ai !== 1,
+        ).length;
         setUserLinkCount(count);
         setHasCheckedUserLinks(true);
       });

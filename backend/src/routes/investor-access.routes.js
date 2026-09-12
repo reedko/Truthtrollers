@@ -114,14 +114,61 @@ function rateLimited(ip) {
   return entry.count > RATE_LIMIT_MAX;
 }
 
+function sendInvitationConfirmation(res, token) {
+  const action = `/access/${encodeURIComponent(token)}`;
+  res.set({
+    "Cache-Control": "private, no-store",
+    "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-Robots-Tag": "noindex, nofollow, noarchive",
+  });
+  res.type("html").send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VeriStrata Investor Invitation</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; color: #eafaff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: radial-gradient(circle at 78% 12%, rgba(0, 162, 255, .22), transparent 34%), linear-gradient(145deg, #030811, #071828 58%, #06111d); }
+    main { width: min(580px, 100%); padding: 42px; border: 1px solid rgba(113, 219, 255, .28); border-radius: 22px; background: linear-gradient(145deg, rgba(7, 22, 38, .94), rgba(4, 12, 23, .97)); box-shadow: 0 28px 90px rgba(0, 0, 0, .48), inset 0 1px rgba(255, 255, 255, .04); }
+    header { display: flex; align-items: center; gap: 12px; margin-bottom: 34px; color: #71dbff; font: 700 12px ui-monospace, monospace; letter-spacing: .15em; }
+    header img { width: 34px; height: 34px; object-fit: contain; }
+    .eyebrow { margin: 0 0 12px; color: #56d5ff; font: 700 11px ui-monospace, monospace; letter-spacing: .16em; }
+    h1 { margin: 0; font-size: clamp(32px, 7vw, 48px); line-height: 1.02; letter-spacing: -.045em; }
+    .lede { margin: 20px 0 12px; color: #b9d1dc; font-size: 17px; line-height: 1.62; }
+    .privacy { margin: 0 0 30px; color: #7896a5; font-size: 13px; line-height: 1.55; }
+    button { width: 100%; min-height: 54px; border: 1px solid #71dbff; border-radius: 12px; color: #03101b; background: linear-gradient(135deg, #71dbff, #32baff); box-shadow: 0 0 28px rgba(50, 186, 255, .2); font: 800 12px ui-monospace, monospace; letter-spacing: .12em; cursor: pointer; }
+    button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    footer { margin-top: 22px; color: #5f7b89; font-size: 12px; line-height: 1.55; }
+    @media (max-width: 520px) { main { padding: 30px 24px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><img src="/logo.png" alt=""> VERISTRATA · INVESTOR OS</header>
+    <p class="eyebrow">PRIVATE INVESTOR INVITATION</p>
+    <h1>Review the VeriStrata investor materials.</h1>
+    <p class="lede">This private link was issued to share VeriStrata's investor information room. Continue to open the packet.</p>
+    <p class="privacy">No password or payment information is requested.</p>
+    <form method="post" action="${action}"><button type="submit">CONTINUE TO INVESTOR OS</button></form>
+    <footer>If you were not expecting this invitation, close this page. Access through this link may be recorded for investor-relations follow-up.</footer>
+  </main>
+</body>
+</html>`);
+}
+
 export default function ({ query, pool }) {
   const router = Router();
 
   /**
    * GET /access/:token
-   * Redeems an invitation link: validates it, mints a session, sets the
-   * cookie, and redirects to the clean portal URL (token never lingers in
-   * the address bar). Reusable until the invitation expires or is revoked.
+   * Validates the invitation and shows a branded confirmation page. Link
+   * scanners can safely preview this GET without minting a session or
+   * generating investor activity. Only the explicit POST below redeems it.
    */
   router.get("/access/:token", async (req, res) => {
     const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
@@ -143,6 +190,44 @@ export default function ({ query, pool }) {
       if (rows.length === 0) {
         return res.redirect("/");
       }
+
+      const invitation = rows[0];
+      const now = new Date();
+      if (invitation.revoked_at) {
+        return res.redirect("/");
+      }
+      if (new Date(invitation.expires_at) <= now) {
+        return res.redirect("/");
+      }
+
+      sendInvitationConfirmation(res, token);
+    } catch (err) {
+      console.error("❌ [Investor Access] GET /access/:token error:", err);
+      res.redirect("/");
+    }
+  });
+
+  /**
+   * POST /access/:token
+   * Redeems an invitation after the visitor explicitly confirms. Mints a
+   * session, sets the cookie, and redirects to the clean portal URL.
+   */
+  router.post("/access/:token", async (req, res) => {
+    const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+    if (rateLimited(String(ip).split(",")[0].trim())) {
+      return res.status(429).send("Too many attempts. Please try again later.");
+    }
+
+    try {
+      const { token } = req.params;
+      const hash = hashToken(token);
+      const rows = await query(
+        `SELECT invitation_id, recipient_name, recipient_email, expires_at, revoked_at
+         FROM investor_invitations
+         WHERE token_hash = ?`,
+        [hash],
+      );
+      if (rows.length === 0) return res.redirect("/");
 
       const invitation = rows[0];
       await query(
@@ -209,7 +294,7 @@ export default function ({ query, pool }) {
       });
       res.redirect("/");
     } catch (err) {
-      console.error("❌ [Investor Access] /access/:token error:", err);
+      console.error("❌ [Investor Access] POST /access/:token error:", err);
       res.redirect("/");
     }
   });

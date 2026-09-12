@@ -18,6 +18,7 @@ import type {
   WorkspaceClaimLink,
   WorkspaceEvidenceRelation,
 } from "../evidenceLinkPresentation";
+import TraceSupportControl from "../../modules/provenance/traceSupport/TraceSupportControl";
 
 interface Props {
   anchorSelector?: string;
@@ -31,10 +32,12 @@ interface Props {
   onVerifyClaim?: (claim: Claim) => void;
   onEditClaim?: (claim: Claim) => void;
   onDeleteClaim?: (claimId: number) => void;
+  onStartLink?: (claim: Pick<Claim, "claim_id" | "claim_text">) => void;
   claimLinks?: WorkspaceClaimLink[];
   taskClaims?: Claim[];
   onClaimClick?: (claim: Claim) => void;
   onRescrape?: () => void;
+  rootContentId?: number;
 }
 
 const DraggableReferenceClaimsModal: React.FC<Props> = ({
@@ -47,10 +50,12 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   onVerifyClaim,
   onEditClaim,
   onDeleteClaim,
+  onStartLink,
   claimLinks = [],
   taskClaims = [],
   onClaimClick,
   onRescrape,
+  rootContentId,
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -608,12 +613,16 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     const isSnippet = claim.claim_type === "snippet";
                     const connections = getClaimConnections(claim.claim_id);
                     const hasConnection = connections.length > 0;
+                    const aiConnection = connections.find(
+                      (connection) => connection.linkKind === "assertion-bearing",
+                    );
+                    const primaryConnection = aiConnection || connections[0];
 
                     const accentColor =
                       hasConnection
-                        ? connections[0].relation === "support"
+                        ? primaryConnection.relation === "support"
                           ? "rgba(74,222,128,0.7)"
-                          : connections[0].relation === "refute"
+                          : primaryConnection.relation === "refute"
                             ? "rgba(239,68,68,0.7)"
                             : "rgba(0,162,255,0.7)"
                         : isSnippet
@@ -621,7 +630,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           : "rgba(0,162,255,0.32)";
 
                     const glowColor = hasConnection
-                      ? connections[0].relation === "support" ? "rgba(74,222,128,0.12)" : connections[0].relation === "refute" ? "rgba(239,68,68,0.12)" : "rgba(0,162,255,0.12)"
+                      ? primaryConnection.relation === "support" ? "rgba(74,222,128,0.12)" : primaryConnection.relation === "refute" ? "rgba(239,68,68,0.12)" : "rgba(0,162,255,0.12)"
                       : "rgba(0,162,255,0.08)";
 
                     return (
@@ -669,14 +678,24 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                             {/* claim id chip */}
                             <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.45)" letterSpacing="1px" mb="3px">#{claim.claim_id}</Text>
                             {hasConnection && (
-                              <Text fontSize="10px" color={accentColor} mb="3px" letterSpacing="0.5px">
-                                {connections[0].relation === "support"
-                                  ? "🟢 Supports"
-                                  : connections[0].relation === "refute"
-                                    ? "🔴 Refutes"
-                                    : "🔵 Nuances"}{" "}
-                                task claim
-                              </Text>
+                              <HStack align="center" spacing={2} mb="3px" flexWrap="wrap">
+                                <Text fontSize="10px" color={accentColor} letterSpacing="0.5px">
+                                  {primaryConnection.linkKind === "assertion-bearing" ? "🤖 AI · " : "✓ User · "}
+                                  {primaryConnection.relation === "support"
+                                    ? "🟢 Supports"
+                                    : primaryConnection.relation === "refute"
+                                      ? "🔴 Refutes"
+                                      : "🔵 Nuances"}{" "}
+                                  task claim
+                                </Text>
+                                {!isSnippet && (
+                                  <TraceSupportControl
+                                    rootContentId={rootContentId}
+                                    parentReferenceContentId={reference?.reference_content_id}
+                                    evidenceClaimId={claim.claim_id}
+                                  />
+                                )}
+                              </HStack>
                             )}
                             {isSnippet ? (
                               <Text fontStyle="italic" fontSize="sm" color="var(--mr-text-secondary)" opacity={0.9}>
@@ -689,6 +708,20 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                         </Box>
 
                         <VStack spacing={1} align="center" pt={1}>
+                          {onStartLink && (
+                            <IconButton
+                              size="xs"
+                              aria-label="Link to case claim"
+                              icon={<span style={{ fontSize: "11px" }}>🔗</span>}
+                              variant="ghost"
+                              color="cyan.300"
+                              _hover={{ bg: "rgba(0, 162, 255, 0.15)" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStartLink(claim);
+                              }}
+                            />
+                          )}
                           <IconButton
                             size="xs"
                             aria-label="Edit"

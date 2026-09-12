@@ -49,6 +49,14 @@ function isDomainLikePublisherName(value = "") {
   return /^[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)+$/i.test(String(value).trim());
 }
 
+function isCopyrightOnlyPublisherName(value = "") {
+  return /^(?:copyright\s*)?(?:©|\(c\))?\s*\d{4}(?:\s*[–—-]\s*\d{4})?$/i.test(String(value).trim());
+}
+
+export function hasRecursivePublisherAttribution(text = "") {
+  return RECURSIVE_ENTRY_ATTR_RE.test(String(text));
+}
+
 function repositoryPublisherFromUrl(url) {
   const domain = domainFromUrl(url);
   if (!domain) return null;
@@ -236,7 +244,7 @@ export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedH
         // A bare domain is only a placeholder, not a resolved publisher name.
         // Keep following the article so childrenshealthdefense.org can become
         // "Children's Health Defense", for example.
-        if (name && !JUNK_PUBLISHER_RE.test(name) && !isDomainLikePublisherName(name) && name.length > 2) {
+        if (name && !JUNK_PUBLISHER_RE.test(name) && !isDomainLikePublisherName(name) && !isCopyrightOnlyPublisherName(name) && name.length > 2) {
           logger.log(`📦 [chain:${depth}] Already in DB: "${name}" for ${url}`);
           return { name, content_id: rows[0].content_id, resolvedUrl: url };
         }
@@ -283,7 +291,9 @@ export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedH
     let pub = await extractPublisher($, url);
     const ogSite = $('meta[property="og:site_name"]').attr('content')
       || $('meta[name="publisher"]').attr('content');
-    if (!pub?.name && ogSite?.trim().length > 1) pub = { name: ogSite.trim() };
+    if ((!pub?.name || isCopyrightOnlyPublisherName(pub.name)) && ogSite?.trim().length > 1) {
+      pub = { name: ogSite.trim(), role: "publisher", confidence: "og_site_name" };
+    }
     logger.log(`🔗 [chain:${depth}] extractPublisher → "${pub?.name || 'none'}", og:site_name → "${ogSite || 'none'}"`);
 
     // ── 3. Canonical on a different domain → recurse ─────────────────────
@@ -316,6 +326,19 @@ export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedH
         } catch {}
         return null;
       };
+      const scoreAttributionLink = (a) => {
+        const candidateUrl = toExternal($(a).attr('href'));
+        if (!candidateUrl) return null;
+        const linkText = $(a).text().replace(/\s+/g, ' ').trim();
+        let score = 0;
+        if (/\boriginal (?:article|story|post|piece|source)\b/i.test(linkText)) score += 100;
+        if (/\b(?:read|view) (?:the )?(?:original|full)\b/i.test(linkText)) score += 80;
+        try {
+          const path = new URL(candidateUrl).pathname.replace(/\/+$/, '');
+          if (path) score += 10;
+        } catch {}
+        return { url: candidateUrl, score };
+      };
 
       // Scope link search to article body — avoids nav/footer noise
       const $body = $('article, [role="main"], .post-content, .entry-content, .post-body, .article-body, main, #content, #main').first();
@@ -330,30 +353,30 @@ export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedH
       if (allExternal.length > 0) logger.log(`🔗 [chain:${depth}] external links: ${allExternal.slice(0, 5).join(' | ')}`);
 
       let sourceUrl = null;
+      const attributionCandidates = [];
 
       // First pass: find a small inline element that matches attribution text AND contains an external link.
       // We do NOT filter profile/author URLs here — if we land on a 403, the fetch handler
       // will retry the root domain (e.g. /authors/foo → 403 → try childrenshealthdefense.org root).
       $scope.find('p, li, h1, h2, h3, h4, blockquote, cite, .source, .credit, .attribution').each((_, el) => {
-        if (sourceUrl) return;
         const text = $(el).text();
         if (!SOURCE_ATTR_RE.test(text)) return;
         logger.log(`🔗 [chain:${depth}] Attribution element: "${text.trim().slice(0, 120)}"`);
-        $(el).find('a[href]').each((__, a) => {
-          if (sourceUrl) return;
-          sourceUrl = toExternal($(a).attr('href')); // allow profile links — 403 fallback handles them
-        });
+        attributionCandidates.push(
+          ...$(el).find('a[href]').map((__, a) => scoreAttributionLink(a)).get().filter(Boolean),
+        );
         // Also check next few siblings for a link
-        if (!sourceUrl) {
+        if (!$(el).find('a[href]').length) {
           $(el).nextAll('p, a, div').slice(0, 3).each((__, sib) => {
-            if (sourceUrl) return;
             $(sib).find('a[href]').addBack('a[href]').each((___, a) => {
-              if (sourceUrl) return;
-              sourceUrl = toExternal($(a).attr('href'));
+              const candidate = scoreAttributionLink(a);
+              if (candidate) attributionCandidates.push(candidate);
             });
           });
         }
       });
+      attributionCandidates.sort((a, b) => b.score - a.score);
+      sourceUrl = attributionCandidates[0]?.url || null;
 
       // Second pass: attribution anywhere + pick the dominant external domain's article link
       // (emfacts has 23 external links, mostly CHD — find the first non-profile CHD one)
@@ -382,6 +405,34 @@ export async function resolvePublisherChain(url, depth = 0, dbQuery, prefetchedH
     logger.log(`⚠️  [chain:${depth}] fetch failed: ${e.message}`);
     return null;
   }
+}
+
+export async function resolvePublisherFromScrapedHtml(url, rawHtml, dbQuery) {
+  if (!url || !rawHtml) return null;
+  const $ = cheerio.load(rawHtml);
+  const $article = $('article, [role="main"], .post-content, .entry-content, .post-body, .article-body, main, #content, #main').first();
+  const $scope = $article.length ? $article : $('body');
+  if (!hasRecursivePublisherAttribution($scope.text())) return null;
+
+  let sourceHost = null;
+  try {
+    sourceHost = new URL(url).hostname.replace(/^www\./, '');
+  } catch {}
+  const hasExternalLink = $scope.find('a[href]').toArray().some((anchor) => {
+    try {
+      const candidateHost = new URL($(anchor).attr('href'), url).hostname.replace(/^www\./, '');
+      return candidateHost && candidateHost !== sourceHost;
+    } catch {
+      return false;
+    }
+  });
+
+  // The extension's compact-page payload intentionally contains plain text
+  // inside <pre> and omits anchors/meta tags. In that case fetch the complete
+  // page server-side and bypass the stale wrapper-publisher DB short-circuit.
+  return hasExternalLink
+    ? resolvePublisherChain(url, 0, dbQuery, rawHtml)
+    : resolvePublisherChain(url, 0, null);
 }
 
 /**
@@ -492,43 +543,39 @@ export async function scrapeReference(query, {
     // Start it with the extension HTML so bot-protected wrappers can be
     // inspected without a redundant server-side fetch.
     if (!isFacebookUrl && raw_html && $) {
-      const $article = $('article, [role="main"], .post-content, .entry-content, .post-body, .article-body, main, #content, #main').first();
-      const attributionText = ($article.length ? $article : $('body')).text();
-      if (RECURSIVE_ENTRY_ATTR_RE.test(attributionText)) {
-        const resolved = await resolvePublisherChain(url, 0, query, raw_html);
-        if (resolved?.name && !JUNK_PUBLISHER_RE.test(resolved.name)) {
-          const wrapperIdentity = publisher?.identity || null;
-          if (wrapperIdentity && resolved.name.toLowerCase() !== String(publisher?.name || '').toLowerCase()) {
-            wrapperIdentity.entities = {
-              ...wrapperIdentity.entities,
-              original_publisher: {
-                name: resolved.name,
-                entity_type: "organization",
-                method: "recursive_attribution_chain",
-                confidence: 0.96,
-                evidence: resolved.resolvedUrl || resolved.name,
-              },
-            };
-            wrapperIdentity.context = {
-              ...wrapperIdentity.context,
-              linked_url: resolved.resolvedUrl || null,
-              linked_publisher_observed: resolved.name,
-              publication_relationship: {
-                type: "republished",
-                originalUrl: resolved.resolvedUrl || null,
-                evidenceText: "Resolved through recursive source attribution",
-                detectionMethod: "recursive_attribution_chain",
-              },
-            };
-          }
-          publisher = {
-            ...resolved,
-            role: "publisher",
-            confidence: "recursive_attribution_chain",
-            ...(wrapperIdentity ? { identity: wrapperIdentity } : {}),
+      const resolved = await resolvePublisherFromScrapedHtml(url, raw_html, query);
+      if (resolved?.name && !JUNK_PUBLISHER_RE.test(resolved.name)) {
+        const wrapperIdentity = publisher?.identity || null;
+        if (wrapperIdentity && resolved.name.toLowerCase() !== String(publisher?.name || '').toLowerCase()) {
+          wrapperIdentity.entities = {
+            ...wrapperIdentity.entities,
+            original_publisher: {
+              name: resolved.name,
+              entity_type: "organization",
+              method: "recursive_attribution_chain",
+              confidence: 0.96,
+              evidence: resolved.resolvedUrl || resolved.name,
+            },
           };
-          logger.log(`🧬 [scrapeReference] Recursive provenance resolved publisher → "${resolved.name}"`);
+          wrapperIdentity.context = {
+            ...wrapperIdentity.context,
+            linked_url: resolved.resolvedUrl || null,
+            linked_publisher_observed: resolved.name,
+            publication_relationship: {
+              type: "republished",
+              originalUrl: resolved.resolvedUrl || null,
+              evidenceText: "Resolved through recursive source attribution",
+              detectionMethod: "recursive_attribution_chain",
+            },
+          };
         }
+        publisher = {
+          ...resolved,
+          role: "publisher",
+          confidence: "recursive_attribution_chain",
+          ...(wrapperIdentity ? { identity: wrapperIdentity } : {}),
+        };
+        logger.log(`🧬 [scrapeReference] Recursive provenance resolved publisher → "${resolved.name}"`);
       }
     }
 
@@ -734,6 +781,7 @@ export async function scrapeReference(query, {
       media_source: platform || (isPdf ? "pdf" : /facebook\.com|fb\.com/i.test(url) ? "facebook" : /youtube\.com|youtu\.be/i.test(url) ? "youtube" : "web"),
       topic: "AI Evidence",
       subtopics: [],
+      content_type: "reference",
       taskContentId, // passing this is what creates the content_relations link
       thumbnail,
       details: text.slice(0, 500),

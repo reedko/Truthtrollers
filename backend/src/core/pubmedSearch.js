@@ -165,6 +165,40 @@ async function fetchPubMedAbstracts(ids) {
   }
 }
 
+async function fetchRetractionNoticeReason(pmid) {
+  try {
+    const pubmedUrl = new URL(PUBMED_EFETCH);
+    pubmedUrl.searchParams.set("db", "pubmed");
+    pubmedUrl.searchParams.set("id", pmid);
+    pubmedUrl.searchParams.set("retmode", "xml");
+    addPubMedParams(pubmedUrl);
+    const pubmedResponse = await pubmedFetch(pubmedUrl);
+    if (!pubmedResponse.ok) return null;
+    const pubmedXml = await pubmedResponse.text();
+    const pmcid = decodeXml(
+      pubmedXml.match(/<ArticleId\b[^>]*IdType=["']pmc["'][^>]*>([\s\S]*?)<\/ArticleId>/i)?.[1],
+    );
+    if (!pmcid) return null;
+
+    const pmcUrl = new URL(PUBMED_EFETCH);
+    pmcUrl.searchParams.set("db", "pmc");
+    pmcUrl.searchParams.set("id", pmcid.replace(/^PMC/i, ""));
+    pmcUrl.searchParams.set("retmode", "xml");
+    addPubMedParams(pmcUrl);
+    const pmcResponse = await pubmedFetch(pmcUrl);
+    if (!pmcResponse.ok) return null;
+    const pmcXml = await pmcResponse.text();
+    const body = pmcXml.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i)?.[1] || "";
+    const paragraphs = [...body.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/gi)]
+      .map((match) => decodeXml(match[1]))
+      .filter((text) => /retract|competing interest|peer review|statistical|confidence|validity/i.test(text));
+    return paragraphs.slice(0, 3).join(" ").slice(0, 1800) || null;
+  } catch (error) {
+    logger.warn(`⚠️ [PubMed] Retraction notice reason lookup failed for PMID ${pmid}: ${error.message}`);
+    return null;
+  }
+}
+
 export async function searchPubMed({ query, topK = 5 }) {
   const term = String(query || "").trim();
 
@@ -269,5 +303,73 @@ export async function searchPubMed({ query, topK = 5 }) {
     logger.warn(`⚠️ [PubMed] Search failed for "${term}": ${err.message}`);
 
     return [];
+  }
+}
+
+export function parsePubMedPublicationStatusXml(xml) {
+  const publicationTypes = [...String(xml || "").matchAll(/<PublicationType\b[^>]*>([\s\S]*?)<\/PublicationType>/gi)]
+    .map((match) => decodeXml(match[1]))
+    .filter(Boolean);
+  const correctionBlocks = [...String(xml || "").matchAll(/<CommentsCorrections\b([^>]*)>([\s\S]*?)<\/CommentsCorrections>/gi)];
+  const retractionBlock = correctionBlocks.find((match) =>
+    /\bRefType=["']RetractionIn["']/i.test(match[1] || ""),
+  );
+  const noticePmid = decodeXml(
+    retractionBlock?.[2]?.match(/<PMID\b[^>]*>([\s\S]*?)<\/PMID>/i)?.[1],
+  ) || null;
+  const noticeCitation = decodeXml(
+    retractionBlock?.[2]?.match(/<RefSource\b[^>]*>([\s\S]*?)<\/RefSource>/i)?.[1],
+  ) || null;
+  const noticeDoi = noticeCitation?.match(/10\.\d{4,9}\/[-._;()/:A-Z0-9]+/i)?.[0]?.replace(/[).,;]+$/, "") || null;
+  const retracted =
+    Boolean(retractionBlock) ||
+    publicationTypes.some((type) =>
+      /^(retracted publication|withdrawn publication)$/i.test(type),
+    );
+
+  return {
+    status: retracted ? "retracted" : "unknown",
+    source: retracted ? "pubmed_retraction_metadata" : "pubmed_publication_type",
+    publicationTypes,
+    retractionNotice: noticePmid || noticeDoi || noticeCitation
+      ? {
+          pmid: noticePmid,
+          doi: noticeDoi,
+          citation: noticeCitation,
+          url: noticePmid
+            ? `https://pubmed.ncbi.nlm.nih.gov/${noticePmid}/`
+            : noticeDoi
+              ? `https://doi.org/${noticeDoi}`
+              : null,
+          reason: null,
+        }
+      : null,
+  };
+}
+
+/** Exact publication status for a known PMID; no title search or inference. */
+export async function lookupPubMedPublicationStatus(pmid) {
+  const id = String(pmid || "").match(/^\d{5,9}$/)?.[0];
+  if (!id) return { status: "unknown", source: "pubmed", publicationTypes: [], retractionNotice: null };
+  try {
+    const fetchUrl = new URL(PUBMED_EFETCH);
+    fetchUrl.searchParams.set("db", "pubmed");
+    fetchUrl.searchParams.set("id", id);
+    fetchUrl.searchParams.set("retmode", "xml");
+    addPubMedParams(fetchUrl);
+    const response = await pubmedFetch(fetchUrl);
+    if (!response.ok) throw new Error(`PubMed efetch HTTP ${response.status}`);
+    const xml = await response.text();
+    const status = parsePubMedPublicationStatusXml(xml);
+    if (status.retractionNotice?.pmid) {
+      const abstracts = await fetchPubMedAbstracts([status.retractionNotice.pmid]);
+      status.retractionNotice.reason =
+        abstracts.get(status.retractionNotice.pmid) ||
+        await fetchRetractionNoticeReason(status.retractionNotice.pmid);
+    }
+    return status;
+  } catch (error) {
+    logger.warn(`⚠️ [PubMed] Publication status lookup failed for PMID ${id}: ${error.message}`);
+    return { status: "unknown", source: "pubmed", publicationTypes: [], retractionNotice: null };
   }
 }

@@ -51,7 +51,15 @@ export default function createReviewArticlesRouter({ query }) {
         publicBaseUrl,
       });
 
-      res.status(201).json({ success: true, article });
+      let finalArticle = article;
+      try {
+        await generateReviewArticleEssay(query, article.id, req.user.user_id, { publicBaseUrl });
+        finalArticle = await getReviewArticleById(query, article.id);
+      } catch (essayError) {
+        console.warn("Essay generation failed during review article creation:", essayError.message);
+      }
+
+      res.status(201).json({ success: true, article: finalArticle });
     } catch (error) {
       console.error("Error generating review article:", error);
       res.status(error.status || 500).json({ error: error.message || "Failed to generate review article" });

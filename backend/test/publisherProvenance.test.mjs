@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { resolvePublisherChain } from "../src/core/scrapeReference.js";
+import {
+  resolvePublisherChain,
+  resolvePublisherFromScrapedHtml,
+} from "../src/core/scrapeReference.js";
 import {
   classifyOrganizationStatusFromPages,
   deriveSourceAlignment,
@@ -81,6 +84,85 @@ test("PBS wrapper resolves an 'originally appeared on PolitiFact' link", async (
     );
     assert.equal(result?.name, "PolitiFact");
     assert.equal(result?.resolvedUrl, "https://www.politifact.com/article/example");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("Scientific American reprint prefers the linked original article and The Conversation", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    assert.equal(
+      String(url),
+      "https://theconversation.com/nhs-ransomware-cyber-attack-was-preventable-77674",
+    );
+    return new Response(`
+      <html><head>
+        <meta property="og:site_name" content="The Conversation">
+      </head><body><main>
+        <article><h1>NHS ransomware cyber-attack was preventable</h1></article>
+        <footer>Copyright © 2010–2026</footer>
+      </main></body></html>
+    `, { status: 200, headers: { "content-type": "text/html" } });
+  };
+
+  try {
+    const result = await resolvePublisherChain(
+      "https://www.scientificamerican.com/article/nhs-ransomware-cyber-attack-was-preventable/",
+      0,
+      null,
+      `<html><head><meta property="og:site_name" content="Scientific American"></head><body><main>
+        <p>The following essay is reprinted with permission from
+          <a href="http://theconversation.com/">The Conversation</a>.
+        </p>
+        <p>This article was originally published on
+          <a href="http://theconversation.com/">The Conversation</a>.
+          Read the <a href="https://theconversation.com/nhs-ransomware-cyber-attack-was-preventable-77674">original article</a>.
+        </p>
+      </main></body></html>`,
+    );
+
+    assert.equal(result?.name, "The Conversation");
+    assert.equal(
+      result?.resolvedUrl,
+      "https://theconversation.com/nhs-ransomware-cyber-attack-was-preventable-77674",
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("compact extension text falls back to the full page for publisher provenance", async () => {
+  const originalFetch = globalThis.fetch;
+  const wrapperUrl = "https://www.scientificamerican.com/article/nhs-ransomware-cyber-attack-was-preventable/";
+  const originalUrl = "https://theconversation.com/nhs-ransomware-cyber-attack-was-preventable-77674";
+  const pages = new Map([
+    [wrapperUrl, `<html><head><meta property="og:site_name" content="Scientific American"></head><body><main>
+      <p>This article was originally published on <a href="http://theconversation.com/">The Conversation</a>.
+        Read the <a href="${originalUrl}">original article</a>.</p>
+    </main></body></html>`],
+    [originalUrl, `<html><head><meta property="og:site_name" content="The Conversation"></head><body><main>
+      <h1>NHS ransomware cyber-attack was preventable</h1><footer>Copyright © 2010–2026</footer>
+    </main></body></html>`],
+  ]);
+  globalThis.fetch = async (url) => {
+    const html = pages.get(String(url));
+    return new Response(html || "not found", {
+      status: html ? 200 : 404,
+      headers: { "content-type": "text/html" },
+    });
+  };
+
+  try {
+    const result = await resolvePublisherFromScrapedHtml(
+      wrapperUrl,
+      `<article><h1>NHS Ransomware Cyber-Attack Was Preventable</h1><pre>
+        This article was originally published on The Conversation. Read the original article.
+      </pre></article>`,
+      async () => [{ content_id: 23659, publisher_name: "Scientific American" }],
+    );
+    assert.equal(result?.name, "The Conversation");
+    assert.equal(result?.resolvedUrl, originalUrl);
   } finally {
     globalThis.fetch = originalFetch;
   }

@@ -6,6 +6,24 @@ import { sendInvestorActivitySummaryEmail } from "../utils/emailService.js";
 
 const IDLE_MINUTES = 15;
 const CHECK_INTERVAL_MS = 2 * 60 * 1000;
+const REPORTABLE_EVENT_TYPES = new Set([
+  "portal_opened",
+  "document_opened",
+  "document_dwell",
+  "document_downloaded",
+]);
+
+function eventIdsSql(events) {
+  return events.map(() => "?").join(",");
+}
+
+async function markSummarized(query, events) {
+  const eventIds = events.map((event) => event.event_id);
+  await query(
+    `UPDATE investor_access_events SET summarized_at = NOW() WHERE event_id IN (${eventIdsSql(events)})`,
+    eventIds,
+  );
+}
 
 async function runOnce(query) {
   const idleSessions = await query(
@@ -34,13 +52,22 @@ async function runOnce(query) {
       );
       if (events.length === 0) continue;
 
-      await sendInvestorActivitySummaryEmail(invitations[0], events);
+      // Link scanners and email-security previews commonly redeem an invite
+      // without ever loading the portal. Those sessions contain only the
+      // access_granted event. The instant link-open notification already
+      // covers that event, so do not follow it with an empty digest.
+      const hasReportableActivity = events.some((event) => REPORTABLE_EVENT_TYPES.has(event.event_type));
+      if (!hasReportableActivity) {
+        await markSummarized(query, events);
+        continue;
+      }
 
-      const eventIds = events.map((e) => e.event_id);
-      await query(
-        `UPDATE investor_access_events SET summarized_at = NOW() WHERE event_id IN (${eventIds.map(() => "?").join(",")})`,
-        eventIds,
-      );
+      const result = await sendInvestorActivitySummaryEmail(invitations[0], events);
+      if (!result?.success) {
+        throw new Error(result?.error || "activity summary email was not sent");
+      }
+
+      await markSummarized(query, events);
     } catch (err) {
       console.error(`❌ [Investor Digest] Failed for session ${session_id}:`, err.message);
     }

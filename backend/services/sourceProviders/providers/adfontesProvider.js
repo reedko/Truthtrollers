@@ -7,7 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SEED_PATH = path.join(__dirname, "../../../../data/seeds/adfontes.json");
+const SEED_PATH = path.join(__dirname, "../../../data/seeds/adfontes.json");
 
 let _seedData = null;
 function getSeedData() {

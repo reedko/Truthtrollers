@@ -30,6 +30,10 @@ import { persistAuthors } from "../storage/persistAuthors.js";
 import { persistPublishers } from "../storage/persistPublishers.js";
 import { extractAuthors } from "../utils/extractAuthors.js";
 import { extractPublisher } from "../utils/extractPublisher.js";
+import {
+  hasRecursivePublisherAttribution,
+  resolvePublisherChain,
+} from "./scrapeReference.js";
 import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
 import {
@@ -141,6 +145,9 @@ async function ensureReferencePublisherLink({
   if (!referenceContentId || !url) return null;
 
   const hintName = usablePublisherName(publisher?.name);
+  const isAttributedPublisher =
+    publisher?.confidence === "recursive_attribution_chain" ||
+    Boolean(publisher?.identity?.context?.publication_relationship);
   let identity = null;
   try {
     identity = await resolveSourceIdentity(url, {
@@ -156,7 +163,9 @@ async function ensureReferencePublisherLink({
   }
 
   const publisherName =
-    (publisher?.role === "journal" || publisher?.confidence === "proxy"
+    (publisher?.role === "journal" ||
+    publisher?.confidence === "proxy" ||
+    isAttributedPublisher
       ? hintName
       : null) ||
     usablePublisherName(identity?.publisherName) ||
@@ -170,7 +179,7 @@ async function ensureReferencePublisherLink({
     return null;
   }
 
-  let publisherId = identity?.publisherId || null;
+  let publisherId = isAttributedPublisher ? null : identity?.publisherId || null;
   if (!publisherId) {
     const rows = await query(
       `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`,
@@ -738,6 +747,34 @@ export async function runEvidenceEngine({
                 cand.title || (await getMainHeadline($)) || "AI Reference";
               authors = await extractAuthors($);
               publisher = await extractPublisher($, cand.url);
+              const attributionScope = $(
+                'article, [role="main"], .post-content, .entry-content, .post-body, .article-body, main, #content, #main',
+              ).first();
+              const attributionText = (attributionScope.length
+                ? attributionScope
+                : $("body")
+              ).text();
+              if (hasRecursivePublisherAttribution(attributionText)) {
+                const resolvedPublisher = await resolvePublisherChain(
+                  cand.url,
+                  0,
+                  query,
+                  html,
+                );
+                if (
+                  resolvedPublisher?.name &&
+                  usablePublisherName(resolvedPublisher.name)
+                ) {
+                  publisher = {
+                    ...resolvedPublisher,
+                    role: "publisher",
+                    confidence: "recursive_attribution_chain",
+                  };
+                  logger.log(
+                    `🧬 [Evidence] Recursive provenance resolved publisher → "${resolvedPublisher.name}"`,
+                  );
+                }
+              }
               const tavilyThumbnail = getBestImageFromCandidates(
                 cand.images,
                 cand.url,
@@ -1378,18 +1415,6 @@ export async function runEvidenceEngine({
 
           EXISTS (
             SELECT 1
-            FROM content_claims cc
-            WHERE cc.content_id = ?
-          ) AS has_content_claims,
-
-          EXISTS (
-            SELECT 1
-            FROM reference_claim_links rcl
-            WHERE rcl.reference_content_id = ?
-          ) AS has_reference_claim_links,
-
-          EXISTS (
-            SELECT 1
             FROM claim_sources cs
             WHERE cs.reference_content_id = ?
           ) AS has_claim_sources
@@ -1403,8 +1428,6 @@ export async function runEvidenceEngine({
               referenceContentId,
               referenceContentId,
               referenceContentId,
-              referenceContentId,
-              referenceContentId,
             ],
           );
 
@@ -1414,8 +1437,6 @@ export async function runEvidenceEngine({
             usage &&
             usage.content_type === "reference" &&
             !Number(usage.has_relations) &&
-            !Number(usage.has_content_claims) &&
-            !Number(usage.has_reference_claim_links) &&
             !Number(usage.has_claim_sources);
 
           if (isUnusedReference) {

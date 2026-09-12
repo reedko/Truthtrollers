@@ -603,6 +603,44 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
   const isBusy = isLoadingExisting || isScanning;
 
+  const findReference = (referenceId: number | string | undefined) => {
+    const normalizedId = Number(referenceId);
+    if (!Number.isFinite(normalizedId)) return undefined;
+
+    return references.find(
+      (reference) =>
+        Number(reference.reference_content_id) === normalizedId,
+    );
+  };
+
+  const focusReferenceInList = (
+    referenceId: number | string | undefined,
+  ) => {
+    const normalizedId = Number(referenceId);
+    if (!Number.isFinite(normalizedId) || !findReference(normalizedId)) {
+      return false;
+    }
+
+    if (onFocusReference) {
+      onFocusReference(normalizedId);
+      return true;
+    }
+
+    return false;
+  };
+
+  const openClaimLevelReference = (
+    claim: ClaimWithRelevance,
+    referenceId: number | string | undefined,
+  ) => {
+    if (focusReferenceInList(referenceId)) return;
+
+    const normalizedId = Number(referenceId);
+    if (Number.isFinite(normalizedId)) {
+      onSelectReferenceClaim?.(claim, normalizedId);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -916,10 +954,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                         : bearingScore < 0
                           ? "refute"
                           : "nuance";
-                  const reference = references.find(
-                    (r) => Number(r.reference_content_id) === referenceId,
-                  );
+                  const reference = findReference(referenceId);
                   const stanceColor = getStanceColor(docStance);
+                  const canFocusReference = Boolean(
+                    reference && onFocusReference,
+                  );
 
                   return (
                     <Box
@@ -941,21 +980,28 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                       }
                       position="relative"
                       overflow="hidden"
-                      cursor={reference ? "pointer" : "default"}
-                      role={reference ? "button" : undefined}
-                      tabIndex={reference ? 0 : undefined}
+                      cursor={canFocusReference ? "pointer" : "default"}
+                      role={canFocusReference ? "button" : undefined}
+                      tabIndex={canFocusReference ? 0 : undefined}
                       onClick={() => {
-                        if (reference) onFocusReference?.(referenceId);
+                        if (canFocusReference) {
+                          focusReferenceInList(referenceId);
+                        }
                       }}
                       onKeyDown={(event) => {
-                        if (!reference) return;
+                        if (
+                          !canFocusReference ||
+                          event.target !== event.currentTarget
+                        ) {
+                          return;
+                        }
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          onFocusReference?.(referenceId);
+                          focusReferenceInList(referenceId);
                         }
                       }}
                       _hover={
-                        reference
+                        canFocusReference
                           ? {
                               transform: "translateY(-1px)",
                               borderColor: `${stanceColor}.300`,
@@ -1169,10 +1215,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
                 {topClaims.map((claim, index) => {
                   const referenceId = claimReferenceMap.get(claim.claim_id);
-                  const reference = references.find(
-                    (r) => r.reference_content_id === referenceId,
-                  );
+                  const reference = findReference(referenceId);
                   const stanceColor = getStanceColor(claim.stance);
+                  const canOpenReference = Boolean(
+                    reference && (onFocusReference || onSelectReferenceClaim),
+                  );
 
                   return (
                     <Box
@@ -1193,6 +1240,26 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                       }
                       position="relative"
                       overflow="hidden"
+                      cursor={canOpenReference ? "pointer" : "default"}
+                      role={canOpenReference ? "button" : undefined}
+                      tabIndex={canOpenReference ? 0 : undefined}
+                      onClick={() => {
+                        if (canOpenReference) {
+                          openClaimLevelReference(claim, referenceId);
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (
+                          !canOpenReference ||
+                          event.target !== event.currentTarget
+                        ) {
+                          return;
+                        }
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openClaimLevelReference(claim, referenceId);
+                        }
+                      }}
                       _hover={{
                         transform: "translateY(-4px) translateZ(0)",
                         boxShadow:
@@ -1376,7 +1443,10 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                           color={claim.hasLink ? "#ed8936" : "#48bb78"}
                           boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
                           leftIcon={<span>{claim.hasLink ? "✏️" : "🔗"}</span>}
-                          onClick={() => handleOpenLinkOverlay(claim)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenLinkOverlay(claim);
+                          }}
                           _hover={{
                             bg: claim.hasLink
                               ? "rgba(237, 137, 54, 0.18)"
@@ -1397,7 +1467,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                             color="#f56565"
                             boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
                             leftIcon={<span>🗑️</span>}
-                            onClick={async () => {
+                            onClick={async (event) => {
+                              event.stopPropagation();
                               if (
                                 confirm(
                                   `Delete link to "${claim.claim_text.substring(0, 50)}..."?`,
@@ -1414,25 +1485,29 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                             Delete Link
                           </Button>
                         )}
-                        {onSelectReferenceClaim && referenceId && (
-                          <Button
-                            size="sm"
-                            bg="rgba(66, 153, 225, 0.12)"
-                            border="1px solid"
-                            borderColor="rgba(66, 153, 225, 0.3)"
-                            color="#4299e1"
-                            boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
-                            onClick={() =>
-                              onSelectReferenceClaim(claim, referenceId)
-                            }
-                            _hover={{
-                              bg: "rgba(66, 153, 225, 0.18)",
-                              borderColor: "rgba(66, 153, 225, 0.5)",
-                            }}
-                          >
-                            View Source
-                          </Button>
-                        )}
+                        {(onFocusReference || onSelectReferenceClaim) &&
+                          referenceId && (
+                            <Button
+                              size="sm"
+                              bg="rgba(66, 153, 225, 0.12)"
+                              border="1px solid"
+                              borderColor="rgba(66, 153, 225, 0.3)"
+                              color="#4299e1"
+                              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openClaimLevelReference(claim, referenceId);
+                              }}
+                              _hover={{
+                                bg: "rgba(66, 153, 225, 0.18)",
+                                borderColor: "rgba(66, 153, 225, 0.5)",
+                              }}
+                            >
+                              {onFocusReference
+                                ? "Find in Sources"
+                                : "View Source"}
+                            </Button>
+                          )}
                       </HStack>
                     </Box>
                   );

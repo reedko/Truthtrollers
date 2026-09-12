@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import ClaimLinkOverlay from "./overlays/ClaimLinkOverlay";
 
 import {
@@ -182,7 +182,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const scope = useTaskStore((s) => s.viewScope);
 
   useEffect(() => {
-    fetchClaimsAndLinkedReferencesForTask(contentId, viewerId, scope)
+    fetchClaimsAndLinkedReferencesForTask(
+      contentId,
+      viewerId,
+      scope,
+      linkFilter !== "user",
+    )
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
         const formattedLinks: WorkspaceClaimLink[] = data.map(
@@ -193,7 +198,35 @@ const Workspace: React.FC<WorkspaceProps> = ({
       .catch((error) => {
         console.error("Error fetching claim links:", error);
       });
-  }, [contentId, refreshLinks, viewerId, scope]);
+  }, [contentId, refreshLinks, viewerId, scope, linkFilter]);
+
+  const visibleAssertionLinks = useMemo(() => {
+    if (linkFilter === "user") {
+      return claimLinks.filter((link) => link.linkKind === "human");
+    }
+    if (linkFilter === "ai") {
+      return claimLinks.filter((link) => link.linkKind === "assertion-bearing");
+    }
+    return claimLinks;
+  }, [claimLinks, linkFilter]);
+
+  // Combined user + AI links for the RelationshipMap, filtered by linkFilter.
+  // Memoized so hover/modal state changes elsewhere in Workspace don't force
+  // RelationshipMap to rebuild its whole SVG line set on every render.
+  const relationshipMapLinks = useMemo(() => {
+    const allLinks = [
+      ...visibleAssertionLinks,
+      ...aiEvidenceLinks.map(mapDocumentDiscoveryLinkForWorkspace),
+    ];
+
+    if (linkFilter === "user") {
+      return allLinks.filter((link) => link.linkKind === "human");
+    }
+    if (linkFilter === "ai") {
+      return allLinks.filter((link) => link.linkKind !== "human");
+    }
+    return allLinks;
+  }, [visibleAssertionLinks, aiEvidenceLinks, linkFilter]);
 
   // Note: claims and references are now provided by useClaimLinkSession above.
   // Only the RelationshipMap-specific AI links are fetched here.
@@ -276,7 +309,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsRelevanceScanModalOpen(true);
   };
 
-  const findPublisherForClaim = (
+  const findPublisherForClaim = useCallback((
     claimId: number,
   ): (SourceProfile & { alignment?: SourceAlignment | null }) | null => {
     const ref = references.find(
@@ -292,7 +325,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       }),
       alignment: ref.alignment ?? null,
     };
-  };
+  }, [references]);
 
   const handleOpenLinkOverlayFromScan = (
     scanSourceClaim: { claim_id: number; claim_text: string },
@@ -314,7 +347,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsClaimLinkModalOpen(true);
   };
 
-  const handleFocusReferenceFromDocLink = (referenceId: number) => {
+  const handleFocusReferenceFromScan = (referenceId: number) => {
     const reference = references.find(
       (ref) => Number(ref.reference_content_id) === Number(referenceId),
     );
@@ -350,9 +383,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsReferenceClaimsModalOpen(true);
   };
 
-  const handleLineClick = async (link: WorkspaceClaimLink) => {
+  const handleLineClick = useCallback(async (link: WorkspaceClaimLink) => {
     // Count how many links connect to this reference
-    const linksToReference = claimLinks.filter(
+    const linksToReference = visibleAssertionLinks.filter(
       (l) => l.referenceId === link.referenceId,
     );
 
@@ -421,9 +454,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
         setIsReferenceClaimsModalOpen(true);
       }
     }
-  };
+  }, [visibleAssertionLinks, aiEvidenceLinks, references, findPublisherForClaim]);
 
-  const handleLineHover = (link: WorkspaceClaimLink) => {
+  const handleLineHover = useCallback((link: WorkspaceClaimLink) => {
     // Find the reference for this link and open modal after 2s
     const reference = references.find(
       (ref) => ref.reference_content_id === link.referenceId,
@@ -432,7 +465,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       setSelectedReference(reference);
       setIsReferenceClaimsModalOpen(true);
     }
-  };
+  }, [references]);
 
   const handleDeleteReference = async (
     contentId: number,
@@ -532,7 +565,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         contentId={contentId}
         claims={claims}
         references={references}
-        claimLinks={claimLinks}
+        claimLinks={visibleAssertionLinks}
         viewerId={viewerId}
       />
     );
@@ -638,7 +671,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             }}
             onTaskClaimClick={handleTaskClaimRelevanceScan}
             onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
-            onFocusReference={handleFocusReferenceFromDocLink}
+            onFocusReference={handleFocusReferenceFromScan}
             draggingClaim={draggingClaim}
             onDropReferenceClaim={handleDropReferenceClaim}
             taskId={contentId}
@@ -654,7 +687,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             setEditingClaim={setEditingClaim}
             selectedReferenceId={selectedReference?.reference_content_id}
             isReferenceModalOpen={isReferenceClaimsModalOpen}
-            claimLinks={claimLinks}
+            claimLinks={visibleAssertionLinks}
             references={references}
             contentId={contentId}
             viewerId={viewerId}
@@ -695,26 +728,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             onLineClick={handleLineClick}
             onLineHover={handleLineHover}
             isModalOpen={isReferenceClaimsModalOpen}
-            claimLinks={(() => {
-              // Combine user and AI links
-              const allLinks = [
-                ...claimLinks, // User-created claim links
-                // Convert AI evidence links to ClaimLink format
-                ...aiEvidenceLinks.map(mapDocumentDiscoveryLinkForWorkspace),
-              ];
-
-              // Apply filter based on linkFilter state
-              if (linkFilter === "user") {
-                return allLinks.filter(
-                  (link) => link.linkKind === "human",
-                );
-              } else if (linkFilter === "ai") {
-                return allLinks.filter((link) =>
-                  link.linkKind !== "human",
-                );
-              }
-              return allLinks; // 'all' - no filtering
-            })()}
+            claimLinks={relationshipMapLinks}
           />
         </Box>
         <Box
@@ -740,7 +754,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             selectedReference={selectedReference}
             onUpdateReferences={() => sessionRefreshReferences()}
             bubbleStyle={bubbleStyle}
-            claimLinks={claimLinks}
+            claimLinks={visibleAssertionLinks}
             isSuperAdmin={isSuperAdmin}
             focusedReferenceId={focusedReferenceId}
             onHardDeleteReferences={async (referenceIds) => {
@@ -759,6 +773,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       </Grid>
       {selectedReference && (
         <DraggableReferenceClaimsModal
+          rootContentId={contentId}
           anchorSelector=".workspace-references"
           isOpen={isReferenceClaimsModalOpen}
           onClose={() => setIsReferenceClaimsModalOpen(false)}
@@ -919,7 +934,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
         contentId={contentId}
         viewerId={viewerId}
-        onFocusReference={handleFocusReferenceFromDocLink}
+        onFocusReference={handleFocusReferenceFromScan}
       />
       {draggingClaim && hoveredClaimId && (
         <Box

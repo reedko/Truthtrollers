@@ -124,12 +124,9 @@ export async function calculateCombinedClaimScore(query, claimId, userId = null,
  */
 export async function calculateAIContentScore(query, contentId) {
   try {
-    // Single batch query — globally average all document-level AI stance assessments
-    // for claims belonging to this content. Each reference-claim link is weighted
-    // equally regardless of how many claims a given reference appears against.
-    // This prevents the two-level averaging distortion that occurs when averaging
-    // per-claim scores first (a claim with 7 refute links at -1.0 would only count
-    // once in the outer average, same weight as a claim with 1 nuance link at +0.5).
+    // The case-level AI score is one vote per document-level adjudication.
+    // Assertion bearings are explanatory drill-down data; counting them here
+    // gives verbose or duplicated documents disproportionate voting power.
     const [result] = await query(
       `SELECT
          COALESCE(AVG(CASE rcl.stance

@@ -82,7 +82,7 @@ async function fetchWithPuppeteer(url) {
 
     // Wait for Cloudflare challenge to complete (if present)
     // Cloudflare challenge takes 3-5 seconds to solve
-    await page.waitForTimeout(6000);
+    await new Promise((resolve) => setTimeout(resolve, 6000));
 
     const html = await page.content();
     return html;

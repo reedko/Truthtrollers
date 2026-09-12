@@ -13,7 +13,7 @@ import { authenticateToken } from "../../middleware/auth.js";
 import logger from "../../utils/logger.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SEEDS_DIR = join(__dirname, "../../../../data/seeds");
+const SEEDS_DIR = join(__dirname, "../../../data/seeds");
 
 const SOURCES = ["allsides", "adfontes", "mbfc", "opensources"];
 

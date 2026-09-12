@@ -441,12 +441,13 @@ export async function fetchClaimById(claimId: number): Promise<Claim> {
 export const fetchClaimsAndLinkedReferencesForTask = async (
   contentId: number,
   viewerId: number | null,
-  scope?: 'user' | 'all' | 'admin'
+  scope?: 'user' | 'all' | 'admin',
+  includeAi = false,
 ): Promise<ClaimLinks[]> => {
   try {
     const response = await api.get(
       `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`,
-      { params: { viewerId, scope } }
+      { params: { viewerId, scope, includeAi: includeAi ? 'true' : 'false' } }
     );
 
     return response.data;
@@ -1288,4 +1289,3 @@ export const fetchUsersWithPendingRatings =
     // Backend wraps in { success, data }
     return res.data?.data ?? { users: [], evaluator_role: { name: "user", level: 10 } };
   };
-

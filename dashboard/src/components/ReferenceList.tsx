@@ -27,7 +27,6 @@ import {
   FailedReference,
 } from "../../../shared/entities/types";
 import ReferenceModal from "./modals/ReferenceModal";
-import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import SourceCrest from "./SourceCrest";
 import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
