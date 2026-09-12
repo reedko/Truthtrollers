@@ -11,8 +11,8 @@ const __dirname = path.dirname(__filename);
 // ============================================================
 // CONFIGURATION - Toggle these on/off as needed
 // ============================================================
-const ENABLE_CONSOLE_LOGGING = true; // Set to false to disable console output
-const ENABLE_FILE_LOGGING = true; // Set to false to disable file logging
+const ENABLE_CONSOLE_LOGGING = process.env.LOG_CONSOLE !== "false";
+const ENABLE_FILE_LOGGING = process.env.LOG_TO_FILE !== "false";
 
 // ============================================================
 // Log file management
@@ -40,7 +40,8 @@ export const clearLogFile = () => {
   }
 };
 
-// Write to file (synchronous to preserve order)
+// Queue file writes so logging never blocks request processing.
+let pendingWrite = Promise.resolve();
 const writeToFile = (message) => {
   if (!ENABLE_FILE_LOGGING) return;
 
@@ -48,13 +49,13 @@ const writeToFile = (message) => {
   const timestamp = new Date().toISOString();
   const logLine = `[${timestamp}] ${message}\n`;
 
-  try {
-    fs.appendFileSync(logFile, logLine);
-  } catch (err) {
-    if (ENABLE_CONSOLE_LOGGING) {
-      console.error("Failed to write to log file:", err);
-    }
-  }
+  pendingWrite = pendingWrite
+    .then(() => fs.promises.appendFile(logFile, logLine))
+    .catch((err) => {
+      if (ENABLE_CONSOLE_LOGGING) {
+        console.error("Failed to write to log file:", err);
+      }
+    });
 };
 
 // Custom console wrapper

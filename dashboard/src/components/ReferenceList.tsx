@@ -21,11 +21,7 @@ import {
   Checkbox,
   useToast,
 } from "@chakra-ui/react";
-import {
-  LitReference,
-  ReferenceWithClaims,
-  FailedReference,
-} from "../../../shared/entities/types";
+import { ReferenceWithClaims } from "../../../shared/entities/types";
 import ReferenceModal from "./modals/ReferenceModal";
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import SourceCrest from "./SourceCrest";
@@ -33,7 +29,6 @@ import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
 import SourceDetailModal from "./modals/SourceDetailModal";
 import { fetchFailedReferences } from "../services/useDashboardAPI";
 import usePermissions from "../hooks/usePermissions";
-import { ClaimLink } from "./RelationshipMap";
 
 interface ReferenceListProps {
   references: ReferenceWithClaims[];
@@ -41,53 +36,11 @@ interface ReferenceListProps {
   onDeleteReference: (referenceId: number) => void;
   taskId: number;
   onReferenceClick: (ref: ReferenceWithClaims, e: React.MouseEvent) => void;
-  selectedReference: ReferenceWithClaims | null; // 👈 add this!
   onUpdateReferences?: () => void; // ✅ new
-  bubbleStyle?: boolean;
-  claimLinks?: ClaimLink[];
   isSuperAdmin?: boolean;
   onHardDeleteReferences?: (referenceIds: number[]) => Promise<void>;
   focusedReferenceId?: number | null;
 }
-
-const BUBBLE_KEYFRAMES = {
-  "@keyframes pulse-green": {
-    "0%, 100%": {
-      boxShadow:
-        "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow:
-        "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-  "@keyframes pulse-red": {
-    "0%, 100%": {
-      boxShadow:
-        "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow:
-        "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-  "@keyframes pulse-blue": {
-    "0%, 100%": {
-      boxShadow:
-        "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow:
-        "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-} as const;
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
   references,
@@ -95,10 +48,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   onDeleteReference,
   taskId,
   onReferenceClick,
-  selectedReference,
   onUpdateReferences,
-  bubbleStyle = false,
-  claimLinks = [],
   isSuperAdmin = false,
   onHardDeleteReferences,
   focusedReferenceId = null,
@@ -157,7 +107,6 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
     "0 4px 12px rgba(94, 234, 212, 0.3)",
     "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
-  const useBubbleEffects = bubbleStyle && references.length <= 40;
   const isLargeReferenceList = references.length > 40;
   const effectiveRefBoxShadow = isLargeReferenceList
     ? "0 1px 4px rgba(0, 0, 0, 0.18)"
@@ -209,10 +158,6 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         setProvisionalStatuses(new Map(
           failedRefs.map((ref) => [ref.content_id, ref.scrape_status || "failed"]),
         ));
-        console.log(
-          `📋 Found ${failedRefs.length} failed references for task ${taskId}:`,
-          failedRefs,
-        );
       });
     }
   }, [taskId]); // `references` intentionally omitted — it changes identity on every parent render
@@ -225,11 +170,10 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
       <VStack
         align="start"
         spacing={2}
-        borderLeft={bubbleStyle ? "none" : "1px solid gray"}
+        borderLeft="1px solid gray"
         alignSelf="flex-start"
         pl={4}
         width="100%"
-        bg={bubbleStyle ? "transparent" : undefined}
       >
         <HStack width="100%" justify="space-between" align="center" flexWrap="wrap">
           <Heading size="sm">Sources</Heading>
@@ -331,70 +275,8 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           <Text>No Sources Found</Text>
         ) : (
           references.map((ref) => {
-            // Find all links for this reference and determine dominant color
-            const refLinks = claimLinks.filter(
-              (link) => link.referenceId === ref.reference_content_id,
-            );
-
-            // Count relationship types
-            const relationCounts = {
-              support: refLinks.filter((l) => l.relation === "support").length,
-              refute: refLinks.filter((l) => l.relation === "refute").length,
-              nuance: refLinks.filter((l) => l.relation === "nuance").length,
-            };
-
-            // Determine dominant relationship
-            let dominantRelation: "support" | "refute" | "nuance" | null = null;
-            if (
-              relationCounts.support > 0 ||
-              relationCounts.refute > 0 ||
-              relationCounts.nuance > 0
-            ) {
-              const maxCount = Math.max(
-                relationCounts.support,
-                relationCounts.refute,
-                relationCounts.nuance,
-              );
-              if (relationCounts.support === maxCount)
-                dominantRelation = "support";
-              else if (relationCounts.refute === maxCount)
-                dominantRelation = "refute";
-              else dominantRelation = "nuance";
-            }
-
-            // Determine styling based on bubbleStyle and dominant relation
-            let bubbleBorder = `1px solid ${borderColor}`;
-            let bubbleBoxShadow = effectiveRefBoxShadow;
-            let bubbleAnimation: string | undefined;
-            let bubbleBackground = defaultBg;
             const referenceId = Number(ref.reference_content_id);
             const isFocused = focusedGlowId === referenceId;
-
-            if (useBubbleEffects && dominantRelation) {
-              switch (dominantRelation) {
-                case "support":
-                  bubbleBorder = "2px solid #38A169";
-                  bubbleBoxShadow =
-                    "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)";
-                  bubbleAnimation = "pulse-green 1.5s ease-in-out infinite";
-                  bubbleBackground = "transparent";
-                  break;
-                case "refute":
-                  bubbleBorder = "2px solid #E53E3E";
-                  bubbleBoxShadow =
-                    "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)";
-                  bubbleAnimation = "pulse-red 1.5s ease-in-out infinite";
-                  bubbleBackground = "transparent";
-                  break;
-                case "nuance":
-                  bubbleBorder = "2px solid #D69E2E";
-                  bubbleBoxShadow =
-                    "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)";
-                  bubbleAnimation = "pulse-blue 1.5s ease-in-out infinite";
-                  bubbleBackground = "transparent";
-                  break;
-              }
-            }
 
             return (
               <Box
@@ -404,16 +286,16 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   else refCardRefs.current.delete(referenceId);
                 }}
                 data-ref-id={ref.reference_content_id} // 👈 for measuring
-                border={isFocused ? "3px solid #FBBF24" : bubbleBorder}
-                background={bubbleStyle ? "transparent" : bubbleBackground}
+                border={isFocused ? "3px solid #FBBF24" : `1px solid ${borderColor}`}
+                background={defaultBg}
                 color={defaultColor}
-                px={bubbleStyle ? 4 : 3}
-                py={bubbleStyle ? 3 : 1}
-                borderRadius={bubbleStyle ? "30px" : "12px"}
+                px={3}
+                py={1}
+                borderRadius="12px"
                 boxShadow={
                   isFocused
                     ? "0 0 0 3px rgba(251, 191, 36, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28)"
-                    : bubbleBoxShadow
+                    : effectiveRefBoxShadow
                 }
                 width="100%"
                 display="flex"
@@ -424,48 +306,12 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 position="relative"
                 overflow="visible"
                 transition="border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease"
-                fontFamily={
-                  bubbleStyle
-                    ? "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                    : "inherit"
-                }
-                fontWeight={bubbleStyle ? "bold" : "normal"}
-                fontSize={bubbleStyle ? "md" : "sm"}
+                fontFamily="inherit"
+                fontWeight="normal"
+                fontSize="sm"
                 _hover={{
                   boxShadow: effectiveRefHoverShadow,
-                  transform: bubbleStyle
-                    ? "scale(1.15) rotate(-2deg)"
-                    : "translateY(-2px)",
-                }}
-                sx={{
-                  animation: isFocused ? undefined : bubbleAnimation,
-                  ...(useBubbleEffects && {
-                    "&::before": {
-                      content: '""',
-                      position: "absolute",
-                      top: "5%",
-                      left: "10%",
-                      width: "50%",
-                      height: "40%",
-                      background:
-                        "radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.7), transparent 50%)",
-                      borderRadius: "50%",
-                      pointerEvents: "none",
-                    },
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      bottom: "8%",
-                      right: "12%",
-                      width: "30%",
-                      height: "25%",
-                      background:
-                        "radial-gradient(ellipse at bottom right, rgba(255, 255, 255, 0.4), transparent 60%)",
-                      borderRadius: "50%",
-                      pointerEvents: "none",
-                    },
-                  }),
-                  ...(useBubbleEffects ? BUBBLE_KEYFRAMES : {}),
+                  transform: "translateY(-2px)",
                 }}
                 onClick={(event) => {
                   const target = event.target;
@@ -477,18 +323,16 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   if (ref.url) window.open(ref.url, "_blank");
                 }}
               >
-                {!bubbleStyle && (
-                  <Box
-                    position="absolute"
-                    left={0}
-                    top={0}
-                    width="20px"
-                    height="100%"
-                    background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
-                    borderLeftRadius="12px"
-                    pointerEvents="none"
-                  />
-                )}
+                <Box
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  width="20px"
+                  height="100%"
+                  background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
+                  borderLeftRadius="12px"
+                  pointerEvents="none"
+                />
                 {canBulkDelete && (
                   <Box
                     data-reference-select-control="true"

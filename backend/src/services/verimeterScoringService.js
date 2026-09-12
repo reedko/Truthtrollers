@@ -122,16 +122,35 @@ export function parseSourceCrestFactor(admiraltyCode, policy) {
   };
 }
 
-async function getReviewerFactor(query, userId, policy) {
+async function getReviewerFactor(query, userId, policy, reviewerScores = null) {
   if (!policy.components.reviewer_reputation.enabled || !userId) {
     return { factor: 1, score: null };
   }
-  const rows = await query("SELECT veracity_rating FROM user_reputation WHERE user_id = ? LIMIT 1", [userId]);
-  const score = rows?.[0]?.veracity_rating;
+  let score;
+  if (reviewerScores) {
+    score = reviewerScores.get(Number(userId));
+  } else {
+    const rows = await query("SELECT veracity_rating FROM user_reputation WHERE user_id = ? LIMIT 1", [userId]);
+    score = rows?.[0]?.veracity_rating;
+  }
   return {
     factor: scoreToFactor(score, policy.components.reviewer_reputation.multiplier, policy.missing.reviewer_reputation),
     score: normalizeRatingScore(score),
   };
+}
+
+async function loadReviewerScores(query, links, policy) {
+  if (!policy.components.reviewer_reputation.enabled) return new Map();
+  const userIds = [...new Set(
+    (links || []).map((link) => Number(link.user_id)).filter(Number.isFinite),
+  )];
+  if (!userIds.length) return new Map();
+
+  const rows = await query(
+    "SELECT user_id, veracity_rating FROM user_reputation WHERE user_id IN (?)",
+    [userIds],
+  );
+  return new Map((rows || []).map((row) => [Number(row.user_id), row.veracity_rating]));
 }
 
 async function reputationWeightedRatingFactor(query, table, idColumn, id, policy, componentKey) {
@@ -269,7 +288,7 @@ async function fetchManualLinks(query, contentId, userId = null, targetClaimId =
   );
 }
 
-async function explainLink(query, link, policy) {
+async function explainLink(query, link, policy, reviewerScores = null) {
   const rawSupportLevel = clamp(Number(link.support_level) || 0, -1, 1);
   const scoreTransform = link.score_transform || "normal";
   const supportLevel = scoreTransform === "invert" ? -rawSupportLevel : rawSupportLevel;
@@ -280,7 +299,7 @@ async function explainLink(query, link, policy) {
     : { factor: 1, raw: null, letter: null, number: null };
   factors.push({ id: "source_crest", enabled: policy.components.source_crest.enabled, factor: sourceCrest.factor, detail: sourceCrest });
 
-  const reviewer = await getReviewerFactor(query, link.user_id, policy);
+  const reviewer = await getReviewerFactor(query, link.user_id, policy, reviewerScores);
   factors.push({ id: "reviewer_reputation", enabled: policy.components.reviewer_reputation.enabled, factor: reviewer.factor, detail: reviewer });
 
   const publisher = await reputationWeightedRatingFactor(
@@ -330,9 +349,10 @@ function summarizeWeightedLinks(explanations) {
 export async function calculateUserContentScore(query, contentId, userId = null, options = {}) {
   const policy = options.policy || await getVerimeterPolicy(query);
   const links = await fetchManualLinks(query, contentId, userId);
+  const reviewerScores = await loadReviewerScores(query, links, policy);
   const explanations = [];
   for (const link of links || []) {
-    explanations.push(await explainLink(query, link, policy));
+    explanations.push(await explainLink(query, link, policy, reviewerScores));
   }
   return {
     ...summarizeWeightedLinks(explanations),
@@ -350,9 +370,10 @@ export async function calculateUserClaimScore(query, claimId, userId = null, opt
   if (!contentId) return { verimeter_score: 0, pro_score: 0, con_score: 0, link_count: 0 };
 
   const links = await fetchManualLinks(query, contentId, userId, claimId);
+  const reviewerScores = await loadReviewerScores(query, links, policy);
   const explanations = [];
   for (const link of links || []) {
-    explanations.push(await explainLink(query, link, policy));
+    explanations.push(await explainLink(query, link, policy, reviewerScores));
   }
   return {
     ...summarizeWeightedLinks(explanations),
@@ -367,9 +388,10 @@ export async function calculateUserClaimScore(query, claimId, userId = null, opt
 export async function calculateUserClaimScoresForContent(query, contentId, userId = null) {
   const policy = await getVerimeterPolicy(query);
   const links = await fetchManualLinks(query, contentId, userId);
+  const reviewerScores = await loadReviewerScores(query, links, policy);
   const grouped = new Map();
   for (const link of links || []) {
-    const explanation = await explainLink(query, link, policy);
+    const explanation = await explainLink(query, link, policy, reviewerScores);
     const list = grouped.get(link.target_claim_id) || [];
     list.push(explanation);
     grouped.set(link.target_claim_id, list);

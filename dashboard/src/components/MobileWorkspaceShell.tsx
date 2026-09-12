@@ -386,7 +386,6 @@ export default function MobileWorkspaceShell({
                 setRefForModal(ref);
                 setRefModalOpen(true);
               }}
-              selectedReference={refForModal}
               onUpdateReferences={() => {}}
             />
           </TabPanel>

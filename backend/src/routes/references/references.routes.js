@@ -35,10 +35,6 @@ export default function createReferencesRoutes({ query, pool }) {
       const scope = req.query.scope || 'user'; // 'user' | 'all' | 'admin'
       const currentUserId = req.user?.user_id || viewerId; // Use JWT user if available
 
-      // 🔍 DEBUG LOGGING
-      console.log(`\n🔍 REFERENCES QUERY: task=${task_content_id}, viewerId=${viewerId}, scope=${scope}, currentUserId=${currentUserId}`);
-      process.stderr.write(`[${new Date().toISOString()}] 🔍 REFS: task=${task_content_id}, viewer=${viewerId}, scope=${scope}, currUser=${currentUserId}\n`);
-
       try {
         let whereClause = '';
         let params = [];
@@ -193,20 +189,6 @@ export default function createReferencesRoutes({ query, pool }) {
           : [currentUserId, ...params];  // Only ucv for 'all' scope
 
         const referencesWithClaims = await query(SQL, finalParams);
-
-        console.log(`✅ FOUND ${referencesWithClaims.length} references for task ${task_content_id}`);
-
-        // Count total claims across all references
-        let totalClaimsCount = 0;
-        referencesWithClaims.forEach(ref => {
-          const claims = Array.isArray(ref.claims)
-            ? ref.claims
-            : (typeof ref.claims === 'string' ? JSON.parse(ref.claims) : []);
-          console.log(`   📦 Ref "${ref.content_name}" has ${claims.length} claims`);
-          totalClaimsCount += claims.length;
-        });
-        console.log(`📊 TOTAL CLAIMS across all references: ${totalClaimsCount}`);
-        process.stderr.write(`[${new Date().toISOString()}] ✅ FOUND ${referencesWithClaims.length} refs with ${totalClaimsCount} total claims\n`);
 
         // Filter out null claims from the arrays (hidden claims)
         const filteredReferences = referencesWithClaims.map(ref => {

@@ -6,8 +6,6 @@ import {
   CardBody,
   Spinner,
   Center,
-  Select,
-  Text,
   Button,
   Icon,
   useDisclosure,
@@ -26,7 +24,6 @@ import GraphControlBar, { GraphMetricPill } from "../components/GraphControlBar"
 import {
   updateScoresForContent,
   fetchContentScores,
-  fetchClaimsAndLinkedReferencesForTask,
   fetchTask,
 } from "../services/useDashboardAPI";
 
@@ -36,9 +33,20 @@ const WorkspacePage = () => {
   const { mode, aiWeight } = useVerimeterMode();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [hasCheckedUserLinks, setHasCheckedUserLinks] = useState(false);
-  const [userLinkCount, setUserLinkCount] = useState<number | null>(null);
-  const [bubbleStyle, setBubbleStyleState] = useState<boolean>(() => localStorage.getItem("workspaceBubbleStyle") === "true");
+  const [workspaceStats, setWorkspaceStats] = useState<{
+    totalClaimLinks: number;
+    totalClaims: number;
+    totalReferences: number;
+    supportingLinks: number;
+    refutingLinks: number;
+    nuancedLinks: number;
+    aiLinkStats: {
+      totalClaimLinks: number;
+      supportingLinks: number;
+      refutingLinks: number;
+      nuancedLinks: number;
+    };
+  } | null>(null);
   const navigate = useNavigate();
   const {
     isOpen: isSubmitRatingOpen,
@@ -56,11 +64,6 @@ const WorkspacePage = () => {
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const setViewScope = useTaskStore((s) => s.setViewScope);
 
-  const setPersistentBubbleStyle = (next: boolean) => {
-    setBubbleStyleState(next);
-    localStorage.setItem("workspaceBubbleStyle", String(next));
-  };
-
   // Refs to prevent circular updates between URL params and store
   const isInitialMount = useRef(true);
   const isUpdatingFromUrl = useRef(false);
@@ -77,7 +80,6 @@ const WorkspacePage = () => {
     if (routeContentId) {
       const contentIdNum = parseInt(routeContentId, 10);
       if (!isNaN(contentIdNum)) {
-        console.log("📍 Setting taskId from route param:", contentIdNum);
         setSelectedTask(contentIdNum);
       }
     }
@@ -90,7 +92,6 @@ const WorkspacePage = () => {
       const viewerNum =
         viewerParam === "null" ? null : parseInt(viewerParam, 10);
       if (!isNaN(viewerNum as number) || viewerNum === null) {
-        console.log("🔗 Setting viewerId from URL param:", viewerNum);
         setViewingUserId(viewerNum);
       }
     }
@@ -99,7 +100,6 @@ const WorkspacePage = () => {
       scopeParam &&
       (scopeParam === "user" || scopeParam === "all" || scopeParam === "admin")
     ) {
-      console.log("🔗 Setting scope from URL param:", scopeParam);
       setViewScope(scopeParam);
     }
 
@@ -163,23 +163,9 @@ const WorkspacePage = () => {
     }
   }, [taskId, viewerId, mode, aiWeight]);
 
-  // Check for user-created links and default filter to 'user' if they exist
   useEffect(() => {
-    setHasCheckedUserLinks(false);
-    setUserLinkCount(null);
+    setWorkspaceStats(null);
   }, [taskId, viewerId, viewScope]);
-
-  useEffect(() => {
-    if (taskId && !hasCheckedUserLinks) {
-      fetchClaimsAndLinkedReferencesForTask(taskId, viewerId, viewScope).then((links) => {
-        const count = links.filter(
-          (link) => link.created_by_ai !== true && link.created_by_ai !== 1,
-        ).length;
-        setUserLinkCount(count);
-        setHasCheckedUserLinks(true);
-      });
-    }
-  }, [taskId, viewerId, viewScope, hasCheckedUserLinks]);
 
   // Try to restore selectedTask from content list if missing
   useEffect(() => {
@@ -187,7 +173,6 @@ const WorkspacePage = () => {
       const all = useTaskStore.getState().content;
       const match = all.find((t) => t.content_id === taskId);
       if (match) {
-        console.log("🔁 Restoring task from content list", match);
         setSelectedTask(match);
       }
     }
@@ -226,7 +211,6 @@ const WorkspacePage = () => {
   const isReady = taskId != null && task != null;
 
   if (!isReady) {
-    console.log("⏳ Not ready:", { taskId, task, viewerId });
     return (
       <Center h="80vh">
         <Spinner size="xl" color="teal.400" />
@@ -235,7 +219,6 @@ const WorkspacePage = () => {
   }
 
   const handleVerimeterRefresh = async (contentId: number) => {
-    console.log("⚙️ Calling updateScoresForContent for", contentId, viewerId);
     await updateScoresForContent(contentId, viewerId);
     const scores = await fetchContentScores(
       contentId,
@@ -243,7 +226,6 @@ const WorkspacePage = () => {
       mode,
       aiWeight,
     );
-    console.log("✅ New fetched score:", scores);
     setVerimeterScore(scores?.verimeterScore ?? null);
     setRefreshKey((prev) => prev + 1);
   };
@@ -251,12 +233,17 @@ const WorkspacePage = () => {
   return (
     <Box p={4} w="100%">
       {/* Sticky Title Bar - Always visible initially */}
-      <StickyTitleBar alwaysVisible={true} />
+      <StickyTitleBar alwaysVisible={true} verimeterScore={verimeterScore} />
 
       <Box w="100%">
         <Card mb={6} mt={2} w="100%">
           <CardBody>
-            <UnifiedHeader refreshKey={refreshKey} />
+            <UnifiedHeader
+              refreshKey={refreshKey}
+              verimeterScore={verimeterScore}
+              workspaceStats={workspaceStats ?? undefined}
+              workspaceOwnsStats
+            />
           </CardBody>
         </Card>
 
@@ -275,49 +262,10 @@ const WorkspacePage = () => {
                 label="Links"
                 value={linkFilter === "all" ? "All" : linkFilter === "user" ? "User" : "AI"}
               />
-              <GraphMetricPill tone="green" label="User Links" value={userLinkCount ?? "-"} />
+              <GraphMetricPill tone="green" label="User Links" value={workspaceStats?.totalClaimLinks ?? "-"} />
             </>
           }
         >
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={2}
-            bg="rgba(15, 23, 42, 0.6)"
-            px={3}
-            py={2}
-            borderRadius="full"
-            border="1px solid rgba(113, 219, 255, 0.2)"
-            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
-            position="relative"
-            zIndex={500}
-            flexShrink={0}
-          >
-            <Text
-              className="mr-text-muted"
-              fontSize="xs"
-              textTransform="uppercase"
-              letterSpacing="1px"
-              whiteSpace="nowrap"
-            >
-              Bubble
-            </Text>
-            <Select
-              size="sm"
-              width="92px"
-              value={bubbleStyle ? "on" : "off"}
-              onChange={(e) => setPersistentBubbleStyle(e.target.value === "on")}
-              bg="rgba(15, 23, 42, 0.9)"
-              border="1px solid var(--mr-blue-border)"
-              color="var(--mr-text-primary)"
-              borderRadius="full"
-              boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
-            >
-              <option value="on">On</option>
-              <option value="off">Off</option>
-            </Select>
-          </Box>
-
           {/* Submit Rating Button */}
           <Button
             className="mr-button"
@@ -348,7 +296,7 @@ const WorkspacePage = () => {
           contentId={taskId}
           viewerId={viewerId}
           linkFilter={linkFilter}
-          bubbleStyle={bubbleStyle}
+          onDataSummary={setWorkspaceStats}
         />
       </Box>
 
@@ -361,7 +309,7 @@ const WorkspacePage = () => {
           contentUrl={task?.url}
           contentTitle={task?.content_name}
           onSuccess={() => {
-            setRefreshKey((prev) => prev + 1);
+            void handleVerimeterRefresh(taskId);
           }}
         />
       )}

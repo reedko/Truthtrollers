@@ -7,6 +7,25 @@ interface PermissionsData {
   roles: string[];
 }
 
+let permissionsCache: { key: string; data: PermissionsData } | null = null;
+let permissionsRequest: { key: string; promise: Promise<PermissionsData> } | null = null;
+
+const loadPermissions = (key: string) => {
+  if (permissionsCache?.key === key) return Promise.resolve(permissionsCache.data);
+  if (permissionsRequest?.key === key) return permissionsRequest.promise;
+
+  const promise = api.get<PermissionsData>("/api/user/permissions")
+    .then((response) => {
+      permissionsCache = { key, data: response.data };
+      return response.data;
+    })
+    .finally(() => {
+      if (permissionsRequest?.key === key) permissionsRequest = null;
+    });
+  permissionsRequest = { key, promise };
+  return promise;
+};
+
 const usePermissions = () => {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [roles, setRoles] = useState<string[]>([]);
@@ -17,6 +36,7 @@ const usePermissions = () => {
   const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
+    let active = true;
     // Don't fetch permissions if user is not logged in or has no token
     if (!user || !token) {
       setPermissions([]);
@@ -29,24 +49,30 @@ const usePermissions = () => {
     const fetchPermissions = async () => {
       try {
         setLoading(true);
-        const response = await api.get<PermissionsData>("/api/user/permissions");
-        setPermissions(response.data.permissions);
-        setRoles(response.data.roles);
+        const data = await loadPermissions(`${user.user_id}:${token}`);
+        if (!active) return;
+        setPermissions(data.permissions);
+        setRoles(data.roles);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        if (!active) return;
+        const status = (err as { response?: { status?: number } })?.response?.status;
         // Silently handle 401 errors - they're expected when not authenticated
-        if (err?.response?.status !== 401) {
+        if (status !== 401) {
           console.error("Error fetching permissions:", err);
         }
-        setError(err?.response?.status === 401 ? null : "Failed to fetch permissions");
+        setError(status === 401 ? null : "Failed to fetch permissions");
         setPermissions([]);
         setRoles([]);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     fetchPermissions();
+    return () => {
+      active = false;
+    };
   }, [user, token]);
 
   const hasPermission = useCallback(

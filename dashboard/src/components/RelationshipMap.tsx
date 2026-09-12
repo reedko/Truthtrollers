@@ -12,7 +12,6 @@ import type { WorkspaceClaimLink } from "./evidenceLinkPresentation";
 export type ClaimLink = WorkspaceClaimLink;
 
 interface RelationshipMapProps {
-  contentId: number;
   leftItems: Claim[];
   rightItems: ReferenceWithClaims[];
   rowHeight: number;
@@ -27,7 +26,6 @@ interface RelationshipMapProps {
 }
 
 const RelationshipMap: React.FC<RelationshipMapProps> = ({
-  contentId,
   leftItems,
   rightItems,
   rowHeight,
@@ -59,8 +57,10 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     const measure = () => {
       if (!containerRef.current) return;
       const containerTop = containerRef.current.getBoundingClientRect().top;
-      const claimNodes = document.querySelectorAll<HTMLElement>("[data-claim-id]");
-      const refNodes = document.querySelectorAll<HTMLElement>("[data-ref-id]");
+      const workspaceGrid = containerRef.current.parentElement;
+      if (!workspaceGrid) return;
+      const claimNodes = workspaceGrid.querySelectorAll<HTMLElement>("[data-claim-id]");
+      const refNodes = workspaceGrid.querySelectorAll<HTMLElement>("[data-ref-id]");
       const nextLeftCenters: Record<number, number> = {};
       const nextRightCenters: Record<number, number> = {};
 
@@ -76,8 +76,16 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
         nextRightCenters[id] = r.top - containerTop + r.height / 2;
       });
 
-      setLeftCenters(nextLeftCenters);
-      setRightCenters(nextRightCenters);
+      const sameCenters = (current: Record<number, number>, next: Record<number, number>) => {
+        const currentKeys = Object.keys(current);
+        const nextKeys = Object.keys(next);
+        return currentKeys.length === nextKeys.length && nextKeys.every(
+          (key) => current[Number(key)] === next[Number(key)],
+        );
+      };
+
+      setLeftCenters((current) => sameCenters(current, nextLeftCenters) ? current : nextLeftCenters);
+      setRightCenters((current) => sameCenters(current, nextRightCenters) ? current : nextRightCenters);
     };
 
     measure();
@@ -175,8 +183,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           const relationLower = link.relation.toLowerCase();
           const isSupport = relationLower === "support" || relationLower === "supports";
           const isRefute = relationLower === "refute" || relationLower === "refutes";
-          const isNuance = !isSupport && !isRefute; // nuance/context/related
-
           // Base colors: green for support, red for refute, yellow/blue for nuance
           const baseColor = isRefute ? "red" : isSupport ? "green" : "blue";
 

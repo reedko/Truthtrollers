@@ -3,8 +3,6 @@ import ClaimLinkOverlay from "./overlays/ClaimLinkOverlay";
 
 import {
   Box,
-  Card,
-  CardBody,
   Grid,
   useColorModeValue,
   useToast,
@@ -13,26 +11,21 @@ import {
   fetchReferencesWithClaimsForTask,
   fetchAIEvidenceLinks,
   updateReference,
-  deleteReferenceFromTask,
   hideReference,
   addClaim,
   updateClaim,
   updateClaimWithEvidence,
-  addClaimLink,
 } from "../services/useDashboardAPI";
 import { useClaimLinkSession } from "../hooks/useClaimLinkSession";
 import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
 import {
   Claim,
-  ClaimReference,
   ReferenceWithClaims,
 } from "../../../shared/entities/types";
-import ClaimLinkModal from "./modals/ClaimLinkModal";
 import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModal";
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
-import RelevanceScanModal from "./modals/RelevanceScanModal";
 import RelationshipMap from "./RelationshipMap";
 import {
   mapAssertionLinkForWorkspace,
@@ -65,19 +58,32 @@ interface WorkspaceProps {
   contentId: number;
   viewerId: number | null;
   onHeightChange?: (height: number) => void;
+  onDataSummary?: (summary: {
+    totalClaimLinks: number;
+    totalClaims: number;
+    totalReferences: number;
+    supportingLinks: number;
+    refutingLinks: number;
+    nuancedLinks: number;
+    aiLinkStats: {
+      totalClaimLinks: number;
+      supportingLinks: number;
+      refutingLinks: number;
+      nuancedLinks: number;
+    };
+  }) => void;
   linkFilter: "all" | "user" | "ai";
-  bubbleStyle?: boolean;
 }
 // Workspace Component v3.0 - Fixed Conditional Hooks
 const Workspace: React.FC<WorkspaceProps> = ({
   contentId,
   viewerId,
   onHeightChange,
+  onDataSummary,
   linkFilter,
-  bubbleStyle = false,
 }) => {
   // Get user permissions for permission-based UI
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasRole } = usePermissions();
   const isSuperAdmin = hasRole("super_admin");
   const { mode, aiWeight } = useVerimeterMode();
 
@@ -140,12 +146,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<
     number | null
   >(null);
-  const [isRelevanceScanModalOpen, setIsRelevanceScanModalOpen] =
-    useState(false);
   const [focusedReferenceId, setFocusedReferenceId] = useState<number | null>(null);
-  const [scanningTaskClaim, setScanningTaskClaim] = useState<Claim | null>(
-    null,
-  );
 
   // Hooks that use context - must be after all useState hooks, but BEFORE any early returns
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -177,8 +178,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
       setComputedHeight(fullHeight);
     }
   };
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
   const scope = useTaskStore((s) => s.viewScope);
 
   useEffect(() => {
@@ -275,6 +274,24 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [claims, references, computedHeight, onHeightChange]);
 
   useEffect(() => {
+    const humanLinks = claimLinks.filter((link) => link.linkKind === "human");
+    onDataSummary?.({
+      totalClaimLinks: humanLinks.length,
+      totalClaims: claims.length,
+      totalReferences: references.length,
+      supportingLinks: humanLinks.filter((link) => link.relation === "support").length,
+      refutingLinks: humanLinks.filter((link) => link.relation === "refute").length,
+      nuancedLinks: humanLinks.filter((link) => link.relation === "nuance").length,
+      aiLinkStats: {
+        totalClaimLinks: aiEvidenceLinks.length,
+        supportingLinks: aiEvidenceLinks.filter((link) => link.stance === "support").length,
+        refutingLinks: aiEvidenceLinks.filter((link) => link.stance === "refute").length,
+        nuancedLinks: aiEvidenceLinks.filter((link) => link.stance === "nuance").length,
+      },
+    });
+  }, [claims.length, references.length, claimLinks, aiEvidenceLinks, onDataSummary]);
+
+  useEffect(() => {
     if (!draggingClaim) return;
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -300,20 +317,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
     };
   }, [draggingClaim]);
 
-  const handleTaskClaimRelevanceScan = (claim: Claim) => {
-    console.log(
-      "[Workspace] Opening relevance scan for task claim:",
-      claim.claim_id,
-    );
-    setScanningTaskClaim(claim);
-    setIsRelevanceScanModalOpen(true);
-  };
-
   const findPublisherForClaim = useCallback((
     claimId: number,
   ): (SourceProfile & { alignment?: SourceAlignment | null }) | null => {
     const ref = references.find(
-      (r) => Array.isArray(r.claims) && r.claims.some((c: any) => c.claim_id === claimId),
+      (r) => Array.isArray(r.claims) && r.claims.some((c) => c.claim_id === claimId),
     );
     if (!ref) return null;
     return {
@@ -341,7 +349,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setAiSuggestedSupportLevel(supportLevel);
     setSelectedClaimLink(null);
     setReadOnly(false);
-    setIsRelevanceScanModalOpen(false);
     setIsClaimViewModalOpen(false); // close TaskClaims-internal scan modal
     setReopenScanAfterLink(true);
     setIsClaimLinkModalOpen(true);
@@ -353,34 +360,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
     );
     if (!reference) return;
 
-    setIsRelevanceScanModalOpen(false);
     setIsClaimViewModalOpen(false);
     setIsReferenceClaimsModalOpen(false);
     setFocusedReferenceId(null);
     window.setTimeout(() => setFocusedReferenceId(referenceId), 0);
     setSelectedReference(reference);
-  };
-
-  const handleSelectReferenceClaim = async (
-    claim: any,
-    referenceId: number,
-  ) => {
-    // Close the relevance scan modal
-    setIsRelevanceScanModalOpen(false);
-
-    // Find the reference
-    const reference = references.find(
-      (r) => r.reference_content_id === referenceId,
-    );
-
-    if (!reference) {
-      console.warn("[Workspace] Reference not found:", referenceId);
-      return;
-    }
-
-    // Open the reference claims modal focused on this claim
-    setSelectedReference(reference);
-    setIsReferenceClaimsModalOpen(true);
   };
 
   const handleLineClick = useCallback(async (link: WorkspaceClaimLink) => {
@@ -488,15 +472,20 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
       // Refresh the references list
       sessionRefreshReferences();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("❌ Error hiding reference:", error);
+
+      const apiError = error as {
+        response?: { data?: { error?: string } };
+        message?: string;
+      };
 
       // Show error toast
       toast({
         title: "Error removing source",
         description:
-          error.response?.data?.error ||
-          error.message ||
+          apiError.response?.data?.error ||
+          apiError.message ||
           "Failed to remove source. Please make sure you're logged in.",
         status: "error",
         duration: 5000,
@@ -538,8 +527,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const handleLinkCreated = async () => {
     const taskStore = useTaskStore.getState();
     const viewerId = taskStore.viewingUserId;
-    const scope = taskStore.viewScope;
-
     // ✅ Update scores in DB then fetch the new Verimeter value
     await updateScoresForContent(contentId, viewerId);
     const scores = await fetchContentScores(
@@ -575,11 +562,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       borderWidth="1px"
       borderRadius="lg"
       p={4}
-      bgGradient={!bubbleStyle ? bgColor : undefined}
-      bgImage={bubbleStyle ? `${API_BASE_URL}/assets/neb3.jpg` : undefined}
-      bgSize={bubbleStyle ? "cover" : undefined}
-      bgPosition={bubbleStyle ? "center" : undefined}
-      bgRepeat="no-repeat"
+      bgGradient={bgColor}
       borderColor={borderColor}
       minHeight={`${computedHeight}px`} // dynamic min height computed above
       position="relative"
@@ -599,7 +582,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
           maxW="400px"
           w="100%"
           className="workspace-claims"
-          bg={bubbleStyle ? "transparent" : undefined}
           position="relative"
           zIndex={2}
         >
@@ -669,7 +651,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
               setVerifyingClaim(claim);
               setIsVerificationModalOpen(true);
             }}
-            onTaskClaimClick={handleTaskClaimRelevanceScan}
             onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
             onFocusReference={handleFocusReferenceFromScan}
             draggingClaim={draggingClaim}
@@ -691,7 +672,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
             references={references}
             contentId={contentId}
             viewerId={viewerId}
-            bubbleStyle={bubbleStyle}
             isSuperAdmin={isSuperAdmin}
             onHardDeleteClaims={async (claimIds) => {
               await hardDeleteClaims(claimIds);
@@ -710,14 +690,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
           ref={containerRef}
           minW="100px"
           w="100%"
-          bg={bubbleStyle ? "transparent" : undefined}
           position="relative"
           zIndex={1}
         >
           {/* Middle column reserved */}
           <RelationshipMap
-            key={`${leftX}-${rightX}-${claims.length}-${references.length}-${aiEvidenceLinks.length}`}
-            contentId={contentId}
             leftItems={claims}
             rightItems={references}
             rowHeight={rowHeight}
@@ -736,7 +713,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
           maxW="400px"
           w="100%"
           className="workspace-references"
-          bg={bubbleStyle ? "transparent" : undefined}
           position="relative"
           zIndex={2}
         >
@@ -751,10 +727,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
               setSelectedReference(ref);
               setIsReferenceClaimsModalOpen(true);
             }}
-            selectedReference={selectedReference}
             onUpdateReferences={() => sessionRefreshReferences()}
-            bubbleStyle={bubbleStyle}
-            claimLinks={visibleAssertionLinks}
             isSuperAdmin={isSuperAdmin}
             focusedReferenceId={focusedReferenceId}
             onHardDeleteReferences={async (referenceIds) => {
@@ -922,20 +895,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
           }}
         />
       )}
-      <RelevanceScanModal
-        isOpen={isRelevanceScanModalOpen}
-        onClose={() => {
-          setIsRelevanceScanModalOpen(false);
-          setScanningTaskClaim(null);
-        }}
-        taskClaim={scanningTaskClaim}
-        references={references}
-        onSelectReferenceClaim={handleSelectReferenceClaim}
-        onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
-        contentId={contentId}
-        viewerId={viewerId}
-        onFocusReference={handleFocusReferenceFromScan}
-      />
       {draggingClaim && hoveredClaimId && (
         <Box
           ref={dragTooltipRef}

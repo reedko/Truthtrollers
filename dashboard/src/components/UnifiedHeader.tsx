@@ -7,7 +7,6 @@ import {
   Tooltip,
   Skeleton,
   SkeletonText,
-  Text,
   useBreakpointValue,
   useColorMode,
 } from "@chakra-ui/react";
@@ -20,7 +19,6 @@ import {
 import { keyframes } from "@emotion/react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useUIStore } from "../store/useUIStore";
-import { useAuthStore } from "../store/useAuthStore";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
@@ -54,7 +52,7 @@ const pulseAnimationLeft = keyframes`
 interface UnifiedHeaderProps {
   pivotType?: "task" | "author" | "publisher" | "reference";
   pivotId?: number;
-  verimeterScore?: number;
+  verimeterScore?: number | null;
   trollmeterScore?: number;
   pro?: number;
   con?: number;
@@ -62,6 +60,21 @@ interface UnifiedHeaderProps {
   variant?: Variant; // optional; auto if omitted
   sticky?: boolean;
   allowToggle?: boolean;
+  workspaceStats?: {
+    totalClaimLinks: number;
+    totalClaims: number;
+    totalReferences: number;
+    supportingLinks: number;
+    refutingLinks: number;
+    nuancedLinks: number;
+    aiLinkStats: {
+      totalClaimLinks: number;
+      supportingLinks: number;
+      refutingLinks: number;
+      nuancedLinks: number;
+    };
+  };
+  workspaceOwnsStats?: boolean;
 }
 
 const CARD_W = 250; // single source of truth
@@ -108,58 +121,6 @@ const cardWrapSx = {
   },
 } as const;
 
-// Helper function to get verdict info based on verimeter score
-const getVerdictInfo = (
-  score: number | null,
-): {
-  color: string;
-  word: string;
-  interpretation: string;
-} => {
-  if (score === null || score === 0) {
-    return {
-      color: "gray.400",
-      word: "UNKNOWN",
-      interpretation: "No evidence assessment available yet",
-    };
-  }
-
-  // Convert to percentage (-100 to 100)
-  const percentage = (score - 0.5) * 200;
-
-  if (percentage <= -50) {
-    return {
-      color: "red.400",
-      word: "FALSE",
-      interpretation: "Evidence strongly suggests this is false",
-    };
-  } else if (percentage <= -15) {
-    return {
-      color: "red.300",
-      word: "FALSE",
-      interpretation: "Evidence nominally suggests this is false",
-    };
-  } else if (percentage < 15) {
-    return {
-      color: "yellow.400",
-      word: "NUANCED",
-      interpretation: "Evidence is inconclusive",
-    };
-  } else if (percentage < 50) {
-    return {
-      color: "green.300",
-      word: "TRUE",
-      interpretation: "Evidence nominally suggests this is true",
-    };
-  } else {
-    return {
-      color: "green.400",
-      word: "TRUE",
-      interpretation: "Evidence strongly suggests this is true",
-    };
-  }
-};
-
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pivotType,
   pivotId,
@@ -171,6 +132,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   variant, // ⬅️ if provided, we respect it; otherwise auto
   sticky = false,
   allowToggle = false,
+  workspaceStats,
+  workspaceOwnsStats = false,
 }) => {
   const { colorMode } = useColorMode();
   const { mode, aiWeight } = useVerimeterMode();
@@ -178,7 +141,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const verimeterScoreMap = useTaskStore((s) => s.verimeterScores);
-  const user = useAuthStore((s) => s.user);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
@@ -202,14 +164,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const isHeaderVisible = useUIStore((s) => s.isHeaderVisible);
 
   // 🔧 Auto-pick variant by breakpoint unless explicitly provided
-  const bpVariant = useBreakpointValue<Variant>({
-    base: "micro",
-    sm: "micro",
-    md: "compact",
-    lg: "compact",
-    xl: "full",
-  });
-
   // Read window.innerWidth synchronously so the very first paint is correct.
   // Chakra's bpVariant starts as "micro" (base) and corrects later — bypassing it
   // for initial state prevents the flash of wrong-size cards.
@@ -241,7 +195,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   }, [variant]);
 
   const isMicro = localVariant === "micro";
-  const isCompact = localVariant === "compact";
   const isFull = localVariant === "full";
 
   // 🔧 Spread across on desktop, stay centered single-column on phones
@@ -273,6 +226,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   useEffect(() => {
     const load = async () => {
+      if (workspaceOwnsStats && selectedTask) {
+        setTasks([selectedTask]);
+        setPivotTask(selectedTask);
+        return;
+      }
       if (resolvedPivotId !== undefined) {
         const results = await fetchTasksByPivot(
           resolvedPivotType,
@@ -289,10 +247,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
     };
     load();
-    // 🔧 PERF: Removed fetchTasksByPivot from deps to prevent loop
-  }, [resolvedPivotType, resolvedPivotId, selectedTask]);
+  }, [resolvedPivotType, resolvedPivotId, selectedTask, workspaceOwnsStats, fetchTasksByPivot]);
 
   useEffect(() => {
+    if (verimeterScore !== undefined) {
+      setLiveVerimeter(null);
+      return;
+    }
     // 🔧 PERF: Debounce score fetching to prevent rapid API calls
     const timeoutId = setTimeout(async () => {
       if (!pivotTask?.content_id) {
@@ -312,11 +273,14 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pivotTask?.content_id, viewerId, refreshKey, mode, aiWeight]);
+  }, [pivotTask?.content_id, viewerId, refreshKey, mode, aiWeight, verimeterScore]);
 
   // Fetch claim statistics for ProgressCard
   useEffect(() => {
+    if (workspaceOwnsStats) {
+      if (workspaceStats) setClaimStats(workspaceStats);
+      return;
+    }
     // 🔧 PERF: Debounce and batch API calls to reduce load
     const timeoutId = setTimeout(async () => {
       if (!pivotTask?.content_id) {
@@ -364,10 +328,14 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [pivotTask?.content_id, viewerId, refreshKey]);
+  }, [pivotTask?.content_id, viewerId, refreshKey, workspaceStats, workspaceOwnsStats]);
 
   // Fetch AI evidence link stats when in ai/combined mode
   useEffect(() => {
+    if (workspaceOwnsStats) {
+      if (workspaceStats) setAILinkStats(workspaceStats.aiLinkStats);
+      return;
+    }
     if (!pivotTask?.content_id || mode === 'user') {
       setAILinkStats({ totalClaimLinks: 0, supportingLinks: 0, refutingLinks: 0, nuancedLinks: 0 });
       return;
@@ -389,7 +357,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [pivotTask?.content_id, mode, refreshKey]);
+  }, [pivotTask?.content_id, mode, refreshKey, workspaceOwnsStats, workspaceStats]);
 
   // Choose which stats + label to show based on verimeter mode
   const displayStats = (() => {

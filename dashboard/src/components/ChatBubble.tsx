@@ -14,6 +14,13 @@ import { usePushNotifications } from "../hooks/usePushNotifications";
 
 const BUBBLE_SIZE = "56px";
 
+interface ChatUserResult {
+  user_id: number;
+  username: string;
+  user_profile_image?: string;
+  is_me?: boolean;
+}
+
 export default function ChatBubble() {
   const user = useAuthStore((s) => s.user);
   const {
@@ -24,7 +31,7 @@ export default function ChatBubble() {
 
   const [draft, setDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<ChatUserResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const { autoSubscribeIfNeeded } = usePushNotifications();
@@ -74,20 +81,16 @@ export default function ChatBubble() {
   };
 
   const handleShowAllUsers = async () => {
-    console.log("[ChatBubble] Fetching all users...");
     setIsSearching(true);
     const results = await fetchAllUsers();
-    console.log("[ChatBubble] All users results:", results);
     setSearchResults(results);
     setSearchQuery("all");
     setIsSearching(false);
   };
 
   const handleShowOnlineUsers = async () => {
-    console.log("[ChatBubble] Fetching online users...");
     setIsSearching(true);
     const results = await fetchOnlineUsers();
-    console.log("[ChatBubble] Online users results:", results);
     setSearchResults(results);
     setSearchQuery("online");
     setIsSearching(false);

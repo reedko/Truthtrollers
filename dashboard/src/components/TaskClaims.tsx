@@ -33,7 +33,7 @@ import { ClaimLink } from "./RelationshipMap";
 interface TaskClaimsProps {
   claims: Claim[];
   onAddClaim: (newClaim: Claim) => Promise<void>;
-  onEditClaim: (updatedClaim: Claim) => Promise<void>;
+  onEditClaim: (updatedClaim: Claim & { runEvidence?: boolean }) => Promise<void>;
   onDeleteClaim: (claimId: number) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onDropReferenceClaim: (
@@ -52,7 +52,6 @@ interface TaskClaimsProps {
   editingClaim: Claim | null;
   setEditingClaim: (claim: Claim | null) => void;
   onVerifyClaim: (claim: Claim) => void;
-  onTaskClaimClick?: (claim: Claim) => void;
   onOpenLinkOverlay?: (
     scanSourceClaim: { claim_id: number; claim_text: string },
     scanTargetClaim: Claim,
@@ -71,43 +70,9 @@ interface TaskClaimsProps {
   references?: ReferenceWithClaims[];
   contentId?: number;
   viewerId?: number | null;
-  bubbleStyle?: boolean;
   isSuperAdmin?: boolean;
   onHardDeleteClaims?: (claimIds: number[]) => Promise<void>;
 }
-
-const CLAIM_BUBBLE_KEYFRAMES = {
-  "@keyframes pulse-green": {
-    "0%, 100%": {
-      boxShadow: "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow: "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-  "@keyframes pulse-red": {
-    "0%, 100%": {
-      boxShadow: "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow: "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-  "@keyframes pulse-blue": {
-    "0%, 100%": {
-      boxShadow: "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-      transform: "translateY(0px) scale(1)",
-    },
-    "50%": {
-      boxShadow: "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-      transform: "translateY(-3px) scale(1.03)",
-    },
-  },
-} as const;
 
 const claimBadgeSx = (color: string) => ({
   position: "relative",
@@ -158,7 +123,6 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   editingClaim,
   setEditingClaim,
   onVerifyClaim,
-  onTaskClaimClick,
   onOpenLinkOverlay,
   onFocusReference,
   taskId,
@@ -170,7 +134,6 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   viewerId,
   selectedReferenceId,
   isReferenceModalOpen = false,
-  bubbleStyle = false,
   isSuperAdmin = false,
   onHardDeleteClaims,
 }) => {
@@ -409,9 +372,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     })();
 
     const roleAccent = getRoleAccent(claim);
-    const bg = bubbleStyle
-      ? "transparent"
-      : hoveredClaimId === claim.claim_id
+    const bg = hoveredClaimId === claim.claim_id
         ? hoveredBg
         : linkTone === "green"
           ? "linear-gradient(135deg, rgba(56, 161, 105, 0.24), rgba(56, 161, 105, 0.12))"
@@ -436,10 +397,10 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           data-claim-id={claim.claim_id}
           background={bg}
           color={hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor}
-          px={bubbleStyle ? 4 : 3}
-          py={bubbleStyle ? 3 : 2}
-          minH={bubbleStyle ? undefined : "54px"}
-          borderRadius={bubbleStyle ? "30px" : "12px"}
+          px={3}
+          py={2}
+          minH="54px"
+          borderRadius="12px"
           border={border}
           boxShadow={
             hoveredClaimId === claim.claim_id ? boxShadowHovered : boxShadowDefault
@@ -449,7 +410,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               ? { bg: linkTone === "neutral" ? "rgba(128, 90, 213, 0.24)" : undefined, cursor: "pointer" }
               : {
                   boxShadow: boxShadowHover,
-                  transform: bubbleStyle ? "scale(1.03)" : "translateY(-2px)",
+                  transform: "translateY(-2px)",
                 }
           }
           width="100%"
@@ -470,18 +431,16 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
             setIsClaimViewModalOpen(true);
           }}
         >
-          {!bubbleStyle && (
-            <Box
-              position="absolute"
-              left={0}
-              top={0}
-              width="20px"
-              height="100%"
-              background={`linear-gradient(90deg, ${roleAccent}55 0%, transparent 100%)`}
-              borderLeftRadius="12px"
-              pointerEvents="none"
-            />
-          )}
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="20px"
+            height="100%"
+            background={`linear-gradient(90deg, ${roleAccent}55 0%, transparent 100%)`}
+            borderLeftRadius="12px"
+            pointerEvents="none"
+          />
           {isSuperAdmin && (
             <Box
               position="relative"
@@ -703,19 +662,18 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [claims, draggingClaim]); // hoveredClaimId removed — mouseUp no longer depends on it
+  }, [claims, draggingClaim, setHoveredClaimId]); // hoveredClaimId removed — mouseUp no longer depends on it
 
   return (
     <VStack
       align="start"
       spacing={2}
-      borderRight={bubbleStyle ? "none" : "1px solid gray"}
+      borderRight="1px solid gray"
       pr={4}
       alignSelf="flex-start"
       //overflowY="auto"
       //maxHeight="800px"
       width="100%"
-      bg={bubbleStyle ? "transparent" : undefined}
     >
       <HStack width="100%" justify="space-between">
         <Heading size="sm">Claims</Heading>
@@ -906,7 +864,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   onEditClaim({
                     ...pendingEdit.claim,
                     runEvidence: true,
-                  } as any);
+                  });
                 }
                 setShowEvidencePrompt(false);
                 setPendingEdit(null);
@@ -922,7 +880,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   onEditClaim({
                     ...pendingEdit.claim,
                     runEvidence: false,
-                  } as any);
+                  });
                 }
                 setShowEvidencePrompt(false);
                 setPendingEdit(null);

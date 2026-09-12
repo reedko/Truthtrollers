@@ -14,17 +14,22 @@ interface StickyTitleBarProps {
    * If false, it only appears when scrolling past a certain point.
    */
   alwaysVisible?: boolean;
+  verimeterScore?: number | null;
 }
 
 const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
   alwaysVisible = false,
+  verimeterScore,
 }) => {
   const { mode, aiWeight } = useVerimeterMode();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const [isVisible, setIsVisible] = useState(alwaysVisible);
   const [imageKey, setImageKey] = useState(Date.now());
-  const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
+  const [liveVerimeterScore, setLiveVerimeterScore] = useState<number | null>(null);
+  const borderColor = useColorModeValue("gray.200", "whiteAlpha.200");
+  const imageBorderColor = useColorModeValue("gray.300", "whiteAlpha.300");
+  const titleColor = useColorModeValue("gray.800", "gray.100");
 
   useEffect(() => {
     if (alwaysVisible) {
@@ -50,14 +55,12 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
     setImageKey(Date.now());
   }, [selectedTask?.content_id]);
 
-  // Fetch verimeter score
   useEffect(() => {
-    if (selectedTask?.content_id) {
-      fetchContentScores(selectedTask.content_id, viewerId, mode, aiWeight).then((scores) => {
-        setVerimeterScore(scores?.verimeterScore ?? null);
-      });
-    }
-  }, [selectedTask?.content_id, viewerId, mode, aiWeight]);
+    if (verimeterScore !== undefined || !selectedTask?.content_id) return;
+    fetchContentScores(selectedTask.content_id, viewerId, mode, aiWeight).then((scores) => {
+      setLiveVerimeterScore(scores?.verimeterScore ?? null);
+    });
+  }, [selectedTask?.content_id, viewerId, mode, aiWeight, verimeterScore]);
 
   if (!selectedTask) return null;
 
@@ -70,7 +73,7 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
       zIndex={999}
       bg="transparent"
       borderBottom="1px solid"
-      borderColor={useColorModeValue("gray.200", "whiteAlpha.200")}
+      borderColor={borderColor}
       transition="all 0.3s ease"
       opacity={isVisible ? 1 : 0}
       transform={isVisible ? "translateY(0)" : "translateY(-100%)"}
@@ -88,13 +91,13 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
             fallbackSrc={`${API_BASE_URL}/assets/images/content/content_id_default.png`}
             flexShrink={0}
             border="2px solid"
-            borderColor={useColorModeValue("gray.300", "whiteAlpha.300")}
+            borderColor={imageBorderColor}
             boxShadow="0 4px 12px rgba(0, 0, 0, 0.2)"
           />
           <Text
             fontSize="lg"
             fontWeight="bold"
-            color={useColorModeValue("gray.800", "gray.100")}
+            color={titleColor}
             noOfLines={1}
           >
             {selectedTask.content_name || "Untitled Case"}
@@ -102,7 +105,7 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
         </HStack>
 
         {/* Second Row: Verimeter Gauge */}
-        <VerimeterMeter score={verimeterScore} width="600px" showInterpretation={true} />
+        <VerimeterMeter score={verimeterScore ?? liveVerimeterScore} width="600px" showInterpretation={true} />
       </VStack>
     </Box>
   );
